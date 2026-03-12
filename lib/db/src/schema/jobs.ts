@@ -194,3 +194,56 @@ export const jobTimeLogsTable = pgTable("job_time_logs", {
 ]);
 
 export type JobTimeLog = typeof jobTimeLogsTable.$inferSelect;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   JOB PARTS USED
+───────────────────────────────────────────────────────────────────────── */
+
+export const jobPartsTable = pgTable("job_parts", {
+  id:             uuid("id").defaultRandom().primaryKey(),
+  job_id:         uuid("job_id").references(() => jobsTable.id, { onDelete: "cascade" }).notNull(),
+  tenant_id:      uuid("tenant_id").references(() => tenantsTable.id, { onDelete: "cascade" }).notNull(),
+  catalog_item_id: uuid("catalog_item_id"),
+  sort_order:     integer("sort_order").notNull().default(0),
+  part_number:    text("part_number"),
+  description:    text("description").notNull(),
+  qty:            numeric("qty",        { precision: 10, scale: 2 }).notNull().default("1.00"),
+  unit_price:     numeric("unit_price", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  line_total:     numeric("line_total", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  added_by:       uuid("added_by").references(() => usersTable.id, { onDelete: "set null" }),
+  created_at:     timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("job_parts_job_idx").on(t.job_id),
+  index("job_parts_tenant_idx").on(t.tenant_id),
+]);
+
+export const insertJobPartSchema = createInsertSchema(jobPartsTable).omit({
+  id: true, created_at: true,
+});
+export type InsertJobPart = z.infer<typeof insertJobPartSchema>;
+export type JobPart = typeof jobPartsTable.$inferSelect;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   JOB PHOTOS
+───────────────────────────────────────────────────────────────────────── */
+
+export const jobPhotosTable = pgTable("job_photos", {
+  id:             uuid("id").defaultRandom().primaryKey(),
+  job_id:         uuid("job_id").references(() => jobsTable.id, { onDelete: "cascade" }).notNull(),
+  tenant_id:      uuid("tenant_id").references(() => tenantsTable.id, { onDelete: "cascade" }).notNull(),
+  url:            text("url").notNull(),
+  caption:        text("caption"),
+  photo_type:     text("photo_type").notNull().default("general"),
+  // "before" | "after" | "damage" | "parts" | "general"
+  uploaded_by:    uuid("uploaded_by").references(() => usersTable.id, { onDelete: "set null" }),
+  created_at:     timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("job_photos_job_idx").on(t.job_id),
+  index("job_photos_tenant_idx").on(t.tenant_id),
+]);
+
+export const insertJobPhotoSchema = createInsertSchema(jobPhotosTable).omit({
+  id: true, created_at: true,
+});
+export type InsertJobPhoto = z.infer<typeof insertJobPhotoSchema>;
+export type JobPhoto = typeof jobPhotosTable.$inferSelect;
