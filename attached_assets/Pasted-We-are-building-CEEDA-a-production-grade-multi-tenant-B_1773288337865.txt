@@ -1,0 +1,87 @@
+We are building CEEDA, a production-grade multi-tenant B2B SaaS platform for automotive workshops on domain ceeda.me.
+
+Use these permanent rules for all future tasks in this repl:
+
+1) Product type
+- CEEDA is a SaaS operating system for auto shops.
+- Each shop is a tenant with isolated data.
+- Public site on ceeda.me
+- Tenant app on {tenant}.ceeda.me
+- Internal platform admin on admin.ceeda.me
+
+2) Phase scope
+Phase 1:
+- Public landing page
+- Auth
+- Tenant onboarding wizard
+- Tenant dashboard
+- Customers
+- Bookings
+- Quotations
+- Jobs / job cards
+- Invoices
+- Team
+- Settings
+- WhatsApp communication hooks
+- Stripe payments
+- Platform admin console basics
+
+Phase 2:
+- Multi-shop
+- Inventory
+- Marketing
+- Website page setup
+
+Phase 3:
+- Native technician app
+- Customer app for car history and bookings
+- Shop ratings / marketplace layer
+
+3) Design system
+Use a minimalistic B2B SaaS design inspired by Attio:
+- very clean
+- white / light gray surfaces
+- subtle borders
+- rounded corners
+- compact top bar and side nav
+- data-table-first UI
+- simple charts
+- restrained use of accent color
+- no flashy gradients
+- premium enterprise feel
+- fast and uncluttered UX
+
+4) Auth and tenancy rules
+- Smart auth entry on /auth
+- Tenant-aware routing based on email domain, invite, or org context
+- Prefer subdomain tenancy: {tenant}.ceeda.me
+- Support email/password, passkey, magic link, social login
+- Prepare architecture for phone OTP via WhatsApp or SMS
+- Tenant admin routes separated from regular user routes
+- Per-tenant isolation at database and API level
+- Role-based access control and audit logs
+- Sessions/devices view and revoke flow
+- Step-up auth for sensitive actions
+
+5) Stack
+Recommend the best Replit-friendly production stack and explain why before coding.
+Prefer:
+- Frontend: Next.js + TypeScript
+- UI: Tailwind + component system
+- Backend: Next.js server routes or Node service where needed
+- Database: PostgreSQL
+- ORM: Prisma
+- Auth: production-ready tenant-aware auth
+- File storage: object storage compatible approach
+- Payments: Stripe
+- Messaging: WhatsApp provider abstraction
+- Charts/tables: modern admin-grade libraries
+
+6) Output style
+- Always separate PLAN vs BUILD
+- In PLAN MODE do not write code
+- In BUILD MODE make changes in small safe increments
+- Always tell me what files you will create or modify before editing
+- Always preserve tenant-safe architecture
+
+Please confirm the target architecture, folder structure, and milestone plan for CEEDA before any code is written.
