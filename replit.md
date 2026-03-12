@@ -44,14 +44,36 @@ ceeda/
 
 ## Routing
 
-### web-app
-- Public routes (in `PublicLayout`): `/`, `/pricing`, `/auth`, `/auth/*`
-- Tenant routes (in `TenantLayout`): `/dashboard`, `/clients`, `/bookings`, `/quotations`, `/jobs`, `/invoices`, `/settings/*`, `/account/*`
-- Router logic: `isTenantPath()` in `App.tsx` selects layout based on current path
+`App.tsx` uses `detectZone(path)` to split into 5 zones:
+
+### web-app zones
+
+| Zone | Paths | Layout |
+|---|---|---|
+| `public` | `/`, `/pricing` | `PublicLayout` (nav + footer) |
+| `full-screen-auth` | `/auth`, `/register` | None (full screen, CEEDA branding) |
+| `tenant-auth` | `/:tenant/login`, `/:tenant/logout`, `/:tenant/forgot-password`, `/:tenant/reset-password`, `/:tenant/verify-email`, `/:tenant/re-auth` | `TenantAuthShell` (split: form + carousel) |
+| `tenant-slug-app` | `/:tenant/account/*`, `/:tenant/admin/*` | `TenantLayout` with `tenantSlug` prop |
+| `legacy-tenant-app` | `/dashboard`, `/clients`, `/bookings`, etc. | `TenantLayout` (no slug prefix) |
 
 ### admin-console
 - Login: `/auth`
 - Protected admin routes (in `AdminLayout`): `/dashboard`, `/tenants`, `/billing`, `/flags`, `/impersonate`
+
+## Auth Service Abstraction
+
+`artifacts/web-app/src/lib/auth.ts`:
+- `IAuthService` interface with all auth methods (signIn, Google, passkey, magicLink, phoneOTP, SSO, signOut, sessions, password reset, email verify, reAuth)
+- `StubAuthService` — mock implementation (swap for real backend)
+- `authService` singleton export
+
+`artifacts/web-app/src/lib/tenant.ts`:
+- `TenantInfo` type — slug, name, logo, allowedAuthMethods, ssoEnabled
+- `resolveTenant(slug)` — async fetch (stub returns mock for known slugs, generates from slug for unknown)
+- `tenantInitials()`, `slugFromPath()`, `tenantBase()` helpers
+
+`artifacts/web-app/src/guards/RouteGuard.tsx`:
+- `AuthGuard`, `GuestGuard`, `RoleGuard`, `TenantGuard` — all stubs, replace with real `useAuth()` hook
 
 ## DB Schema (26 tables across 7 domain files)
 
@@ -79,10 +101,19 @@ Sequential human-readable refs (e.g. `BK-2024-0001`) via `seq` + `ref` columns.
 
 | File | Purpose |
 |---|---|
-| `artifacts/web-app/src/App.tsx` | Main routing (public/tenant split) |
+| `artifacts/web-app/src/App.tsx` | 5-zone routing via `detectZone()` |
+| `artifacts/web-app/src/lib/auth.ts` | `IAuthService` interface + `StubAuthService` mock |
+| `artifacts/web-app/src/lib/tenant.ts` | Tenant resolution + helpers |
+| `artifacts/web-app/src/guards/RouteGuard.tsx` | Auth/role guard stubs |
 | `artifacts/web-app/src/layouts/PublicLayout.tsx` | Marketing site nav + footer |
-| `artifacts/web-app/src/layouts/TenantLayout.tsx` | App sidebar + topbar |
-| `artifacts/web-app/src/hooks/useTenant.ts` | Tenant/user state hook |
+| `artifacts/web-app/src/layouts/TenantLayout.tsx` | App sidebar (Account + Admin sections) + topbar |
+| `artifacts/web-app/src/pages/auth/TenantAuthShell.tsx` | Split-screen layout for tenant auth pages |
+| `artifacts/web-app/src/pages/auth/TenantLoginPage.tsx` | Multi-method login (password/magic/phone/Google/SSO/passkey) |
+| `artifacts/web-app/src/pages/tenant/admin/UsersPage.tsx` | Team member management with invite dialog |
+| `artifacts/web-app/src/pages/tenant/admin/SsoPage.tsx` | SAML 2.0 SSO configuration |
+| `artifacts/web-app/src/pages/tenant/admin/AuditPage.tsx` | Filterable audit event log |
+| `artifacts/web-app/src/pages/tenant/admin/ApiKeysPage.tsx` | API key create/revoke with scope picker |
+| `artifacts/web-app/src/pages/tenant/account/DevicesPage.tsx` | Trusted devices with revoke |
 | `artifacts/admin-console/src/App.tsx` | Admin routing (login/protected split) |
 | `artifacts/admin-console/src/layouts/AdminLayout.tsx` | Dark sidebar + topbar |
 | `lib/db/src/schema/index.ts` | Schema barrel export |
