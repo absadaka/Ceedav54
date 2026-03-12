@@ -110,6 +110,32 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 
 66 permissions across 17 resources (bookings, clients, vehicles, quotations, jobs, invoices, payments, catalog, team, settings, audit_logs, api_keys, sso, platform_tenants, platform_billing, platform_flags, platform_users)
 
+## Tenant App Shell
+
+**Layout**: `artifacts/web-app/src/layouts/TenantLayout.tsx`
+- Left: collapsible sidebar (220px ↔ 56px on desktop; overlay drawer on mobile via hamburger)
+- Sidebar groups: **Main** (Dashboard, Customers, Bookings, Quotations, Jobs, Invoices) → **Workspace** (Team, Settings) → **Admin** (Users, SSO, Audit log, API keys)
+- Top bar: hamburger (mobile), Search/Cmd+K trigger (center), shop avatar + name (right), notification bell, user dropdown
+- CEEDA logo (wrench icon + text) anchors the sidebar top
+- Collapse toggle at sidebar bottom (desktop only)
+
+**Command palette**: `src/components/CommandPalette.tsx` — triggered by ⌘K / Ctrl+K, searchable nav items using shadcn Command dialog
+
+**Pages + loading states** (`src/hooks/usePageLoad.ts`): all section pages show a skeleton for ~350ms on mount then resolve to their empty state. Pattern is ready for real API data fetching.
+
+| Route | Component |
+|---|---|
+| `/dashboard` | DashboardPage — KPI strip, setup checklist, quick actions, recent activity |
+| `/customers` | ClientsPage — sortable table, search, empty state |
+| `/bookings` | BookingsPage — table with filter toolbar |
+| `/quotations` | QuotationsPage — table with filter toolbar |
+| `/jobs` | JobsPage — **Board** (5-lane Kanban) + **List** toggle |
+| `/invoices` | InvoicesPage — status summary strip + table |
+| `/team` | TeamPage — member table with role badges, stats strip |
+| `/settings` | SettingsPage — grouped nav hub (Workshop / Account / Developer) |
+
+**Routing**: `/clients` kept as backward-compat alias for `/customers`.
+
 ## Onboarding API
 
 `POST /api/onboarding` — Creates a new tenant with full setup in a single request.
