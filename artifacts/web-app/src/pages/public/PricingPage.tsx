@@ -1,19 +1,22 @@
 import { Link } from "wouter";
-import { CheckCircle2, Minus } from "lucide-react";
+import { CheckCircle2, Minus, ArrowRight, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
+/* ─── Data ────────────────────────────────────────────────────────────────── */
 const plans = [
   {
     name: "Starter",
-    monthlyPrice: 49,
-    annualPrice: 39,
-    description: "For single-bay workshops getting started with digital management.",
+    monthly: 49,
+    annual: 39,
+    desc: "For single-bay workshops getting started with digital management.",
     plan: "starter",
+    color: "border-border",
+    badge: null,
     features: {
-      users: "3",
-      locations: "1",
+      users: "3 users",
+      locations: "1 location",
       bookings: true,
       jobCards: true,
       quotations: true,
@@ -23,18 +26,21 @@ const plans = [
       api: false,
       sso: false,
       support: "Email",
+      onboarding: false,
+      sla: false,
     },
   },
   {
     name: "Professional",
-    monthlyPrice: 99,
-    annualPrice: 79,
-    description: "For growing workshops that need the full toolkit.",
+    monthly: 99,
+    annual: 79,
+    desc: "The full toolkit for growing workshops that need everything.",
     plan: "professional",
-    highlighted: true,
+    color: "border-primary ring-2 ring-primary/20",
+    badge: "Most popular",
     features: {
-      users: "10",
-      locations: "1",
+      users: "10 users",
+      locations: "1 location",
       bookings: true,
       jobCards: true,
       quotations: true,
@@ -44,14 +50,18 @@ const plans = [
       api: true,
       sso: false,
       support: "Priority email",
+      onboarding: false,
+      sla: false,
     },
   },
   {
     name: "Enterprise",
-    monthlyPrice: null,
-    annualPrice: null,
-    description: "For multi-location chains and franchise operations.",
+    monthly: null,
+    annual: null,
+    desc: "Multi-location chains, dealerships, and franchise operations.",
     plan: "enterprise",
+    color: "border-border",
+    badge: null,
     features: {
       users: "Unlimited",
       locations: "Unlimited",
@@ -63,153 +73,246 @@ const plans = [
       reports: "Custom",
       api: true,
       sso: true,
-      support: "Dedicated",
+      support: "Dedicated CSM",
+      onboarding: true,
+      sla: true,
     },
   },
 ];
 
-type FeatureRow = {
-  label: string;
-  key: keyof typeof plans[0]["features"];
-  format?: (v: string | boolean) => React.ReactNode;
-};
-
-const featureRows: FeatureRow[] = [
-  { label: "Users", key: "users" },
-  { label: "Locations", key: "locations" },
-  { label: "Bookings & calendar", key: "bookings" },
-  { label: "Job cards", key: "jobCards" },
-  { label: "Quotations", key: "quotations" },
-  { label: "Invoices", key: "invoices" },
-  { label: "WhatsApp notifications", key: "whatsapp" },
-  { label: "Reports", key: "reports" },
-  { label: "API access", key: "api" },
-  { label: "SSO", key: "sso" },
-  { label: "Support", key: "support" },
+const featureRows = [
+  { section: "Core", rows: [
+    { label: "Users", key: "users" as const },
+    { label: "Locations", key: "locations" as const },
+    { label: "Bookings & calendar", key: "bookings" as const },
+    { label: "Job cards & Kanban board", key: "jobCards" as const },
+    { label: "Quotations", key: "quotations" as const },
+    { label: "Invoices", key: "invoices" as const },
+  ]},
+  { section: "Communications", rows: [
+    { label: "WhatsApp notifications", key: "whatsapp" as const },
+  ]},
+  { section: "Insights", rows: [
+    { label: "Reports & analytics", key: "reports" as const },
+    { label: "API access", key: "api" as const },
+  ]},
+  { section: "Security & support", rows: [
+    { label: "SSO / SAML", key: "sso" as const },
+    { label: "Support", key: "support" as const },
+    { label: "Dedicated onboarding", key: "onboarding" as const },
+    { label: "SLA guarantee", key: "sla" as const },
+  ]},
 ];
 
-function FeatureValue({ value }: { value: string | boolean }) {
-  if (value === true) return <CheckCircle2 className="w-4 h-4 text-primary mx-auto" />;
-  if (value === false) return <Minus className="w-4 h-4 text-muted-foreground/40 mx-auto" />;
-  return <span className="text-sm text-foreground">{value}</span>;
+const faqs = [
+  ["Can I switch plans anytime?", "Yes. Upgrade or downgrade from billing settings. Changes take effect at the next billing cycle."],
+  ["Is there a setup fee?", "No. Get started in under 5 minutes. No setup fee, no contracts."],
+  ["What payment methods do you accept?", "All major cards via Stripe. Bank transfer available on Enterprise."],
+  ["Can I export my data?", "Anytime. Export clients, bookings, and invoices as CSV."],
+  ["Is my data secure?", "Encrypted in transit and at rest. ISO 27001-certified infrastructure."],
+  ["Do you support multiple locations?", "Yes, on Enterprise. Contact us for multi-location pricing."],
+  ["What's included in the free trial?", "Full access to your chosen plan for 14 days. No credit card needed."],
+  ["Can I use CEEDA in Arabic?", "Arabic (RTL) support is on the roadmap. Contact us if you need it sooner."],
+];
+
+type PlanFeatures = typeof plans[0]["features"];
+type FeatureKey = keyof PlanFeatures;
+
+function FeatureCell({ value }: { value: string | boolean }) {
+  if (value === true) return <CheckCircle2 className="w-4.5 h-4.5 text-primary mx-auto" />;
+  if (value === false) return <Minus className="w-4 h-4 text-muted-foreground/30 mx-auto" />;
+  return <span className="text-sm text-foreground font-medium">{value}</span>;
 }
 
 export default function PricingPage() {
-  const [annual, setAnnual] = useState(false);
+  const [annual, setAnnual] = useState(true);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-16">
-      <div className="text-center mb-12">
-        <h1 className="text-3xl font-semibold text-foreground mb-3">Simple, transparent pricing</h1>
-        <p className="text-muted-foreground mb-6">No hidden fees. Cancel anytime. 14-day free trial on all plans.</p>
-        <div className="inline-flex items-center gap-2 bg-muted rounded-full p-1 text-sm">
-          <button
-            className={cn("px-4 py-1.5 rounded-full transition-colors", !annual ? "bg-background shadow-xs font-medium text-foreground" : "text-muted-foreground")}
-            onClick={() => setAnnual(false)}
-          >
-            Monthly
-          </button>
-          <button
-            className={cn("px-4 py-1.5 rounded-full transition-colors flex items-center gap-1.5", annual ? "bg-background shadow-xs font-medium text-foreground" : "text-muted-foreground")}
-            onClick={() => setAnnual(true)}
-          >
-            Annual
-            <span className="text-[10px] font-medium text-primary bg-accent px-1.5 py-0.5 rounded-full">Save 20%</span>
-          </button>
-        </div>
-      </div>
+    <div className="bg-white">
+      {/* Header */}
+      <section className="pt-16 pb-12 text-center bg-white border-b border-border">
+        <div className="max-w-2xl mx-auto px-6">
+          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Pricing</p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight mb-4">
+            Simple, honest pricing
+          </h1>
+          <p className="text-lg text-muted-foreground mb-8">
+            No hidden fees. No per-seat surprises. 14-day free trial on every plan.
+          </p>
 
-      {/* Plan cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-16">
-        {plans.map((plan) => {
-          const price = annual ? plan.annualPrice : plan.monthlyPrice;
-          return (
-            <div
-              key={plan.name}
+          {/* Billing toggle */}
+          <div className="inline-flex items-center gap-1 bg-muted rounded-full p-1">
+            <button
+              onClick={() => setAnnual(false)}
               className={cn(
-                "rounded-xl border p-6 flex flex-col",
-                plan.highlighted ? "border-primary ring-1 ring-primary/30 bg-accent/20" : "border-border bg-background"
+                "px-5 py-2 rounded-full text-sm font-medium transition-all",
+                !annual ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {plan.highlighted && (
-                <div className="text-xs font-medium text-primary mb-2">Most popular</div>
+              Monthly
+            </button>
+            <button
+              onClick={() => setAnnual(true)}
+              className={cn(
+                "px-5 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2",
+                annual ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
-              <p className="text-[15px] font-semibold text-foreground">{plan.name}</p>
-              <div className="mt-3 mb-4">
-                {price !== null ? (
-                  <>
-                    <span className="text-3xl font-semibold text-foreground">${price}</span>
-                    <span className="text-sm text-muted-foreground">/month</span>
-                    {annual && (
-                      <p className="text-xs text-muted-foreground mt-0.5">Billed annually</p>
-                    )}
-                  </>
-                ) : (
-                  <span className="text-2xl font-semibold text-foreground">Custom</span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed mb-6 flex-1">{plan.description}</p>
-              <Link href={plan.plan === "enterprise" ? "/auth" : `/auth?plan=${plan.plan}`}>
-                <Button
-                  variant={plan.highlighted ? "default" : "outline"}
-                  size="sm"
-                  className="w-full"
-                >
-                  {plan.plan === "enterprise" ? "Contact sales" : "Start free trial"}
-                </Button>
-              </Link>
-            </div>
-          );
-        })}
-      </div>
+            >
+              Annual
+              <span className="text-[10px] font-bold text-primary bg-accent px-1.5 py-0.5 rounded-full">
+                Save 20%
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
 
-      {/* Feature comparison table */}
-      <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted border-b border-border">
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider w-48">Feature</th>
-              {plans.map((p) => (
-                <th key={p.name} className={cn("px-4 py-3 text-center text-xs font-medium uppercase tracking-wider", p.highlighted ? "text-primary" : "text-muted-foreground")}>
-                  {p.name}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {featureRows.map((row) => (
-              <tr key={row.key} className="hover:bg-muted/40 transition-colors">
-                <td className="px-4 py-3 text-foreground">{row.label}</td>
+      {/* Plan cards */}
+      <section className="max-w-5xl mx-auto px-6 py-14">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {plans.map((plan) => {
+            const price = annual ? plan.annual : plan.monthly;
+            return (
+              <div
+                key={plan.name}
+                className={cn(
+                  "rounded-2xl border bg-white p-7 flex flex-col relative",
+                  plan.color
+                )}
+              >
+                {plan.badge && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="bg-primary text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
+                      {plan.badge}
+                    </span>
+                  </div>
+                )}
+
+                <div className="mb-6">
+                  <p className="text-[15px] font-semibold text-foreground">{plan.name}</p>
+                  <div className="mt-3 flex items-baseline gap-1">
+                    {price !== null ? (
+                      <>
+                        <span className="text-4xl font-bold text-foreground">${price}</span>
+                        <span className="text-sm text-muted-foreground">/month</span>
+                      </>
+                    ) : (
+                      <span className="text-3xl font-bold text-foreground">Custom</span>
+                    )}
+                  </div>
+                  {annual && price !== null && (
+                    <p className="text-xs text-muted-foreground mt-1">Billed annually (${price * 12}/year)</p>
+                  )}
+                  <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{plan.desc}</p>
+                </div>
+
+                <div className="flex-1" />
+
+                <Link href={plan.plan === "enterprise" ? "/auth" : `/register?plan=${plan.plan}`}>
+                  <Button
+                    variant={plan.badge ? "default" : "outline"}
+                    size="sm"
+                    className={cn("w-full gap-2 mb-6", plan.badge && "shadow-md shadow-primary/20")}
+                  >
+                    {plan.plan === "enterprise" ? "Talk to sales" : "Start free trial"}
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+
+                {/* Feature highlights */}
+                <ul className="space-y-2.5 border-t border-border pt-5">
+                  {featureRows.flatMap(g => g.rows).slice(0, 5).map((row) => {
+                    const val = plan.features[row.key];
+                    if (val === false) return null;
+                    return (
+                      <li key={`${plan.name}-${row.key}`} className="flex items-center gap-2 text-sm text-foreground">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                        {typeof val === "string" ? val : row.label}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Comparison table */}
+      <section className="max-w-5xl mx-auto px-6 pb-16">
+        <h2 className="text-xl font-bold text-foreground mb-6">Full feature comparison</h2>
+        <div className="rounded-xl border border-border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted border-b border-border">
+                <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-52">Feature</th>
                 {plans.map((p) => (
-                  <td key={p.name} className="px-4 py-3 text-center">
-                    <FeatureValue value={p.features[row.key]} />
-                  </td>
+                  <th key={p.name} className={cn(
+                    "px-5 py-3.5 text-center text-xs font-semibold uppercase tracking-wider",
+                    p.badge ? "text-primary" : "text-muted-foreground"
+                  )}>
+                    {p.name}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {featureRows.map((group) => (
+                <>
+                  <tr key={`section-${group.section}`} className="bg-muted/40">
+                    <td colSpan={4} className="px-5 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      {group.section}
+                    </td>
+                  </tr>
+                  {group.rows.map((row) => (
+                    <tr key={row.key} className="border-t border-border hover:bg-muted/30 transition-colors">
+                      <td className="px-5 py-3 text-foreground font-medium">{row.label}</td>
+                      {plans.map((p) => (
+                        <td key={p.name} className="px-5 py-3 text-center">
+                          <FeatureCell value={p.features[row.key]} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {/* FAQ */}
-      <div className="mt-16">
-        <h2 className="text-xl font-semibold text-foreground mb-6 text-center">Frequently asked questions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          {[
-            ["Can I switch plans?", "Yes. You can upgrade or downgrade at any time from your billing settings. Changes take effect at the next billing cycle."],
-            ["Is there a setup fee?", "No. You can be up and running in under 5 minutes. No setup fee, no onboarding cost."],
-            ["What payment methods are accepted?", "We accept all major credit and debit cards via Stripe. Bank transfer available on Enterprise."],
-            ["Can I export my data?", "Yes. You can export your clients, bookings, and invoices at any time as CSV files."],
-            ["Is my data secure?", "All data is encrypted in transit (TLS) and at rest. We're hosted on ISO 27001-certified infrastructure."],
-            ["Do you offer a discount for multiple locations?", "Yes. Contact us for multi-location pricing on the Enterprise plan."],
-          ].map(([q, a]) => (
-            <div key={q} className="space-y-1.5">
-              <p className="text-[14px] font-medium text-foreground">{q}</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">{a}</p>
-            </div>
-          ))}
+      <section className="border-t border-border bg-muted/20 py-20">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-foreground mb-10 text-center">Frequently asked questions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+            {faqs.map(([q, a]) => (
+              <div key={q}>
+                <p className="text-[14px] font-semibold text-foreground mb-2">{q}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{a}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-20 bg-primary text-center">
+        <div className="max-w-xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-white mb-4">Ready to get started?</h2>
+          <p className="text-primary-foreground/75 mb-8">Join 2,400+ workshops. First 14 days are on us.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/register">
+              <Button variant="secondary" size="lg" className="gap-2 font-semibold">
+                Create your shop — free <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+            <Button variant="ghost" size="lg" className="text-white hover:bg-white/10 gap-2">
+              <MessageSquare className="w-4 h-4" /> Talk to sales
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
