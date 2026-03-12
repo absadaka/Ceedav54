@@ -9,6 +9,7 @@ import TenantLayout from "@/layouts/TenantLayout";
 import LandingPage from "@/pages/public/LandingPage";
 import PricingPage from "@/pages/public/PricingPage";
 import AuthPage from "@/pages/public/AuthPage";
+import RegisterPage from "@/pages/public/RegisterPage";
 import DashboardPage from "@/pages/tenant/DashboardPage";
 import ClientsPage from "@/pages/tenant/ClientsPage";
 import BookingsPage from "@/pages/tenant/BookingsPage";
@@ -38,8 +39,14 @@ const TENANT_PATHS = [
   "/account",
 ];
 
+const FULL_SCREEN_PATHS = ["/auth", "/register"];
+
 function isTenantPath(path: string) {
   return TENANT_PATHS.some((p) => path === p || path.startsWith(p + "/"));
+}
+
+function isFullScreenPath(path: string) {
+  return FULL_SCREEN_PATHS.some((p) => path === p || path.startsWith(p + "/"));
 }
 
 function AppRouter() {
@@ -65,16 +72,21 @@ function AppRouter() {
     );
   }
 
+  if (isFullScreenPath(location)) {
+    return (
+      <Switch>
+        <Route path="/auth" component={AuthPage} />
+        <Route path="/auth/:rest*" component={AuthPage} />
+        <Route path="/register" component={RegisterPage} />
+      </Switch>
+    );
+  }
+
   return (
     <PublicLayout>
       <Switch>
         <Route path="/" component={LandingPage} />
         <Route path="/pricing" component={PricingPage} />
-        <Route path="/auth" component={AuthPage} />
-        <Route path="/auth/invite" component={AuthPage} />
-        <Route path="/auth/reset-password" component={AuthPage} />
-        <Route path="/auth/verify-email" component={AuthPage} />
-        <Route path="/auth/magic" component={AuthPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </PublicLayout>

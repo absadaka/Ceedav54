@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, Wrench } from "lucide-react";
+import { Menu, X, Wrench, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,19 +9,34 @@ const navLinks = [
   { label: "Pricing", href: "/pricing" },
 ];
 
+function Logo({ size = "md" }: { size?: "sm" | "md" }) {
+  return (
+    <Link href="/" className="flex items-center gap-2 font-semibold text-foreground hover:opacity-80 transition-opacity shrink-0">
+      <div className={cn(
+        "rounded-lg bg-primary flex items-center justify-center",
+        size === "sm" ? "w-6 h-6" : "w-7 h-7"
+      )}>
+        <Wrench className={cn("text-white", size === "sm" ? "w-3.5 h-3.5" : "w-4 h-4")} />
+      </div>
+      <span className={cn("tracking-tight font-bold", size === "sm" ? "text-sm" : "text-[15px]")}>CEEDA</span>
+    </Link>
+  );
+}
+
+export { Logo };
+
 function PublicNav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [location] = useLocation();
 
+  const isAuthPage = location === "/auth" || location === "/register" || location.startsWith("/auth/");
+
+  if (isAuthPage) return null;
+
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
-      <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-foreground hover:opacity-80 transition-opacity">
-          <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
-            <Wrench className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-[15px] tracking-tight">CEEDA</span>
-        </Link>
+    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85 border-b border-border">
+      <div className="max-w-6xl mx-auto px-6 h-[60px] flex items-center justify-between">
+        <Logo />
 
         <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => (
@@ -32,7 +47,7 @@ function PublicNav() {
                 "px-3 py-1.5 text-sm rounded-md transition-colors",
                 location === link.href
                   ? "text-foreground bg-muted"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
               {link.label}
@@ -42,15 +57,19 @@ function PublicNav() {
 
         <div className="hidden md:flex items-center gap-2">
           <Link href="/auth">
-            <Button variant="ghost" size="sm">Sign in</Button>
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+              Sign in
+            </Button>
           </Link>
-          <Link href="/auth?plan=starter">
-            <Button size="sm">Start free trial</Button>
+          <Link href="/register">
+            <Button size="sm" className="shadow-sm">
+              Create your shop
+            </Button>
           </Link>
         </div>
 
         <button
-          className="md:hidden p-2 text-muted-foreground hover:text-foreground"
+          className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors rounded-md"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
         >
@@ -59,23 +78,23 @@ function PublicNav() {
       </div>
 
       {menuOpen && (
-        <div className="md:hidden border-t border-border bg-background px-6 py-4 space-y-1">
+        <div className="md:hidden border-t border-border bg-white px-6 py-4 space-y-1 shadow-lg">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="block px-3 py-2 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+              className="block px-3 py-2.5 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
               onClick={() => setMenuOpen(false)}
             >
               {link.label}
             </Link>
           ))}
-          <div className="pt-3 space-y-2">
+          <div className="pt-3 space-y-2 border-t border-border mt-3">
             <Link href="/auth" onClick={() => setMenuOpen(false)}>
               <Button variant="outline" size="sm" className="w-full">Sign in</Button>
             </Link>
-            <Link href="/auth?plan=starter" onClick={() => setMenuOpen(false)}>
-              <Button size="sm" className="w-full">Start free trial</Button>
+            <Link href="/register" onClick={() => setMenuOpen(false)}>
+              <Button size="sm" className="w-full">Create your shop</Button>
             </Link>
           </div>
         </div>
@@ -85,53 +104,56 @@ function PublicNav() {
 }
 
 function PublicFooter() {
+  const [location] = useLocation();
+  const isAuthPage = location === "/auth" || location === "/register" || location.startsWith("/auth/");
+  if (isAuthPage) return null;
+
   return (
-    <footer className="border-t border-border bg-background">
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="flex flex-col md:flex-row justify-between gap-8">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
-                <Wrench className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="text-sm font-semibold">CEEDA</span>
-            </div>
-            <p className="text-xs text-muted-foreground max-w-[220px] leading-relaxed">
-              Workshop management software for modern automotive businesses.
+    <footer className="border-t border-border bg-white">
+      <div className="max-w-6xl mx-auto px-6 py-14">
+        <div className="flex flex-col lg:flex-row justify-between gap-12">
+          <div className="space-y-4 max-w-xs">
+            <Logo />
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              The workshop management platform built for modern automotive businesses. From check-in to invoice.
             </p>
+            <div className="flex items-center gap-3 pt-1">
+              {["twitter", "linkedin"].map((s) => (
+                <a key={s} href="#" className="w-8 h-8 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors">
+                  <span className="text-[10px] font-medium uppercase">{s[0]}</span>
+                </a>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-10 text-sm">
             <div className="space-y-3">
-              <p className="font-medium text-foreground">Product</p>
-              {[["Features", "/#features"], ["Pricing", "/pricing"], ["Changelog", "#changelog"]].map(([label, href]) => (
-                <Link key={`product-${label}`} href={href} className="block text-muted-foreground hover:text-foreground transition-colors">
-                  {label}
-                </Link>
+              <p className="font-semibold text-foreground text-xs uppercase tracking-wider">Product</p>
+              {[["Features", "/#features"], ["Pricing", "/pricing"], ["Changelog", "#changelog"], ["Roadmap", "#roadmap"]].map(([label, href]) => (
+                <Link key={`product-${label}`} href={href} className="block text-muted-foreground hover:text-foreground transition-colors">{label}</Link>
               ))}
             </div>
             <div className="space-y-3">
-              <p className="font-medium text-foreground">Company</p>
-              {[["About", "#about"], ["Contact", "#contact"], ["Blog", "#blog"]].map(([label, href]) => (
-                <Link key={`company-${label}`} href={href} className="block text-muted-foreground hover:text-foreground transition-colors">
-                  {label}
-                </Link>
+              <p className="font-semibold text-foreground text-xs uppercase tracking-wider">Company</p>
+              {[["About", "#about"], ["Blog", "#blog"], ["Careers", "#careers"], ["Contact", "#contact"]].map(([label, href]) => (
+                <Link key={`company-${label}`} href={href} className="block text-muted-foreground hover:text-foreground transition-colors">{label}</Link>
               ))}
             </div>
             <div className="space-y-3">
-              <p className="font-medium text-foreground">Legal</p>
-              {[["Privacy", "#privacy"], ["Terms", "#terms"], ["Security", "#security"]].map(([label, href]) => (
-                <Link key={`legal-${label}`} href={href} className="block text-muted-foreground hover:text-foreground transition-colors">
-                  {label}
-                </Link>
+              <p className="font-semibold text-foreground text-xs uppercase tracking-wider">Legal</p>
+              {[["Privacy", "#privacy"], ["Terms", "#terms"], ["Security", "#security"], ["Cookies", "#cookies"]].map(([label, href]) => (
+                <Link key={`legal-${label}`} href={href} className="block text-muted-foreground hover:text-foreground transition-colors">{label}</Link>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} CEEDA. All rights reserved.</p>
-          <p className="text-xs text-muted-foreground">Built for automotive workshops.</p>
+        <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} CEEDA Technologies. All rights reserved.</p>
+          <div className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <p className="text-xs text-muted-foreground">All systems operational</p>
+          </div>
         </div>
       </div>
     </footer>
