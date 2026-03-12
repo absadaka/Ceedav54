@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, useLocation, useParams } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +27,8 @@ import BookingsPage from "@/pages/tenant/BookingsPage";
 import QuotationsPage from "@/pages/tenant/QuotationsPage";
 import JobsPage from "@/pages/tenant/JobsPage";
 import InvoicesPage from "@/pages/tenant/InvoicesPage";
+import TeamPage from "@/pages/tenant/TeamPage";
+import SettingsPage from "@/pages/tenant/SettingsPage";
 import SettingsTeamPage from "@/pages/tenant/settings/TeamPage";
 import SettingsShopPage from "@/pages/tenant/settings/ShopPage";
 import AccountSecurityPage from "@/pages/tenant/account/SecurityPage";
@@ -48,46 +50,44 @@ const queryClient = new QueryClient({
 /* ─── Route zone detection ───────────────────────────────────────────────── */
 
 const PUBLIC_PATHS = ["/", "/pricing", "/auth", "/register"];
+
 const LEGACY_APP_PREFIXES = [
-  "dashboard", "clients", "bookings", "quotations", "jobs",
-  "invoices", "settings", "account",
+  "dashboard", "customers", "clients", "bookings", "quotations", "jobs",
+  "invoices", "team", "settings", "account",
 ];
+
 const TENANT_AUTH_ACTIONS = [
   "login", "logout", "forgot-password", "reset-password", "verify-email", "re-auth",
 ];
+
 const TENANT_SLUG_PREFIXES = ["account", "admin"];
 
 type RouteZone =
   | "public"
   | "full-screen-auth"
   | "legacy-tenant-app"
-  | "tenant-auth"        // /:tenant/(login|logout|etc.)
-  | "tenant-slug-app";   // /:tenant/account/* or /:tenant/admin/*
+  | "tenant-auth"
+  | "tenant-slug-app";
 
 function detectZone(path: string): RouteZone {
   const segments = path.split("/").filter(Boolean);
   const first = segments[0] ?? "";
   const second = segments[1] ?? "";
 
-  // Global auth (full-screen, no layout)
   if (path === "/auth" || path.startsWith("/auth/") || path === "/register") {
     return "full-screen-auth";
   }
 
-  // Public paths
   if (PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"))) {
     return "public";
   }
 
-  // Legacy tenant app paths (no slug prefix)
   if (LEGACY_APP_PREFIXES.includes(first)) return "legacy-tenant-app";
 
-  // /:tenant/(login|logout|forgot-password|etc.)
   if (segments.length >= 2 && TENANT_AUTH_ACTIONS.includes(second)) {
     return "tenant-auth";
   }
 
-  // /:tenant/account/* or /:tenant/admin/*
   if (segments.length >= 2 && TENANT_SLUG_PREFIXES.includes(second)) {
     return "tenant-slug-app";
   }
@@ -124,7 +124,6 @@ function AppRouter() {
   const [location] = useLocation();
   const zone = detectZone(location);
 
-  // Global full-screen auth (no nav/layout)
   if (zone === "full-screen-auth") {
     return (
       <Switch>
@@ -135,7 +134,6 @@ function AppRouter() {
     );
   }
 
-  // Tenant-scoped auth pages (/:tenant/login etc.)
   if (zone === "tenant-auth") {
     return (
       <Switch>
@@ -149,24 +147,29 @@ function AppRouter() {
     );
   }
 
-  // Tenant slug app pages (/:tenant/account/* etc.)
   if (zone === "tenant-slug-app") {
     return <TenantSlugApp />;
   }
 
-  // Legacy tenant app (paths without slug)
   if (zone === "legacy-tenant-app") {
     return (
       <TenantLayout>
         <Switch>
           <Route path="/dashboard" component={DashboardPage} />
+          {/* Customers — canonical; /clients kept for backward compat */}
+          <Route path="/customers" component={ClientsPage} />
           <Route path="/clients" component={ClientsPage} />
           <Route path="/bookings" component={BookingsPage} />
           <Route path="/quotations" component={QuotationsPage} />
           <Route path="/jobs" component={JobsPage} />
           <Route path="/invoices" component={InvoicesPage} />
+          {/* Team — top-level section */}
+          <Route path="/team" component={TeamPage} />
+          {/* Settings hub + sub-pages */}
+          <Route path="/settings" component={SettingsPage} />
           <Route path="/settings/team" component={SettingsTeamPage} />
           <Route path="/settings/shop" component={SettingsShopPage} />
+          {/* Account sub-pages */}
           <Route path="/account/security" component={AccountSecurityPage} />
           <Route path="/account/sessions" component={AccountSessionsPage} />
           <Route path="/account/devices" component={AccountDevicesPage} />
@@ -176,7 +179,6 @@ function AppRouter() {
     );
   }
 
-  // Public
   return (
     <PublicLayout>
       <Switch>
