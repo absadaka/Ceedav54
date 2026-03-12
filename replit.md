@@ -125,7 +125,7 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 
 | Route | Component |
 |---|---|
-| `/dashboard` | DashboardPage — KPI strip, setup checklist, quick actions, recent activity |
+| `/dashboard` | DashboardPage — live KPI strip, bookings/jobs/quotations/invoices tables, technician workload, revenue summary, activity feed |
 | `/customers` | ClientsPage — sortable table, search, empty state |
 | `/bookings` | BookingsPage — table with filter toolbar |
 | `/quotations` | QuotationsPage — table with filter toolbar |
@@ -155,6 +155,29 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 **Returns**: `{ success: true, slug: "shop-name", tenantId: "uuid", userId: "uuid", redirectTo: "/dashboard" }`
 
 **Operations**: generates unique slug → creates tenant → hashes password (scryptSync) → creates owner user → seeds catalog items
+
+## Dashboard API
+
+`GET /api/dashboard?tenant=<slug>` — Returns all dashboard data in a single request (7 parallel DB queries).
+
+**Response shape**:
+```json
+{
+  "currency": "AED",
+  "kpis": { "bookings_today": 0, "active_jobs": 0, "revenue_month": "451.50", "unpaid_invoices_count": 0, "unpaid_invoices_total": "0.00" },
+  "revenue": { "today": "451.50", "week": "451.50", "month": "451.50" },
+  "bookings_today": [],
+  "active_jobs": [],
+  "pending_quotations": [],
+  "unpaid_invoices": [],
+  "technician_workload": [{ "id": "uuid", "name": "...", "active_count": "0", "completed_today": "1" }],
+  "recent_activity": [{ "id": "uuid", "from_status": null, "to_status": "waiting", "created_at": "...", "job_ref": "JC-2024-0001", "changed_by_name": "..." }]
+}
+```
+
+**Auth**: Uses `?tenant=<slug>` for now; will use session when auth is wired.
+**Caching**: `staleTime: 60_000`, `refetchInterval: 120_000` on the client.
+**Route file**: `artifacts/api-server/src/routes/dashboard.ts` (mounted at `/dashboard` inside `/api` router)
 
 ## Key Files
 
