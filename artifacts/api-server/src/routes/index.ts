@@ -1,10 +1,12 @@
 import { Router, type IRouter } from "express";
-import healthRouter     from "./health";
-import onboardingRouter from "./onboarding";
-import dashboardRouter  from "./dashboard";
-import clientsRouter    from "./clients";
-import vehiclesRouter   from "./vehicles";
-import jobsRouter       from "./jobs";
+import healthRouter      from "./health";
+import onboardingRouter  from "./onboarding";
+import dashboardRouter   from "./dashboard";
+import clientsRouter     from "./clients";
+import vehiclesRouter    from "./vehicles";
+import bookingsRouter    from "./bookings";
+import quotationsRouter  from "./quotations";
+import jobsRouter        from "./jobs";
 
 const router: IRouter = Router();
 
@@ -13,6 +15,8 @@ router.use(onboardingRouter);
 router.use(dashboardRouter);
 router.use(clientsRouter);
 router.use(vehiclesRouter);
-router.use("/jobs", jobsRouter);
+router.use("/bookings",   bookingsRouter);
+router.use("/quotations", quotationsRouter);
+router.use("/jobs",       jobsRouter);
 
 export default router;

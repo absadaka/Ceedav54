@@ -32,16 +32,20 @@ export const quotationsTable = pgTable("quotations", {
   client_id:   uuid("client_id").references(() => clientsTable.id, { onDelete: "set null" }),
   vehicle_id:  uuid("vehicle_id").references(() => vehiclesTable.id, { onDelete: "set null" }),
   advisor_id:  uuid("advisor_id").references(() => usersTable.id, { onDelete: "set null" }),
-  status:      quoteStatusEnum("status").notNull().default("draft"),
-  subtotal:    numeric("subtotal",   { precision: 12, scale: 2 }).notNull().default("0.00"),
-  discount:    numeric("discount",   { precision: 12, scale: 2 }).notNull().default("0.00"),
-  tax_rate:    numeric("tax_rate",   { precision: 5, scale: 2 }).notNull().default("5.00"),
-  tax_amount:  numeric("tax_amount", { precision: 12, scale: 2 }).notNull().default("0.00"),
-  total:       numeric("total",      { precision: 12, scale: 2 }).notNull().default("0.00"),
-  notes:       text("notes"),
-  expires_at:  timestamp("expires_at",  { withTimezone: true }),
-  sent_at:     timestamp("sent_at",     { withTimezone: true }),
-  approved_at: timestamp("approved_at", { withTimezone: true }),
+  status:           quoteStatusEnum("status").notNull().default("draft"),
+  estimated_hours:  numeric("estimated_hours", { precision: 8, scale: 2 }),
+  subtotal:         numeric("subtotal",   { precision: 12, scale: 2 }).notNull().default("0.00"),
+  discount:         numeric("discount",   { precision: 12, scale: 2 }).notNull().default("0.00"),
+  tax_rate:         numeric("tax_rate",   { precision: 5, scale: 2 }).notNull().default("5.00"),
+  tax_amount:       numeric("tax_amount", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  total:            numeric("total",      { precision: 12, scale: 2 }).notNull().default("0.00"),
+  notes:            text("notes"),
+  internal_note:    text("internal_note"),
+  expires_at:       timestamp("expires_at",  { withTimezone: true }),
+  sent_at:          timestamp("sent_at",     { withTimezone: true }),
+  approved_at:      timestamp("approved_at", { withTimezone: true }),
+  rejected_at:      timestamp("rejected_at", { withTimezone: true }),
+  converted_job_id: uuid("converted_job_id"),
   // Audit
   created_at:  timestamp("created_at",  { withTimezone: true }).defaultNow().notNull(),
   updated_at:  timestamp("updated_at",  { withTimezone: true }).defaultNow().notNull(),
@@ -82,6 +86,29 @@ export const quoteLineItemsTable = pgTable("quote_line_items", {
 ]);
 
 export type QuoteLineItem = typeof quoteLineItemsTable.$inferSelect;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   QUOTE ADVANCE PAYMENTS
+───────────────────────────────────────────────────────────────────────── */
+
+export const quoteAdvancePaymentsTable = pgTable("quote_advance_payments", {
+  id:           uuid("id").defaultRandom().primaryKey(),
+  quotation_id: uuid("quotation_id").references(() => quotationsTable.id, { onDelete: "cascade" }).notNull(),
+  tenant_id:    uuid("tenant_id").references(() => tenantsTable.id, { onDelete: "cascade" }).notNull(),
+  amount:       numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  method:       text("method").notNull().default("cash"),
+  // "cash" | "card" | "bank_transfer" | "cheque" | "online"
+  reference:    text("reference"),
+  note:         text("note"),
+  paid_at:      timestamp("paid_at", { withTimezone: true }).defaultNow().notNull(),
+  recorded_by:  uuid("recorded_by").references(() => usersTable.id, { onDelete: "set null" }),
+  created_at:   timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("qap_quotation_idx").on(t.quotation_id),
+  index("qap_tenant_idx").on(t.tenant_id),
+]);
+
+export type QuoteAdvancePayment = typeof quoteAdvancePaymentsTable.$inferSelect;
 
 /* ─────────────────────────────────────────────────────────────────────────
    JOBS  (job cards)
