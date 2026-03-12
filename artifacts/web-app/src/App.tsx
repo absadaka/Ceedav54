@@ -25,8 +25,10 @@ import DashboardPage        from "@/pages/tenant/DashboardPage";
 import ClientsPage          from "@/pages/tenant/ClientsPage";
 import CustomerDetailPage   from "@/pages/tenant/CustomerDetailPage";
 import VehicleDetailPage    from "@/pages/tenant/VehicleDetailPage";
-import BookingsPage from "@/pages/tenant/BookingsPage";
-import QuotationsPage from "@/pages/tenant/QuotationsPage";
+import BookingsPage       from "@/pages/tenant/BookingsPage";
+import BookingDetailPage  from "@/pages/tenant/BookingDetailPage";
+import QuotationsPage     from "@/pages/tenant/QuotationsPage";
+import QuotationDetailPage from "@/pages/tenant/QuotationDetailPage";
 import JobsPage       from "@/pages/tenant/JobsPage";
 import JobDetailPage  from "@/pages/tenant/JobDetailPage";
 import InvoicesPage from "@/pages/tenant/InvoicesPage";
@@ -165,8 +167,10 @@ function AppRouter() {
           <Route path="/clients"       component={ClientsPage} />
           {/* Vehicles */}
           <Route path="/vehicles/:id"  component={VehicleDetailPage} />
-          <Route path="/bookings" component={BookingsPage} />
-          <Route path="/quotations" component={QuotationsPage} />
+          <Route path="/bookings/:id" component={BookingDetailPage} />
+          <Route path="/bookings"    component={BookingsPage} />
+          <Route path="/quotations/:id" component={QuotationDetailPage} />
+          <Route path="/quotations"     component={QuotationsPage} />
           <Route path="/jobs/:id" component={JobDetailPage} />
           <Route path="/jobs"    component={JobsPage} />
           <Route path="/invoices" component={InvoicesPage} />

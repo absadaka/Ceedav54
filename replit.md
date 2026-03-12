@@ -75,6 +75,43 @@ ceeda/
 `artifacts/web-app/src/guards/RouteGuard.tsx`:
 - `AuthGuard`, `GuestGuard`, `RoleGuard`, `TenantGuard` — all stubs, replace with real `useAuth()` hook
 
+## Modules Built & Live
+
+| Module | Status | Notes |
+|---|---|---|
+| Bookings | Live | Full CRUD, 7-status flow, advisor meta, stat strip, booking detail page |
+| Quotations | Live | Full CRUD, line items CRUD with auto-recalc, advance payments, send/approve/reject/convert-to-job flow |
+| Jobs | Live | Kanban + list views, job detail with parts/time/photos/history tabs |
+| Clients/Vehicles | Live | Customer table, detail page, vehicle detail page |
+| Dashboard | Live | KPI strip, 7 live data sections |
+| Invoices | Scaffolded | Page + API route stubbed, pending full build |
+
+### Quotation API Endpoints (`/api/quotations?tenant=<slug>`)
+- `GET /` — paginated list with status filter
+- `POST /` — create draft
+- `GET /:id` — full detail (lines, advance payments, balance)
+- `PATCH /:id` — update draft fields
+- `DELETE /:id` — delete draft only
+- `GET /:id/lines` — list line items
+- `POST /:id/lines` — add line item (auto-recalcs totals)
+- `PUT /:id/lines/:lineId` — update line item (auto-recalcs)
+- `DELETE /:id/lines/:lineId` — delete line item (auto-recalcs)
+- `POST /:id/advance` — record advance payment
+- `DELETE /:id/advance/:paymentId` — remove advance payment
+- `POST /:id/send` — draft → sent
+- `POST /:id/approve` — sent/viewed → approved
+- `POST /:id/reject` — sent/viewed → rejected
+- `POST /:id/convert` — approved only → creates job card, sets `converted_job_id`
+
+### Booking API Endpoints (`/api/bookings?tenant=<slug>`)
+- `GET /` — paginated list with date/status filter
+- `POST /` — create booking
+- `GET /meta/advisors` — list advisors
+- `GET /:id` — full detail
+- `PATCH /:id` — update
+- `DELETE /:id` — delete pending only
+- `POST /:id/status` — status transition with guard
+
 ## DB Schema (26 tables across 6 domain files) — MIGRATED + SEEDED
 
 | File | Tables |
