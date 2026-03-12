@@ -129,9 +129,10 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 | `/customers`     | ClientsPage — live table: search, All/Individual/Company filter, vehicle count, last visit, kebab menu (view/edit/delete), pagination |
 | `/customers/:id` | CustomerDetailPage — stats strip, contact card, Vehicles/Bookings/Quotes/Jobs/Invoices tabs, edit/delete actions |
 | `/vehicles/:id`  | VehicleDetailPage — plate/make/year header, details card (VIN/mileage/fuel/transmission), owner card, history tabs |
+| `/jobs/:id`      | JobDetailPage — full job card: stats strip, customer/vehicle/team cards, mileage, timeline, 5-tab panel (Work/Parts/Time/Photos/History), status transition modal, technician notes, parts CRUD, time logs table, photo gallery |
 | `/bookings` | BookingsPage — table with filter toolbar |
 | `/quotations` | QuotationsPage — table with filter toolbar |
-| `/jobs` | JobsPage — **Board** (5-lane Kanban) + **List** toggle |
+| `/jobs`          | JobsPage — live Kanban (6-lane) + List toggle, real-time lane counts, job cards with priority badges/elapsed time/tech initials, debounced search, New job drawer |
 | `/invoices` | InvoicesPage — status summary strip + table |
 | `/team` | TeamPage — member table with role badges, stats strip |
 | `/settings` | SettingsPage — grouped nav hub (Workshop / Account / Developer) |
