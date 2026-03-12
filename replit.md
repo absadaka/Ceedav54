@@ -75,27 +75,40 @@ ceeda/
 `artifacts/web-app/src/guards/RouteGuard.tsx`:
 - `AuthGuard`, `GuestGuard`, `RoleGuard`, `TenantGuard` — all stubs, replace with real `useAuth()` hook
 
-## DB Schema (26 tables across 7 domain files)
+## DB Schema (26 tables across 6 domain files) — MIGRATED + SEEDED
 
 | File | Tables |
 |---|---|
-| `platform.ts` | tenants, users, audit_logs, feature_flags, sessions |
+| `platform.ts` | tenants, users, permissions, role_permissions, user_invites, sessions, devices, audit_logs, feature_flags, api_keys |
 | `clients.ts` | clients, vehicles |
 | `bookings.ts` | bookings |
-| `jobs.ts` | quotations, quote_line_items, jobs, job_time_logs |
+| `jobs.ts` | quotations, quote_line_items, jobs, job_status_history, job_assignments, job_time_logs |
 | `invoices.ts` | invoices, invoice_line_items, payments, deposits |
-| `catalog.ts` | catalog_items, notification_logs, whatsapp_threads, deposits |
+| `catalog.ts` | catalog_items, notification_logs, whatsapp_threads |
 
-All monetary values: `numeric(12,2)` — never float.
-Sequential human-readable refs (e.g. `BK-2024-0001`) via `seq` + `ref` columns.
+- Migration file: `lib/db/migrations/0000_right_red_wolf.sql`
+- All monetary values: `numeric(12,2)` — never float
+- Sequential human-readable refs (e.g. `BK-2024-0001`) via `seq` + `ref` columns
+- Seed: 1 demo tenant, 6 users, 66 permissions, 237 role-permission mappings, 14 catalog items, 4 clients, 6 vehicles, 1 booking, 1 quotation, 1 job, 1 invoice, 1 payment
+
+### DB Scripts
+```bash
+pnpm --filter @workspace/db run generate   # Regenerate migration files
+pnpm --filter @workspace/db run migrate    # Apply pending migrations
+pnpm --filter @workspace/db run seed       # Seed demo data
+pnpm --filter @workspace/db run push       # Push schema directly (dev only)
+pnpm --filter @workspace/db run studio     # Open Drizzle Studio
+```
 
 ## RBAC
 
-11 roles — code-defined `ROLE_PERMISSIONS` map (not stored in DB):
+11 roles — stored in `roles` enum + `permissions` / `role_permissions` tables (seeded):
 
 **Platform**: `platform_admin`, `platform_support`, `platform_readonly`, `platform_finance`
 **Tenant admin**: `owner`, `admin`
 **Tenant staff**: `service_advisor`, `technician`, `cashier`, `parts_manager`, `receptionist`
+
+66 permissions across 17 resources (bookings, clients, vehicles, quotations, jobs, invoices, payments, catalog, team, settings, audit_logs, api_keys, sso, platform_tenants, platform_billing, platform_flags, platform_users)
 
 ## Key Files
 
