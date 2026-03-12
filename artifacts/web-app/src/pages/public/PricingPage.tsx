@@ -221,7 +221,7 @@ export default function PricingPage() {
 
                 {/* Feature highlights */}
                 <ul className="space-y-2.5 border-t border-border pt-5">
-                  {featureRows.flatMap(g => g.rows).slice(0, 5).map((row) => {
+                  {featureRows.flatMap(g => g.rows as { label: string; key: FeatureKey }[]).slice(0, 5).map((row) => {
                     const val = plan.features[row.key];
                     if (val === false) return null;
                     return (

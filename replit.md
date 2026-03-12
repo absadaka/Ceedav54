@@ -110,6 +110,26 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 
 66 permissions across 17 resources (bookings, clients, vehicles, quotations, jobs, invoices, payments, catalog, team, settings, audit_logs, api_keys, sso, platform_tenants, platform_billing, platform_flags, platform_users)
 
+## Onboarding API
+
+`POST /api/onboarding` — Creates a new tenant with full setup in a single request.
+
+**Payload**:
+```json
+{
+  "owner": { "name": "...", "email": "...", "password": "..." },
+  "shop": { "name": "...", "type": "auto_mechanical|body_fixing|tires|electrical_battery|auto_care", "phone": "...", "address": "...", "country": "AE", "technicians": 3, "workers": 6 },
+  "locale": { "currency": "AED", "timezone": "Asia/Dubai", "locale": "en" },
+  "services": [{ "name": "...", "type": "labour", "unit_price": "150.00", "duration_min": 45 }],
+  "plan": "starter|professional|enterprise",
+  "logo_base64": "data:image/png;base64,..."
+}
+```
+
+**Returns**: `{ success: true, slug: "shop-name", tenantId: "uuid", userId: "uuid", redirectTo: "/dashboard" }`
+
+**Operations**: generates unique slug → creates tenant → hashes password (scryptSync) → creates owner user → seeds catalog items
+
 ## Key Files
 
 | File | Purpose |
