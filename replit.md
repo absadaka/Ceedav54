@@ -126,7 +126,9 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 | Route | Component |
 |---|---|
 | `/dashboard` | DashboardPage — live KPI strip, bookings/jobs/quotations/invoices tables, technician workload, revenue summary, activity feed |
-| `/customers` | ClientsPage — sortable table, search, empty state |
+| `/customers`     | ClientsPage — live table: search, All/Individual/Company filter, vehicle count, last visit, kebab menu (view/edit/delete), pagination |
+| `/customers/:id` | CustomerDetailPage — stats strip, contact card, Vehicles/Bookings/Quotes/Jobs/Invoices tabs, edit/delete actions |
+| `/vehicles/:id`  | VehicleDetailPage — plate/make/year header, details card (VIN/mileage/fuel/transmission), owner card, history tabs |
 | `/bookings` | BookingsPage — table with filter toolbar |
 | `/quotations` | QuotationsPage — table with filter toolbar |
 | `/jobs` | JobsPage — **Board** (5-lane Kanban) + **List** toggle |

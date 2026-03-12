@@ -21,8 +21,10 @@ import ReAuthPage from "@/pages/auth/ReAuthPage";
 import LogoutPage from "@/pages/auth/LogoutPage";
 
 // Tenant app pages
-import DashboardPage from "@/pages/tenant/DashboardPage";
-import ClientsPage from "@/pages/tenant/ClientsPage";
+import DashboardPage        from "@/pages/tenant/DashboardPage";
+import ClientsPage          from "@/pages/tenant/ClientsPage";
+import CustomerDetailPage   from "@/pages/tenant/CustomerDetailPage";
+import VehicleDetailPage    from "@/pages/tenant/VehicleDetailPage";
 import BookingsPage from "@/pages/tenant/BookingsPage";
 import QuotationsPage from "@/pages/tenant/QuotationsPage";
 import JobsPage from "@/pages/tenant/JobsPage";
@@ -52,7 +54,7 @@ const queryClient = new QueryClient({
 const PUBLIC_PATHS = ["/", "/pricing", "/auth", "/register"];
 
 const LEGACY_APP_PREFIXES = [
-  "dashboard", "customers", "clients", "bookings", "quotations", "jobs",
+  "dashboard", "customers", "clients", "vehicles", "bookings", "quotations", "jobs",
   "invoices", "team", "settings", "account",
 ];
 
@@ -157,8 +159,11 @@ function AppRouter() {
         <Switch>
           <Route path="/dashboard" component={DashboardPage} />
           {/* Customers — canonical; /clients kept for backward compat */}
-          <Route path="/customers" component={ClientsPage} />
-          <Route path="/clients" component={ClientsPage} />
+          <Route path="/customers/:id" component={CustomerDetailPage} />
+          <Route path="/customers"     component={ClientsPage} />
+          <Route path="/clients"       component={ClientsPage} />
+          {/* Vehicles */}
+          <Route path="/vehicles/:id"  component={VehicleDetailPage} />
           <Route path="/bookings" component={BookingsPage} />
           <Route path="/quotations" component={QuotationsPage} />
           <Route path="/jobs" component={JobsPage} />
