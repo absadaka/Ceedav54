@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import {
   Building2, Wrench, CalendarClock, Tag, CreditCard,
-  UsersRound, MessageSquare, Plug2, BarChart2,
+  UsersRound, MessageSquare, BarChart2,
 } from "lucide-react";
 
 interface Card {
@@ -69,14 +69,6 @@ const CARDS: Card[] = [
     icon: MessageSquare,
     iconBg: "bg-sky-50",
     iconColor: "text-sky-500",
-  },
-  {
-    title: "Integrations",
-    description: "Connect Stripe, WhatsApp, SMS and other third-party tools.",
-    href: "/settings/integrations",
-    icon: Plug2,
-    iconBg: "bg-teal-50",
-    iconColor: "text-teal-600",
   },
   {
     title: "Reporting",
