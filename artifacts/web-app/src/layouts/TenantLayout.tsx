@@ -3,8 +3,8 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Users, CalendarCheck, FileText, Wrench, Receipt,
   Settings, Bell, LogOut, ChevronDown, ChevronLeft, ChevronRight,
-  UsersRound, Building2, ShieldCheck, Monitor, Laptop2, Shield,
-  Activity, Key, Menu, X, Search,
+  UsersRound, Building2, ShieldCheck, Monitor, Laptop2,
+  Menu, X, Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,12 +47,7 @@ function buildNav(tenantSlug?: string): {
       { label: "Team",     href: `/team${q}`,     icon: UsersRound },
       { label: "Settings", href: `/settings${q}`, icon: Settings },
     ],
-    admin: [
-      { label: "Users",     href: `${slugPrefix}/admin/users`,     icon: Users },
-      { label: "SSO",       href: `${slugPrefix}/admin/sso`,       icon: Shield },
-      { label: "Audit log", href: `${slugPrefix}/admin/audit`,     icon: Activity },
-      { label: "API keys",  href: `${slugPrefix}/admin/api-keys`,  icon: Key },
-    ],
+    admin: [],
   };
 }
 
@@ -181,7 +176,7 @@ function Sidebar({
         ))}
 
         {/* Admin */}
-        {showAdmin && (
+        {showAdmin && nav.admin.length > 0 && (
           <>
             <div className={cn("pt-4 pb-1")}>
               {collapsed

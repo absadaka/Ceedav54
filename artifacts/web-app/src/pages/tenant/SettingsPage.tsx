@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import {
   Building2, Clock, Tag, UsersRound, ShoppingCart, BarChart2,
   CreditCard, MessageSquare, Plug2, Shield, Monitor, Laptop2,
-  Key, Activity, ChevronRight,
+  ChevronRight,
 } from "lucide-react";
 
 interface SettingsSection {
@@ -44,13 +44,6 @@ const GROUPS: { label: string; sections: SettingsSection[] }[] = [
       { title: "Security",        description: "Password and two-factor authentication",          href: "/account/security", icon: Shield },
       { title: "Sessions",        description: "Active browser and device sessions",              href: "/account/sessions", icon: Monitor },
       { title: "Trusted devices", description: "Remembered browsers and devices",                href: "/account/devices",  icon: Laptop2 },
-    ],
-  },
-  {
-    label: "Developer",
-    sections: [
-      { title: "API keys",   description: "Manage API keys for external integrations", href: "/admin/api-keys", icon: Key },
-      { title: "Audit log",  description: "Full history of team and system activity",  href: "/admin/audit",   icon: Activity },
     ],
   },
 ];
