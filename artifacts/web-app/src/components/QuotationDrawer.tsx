@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
@@ -124,14 +124,14 @@ export default function QuotationDrawer({ open, onClose, quotation }: Props) {
   });
 
   return (
-    <Sheet open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <SheetContent className="w-full sm:max-w-[520px] flex flex-col gap-0 p-0">
-        <SheetHeader className="px-6 py-5 border-b border-border">
-          <SheetTitle>{isEdit ? "Edit quotation" : "New quotation"}</SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="sm:max-w-[540px] p-0 gap-0 flex flex-col max-h-[90vh]">
+        <DialogHeader className="px-6 py-5 border-b border-border shrink-0">
+          <DialogTitle>{isEdit ? "Edit quotation" : "New quotation"}</DialogTitle>
+          <DialogDescription>
             {isEdit ? `Editing ${quotation!.ref}` : "Create a service price estimate"}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* Customer */}
@@ -187,12 +187,8 @@ export default function QuotationDrawer({ open, onClose, quotation }: Props) {
             <div className="space-y-1.5">
               <Label>Estimated hours</Label>
               <Input
-                type="number"
-                step="0.5"
-                min="0"
-                placeholder="e.g. 2.5"
-                value={estimatedHours}
-                onChange={e => setEstimatedHours(e.target.value)}
+                type="number" step="0.5" min="0" placeholder="e.g. 2.5"
+                value={estimatedHours} onChange={e => setEstimatedHours(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
@@ -218,12 +214,8 @@ export default function QuotationDrawer({ open, onClose, quotation }: Props) {
             <div className="space-y-1.5">
               <Label>Discount (AED)</Label>
               <Input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={discount}
-                onChange={e => setDiscount(e.target.value)}
+                type="number" step="0.01" min="0" placeholder="0.00"
+                value={discount} onChange={e => setDiscount(e.target.value)}
               />
             </div>
           </div>
@@ -233,9 +225,7 @@ export default function QuotationDrawer({ open, onClose, quotation }: Props) {
             <Label>Customer-visible notes</Label>
             <Textarea
               placeholder="Service description, recommendations, terms…"
-              rows={3}
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
+              rows={3} value={notes} onChange={e => setNotes(e.target.value)}
             />
           </div>
 
@@ -244,20 +234,18 @@ export default function QuotationDrawer({ open, onClose, quotation }: Props) {
             <Label>Internal note <span className="text-muted-foreground font-normal">(not shown to customer)</span></Label>
             <Textarea
               placeholder="Internal workshop notes…"
-              rows={2}
-              value={internalNote}
-              onChange={e => setInternalNote(e.target.value)}
+              rows={2} value={internalNote} onChange={e => setInternalNote(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
+        <DialogFooter className="px-6 py-4 border-t border-border shrink-0">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => save.mutate()} disabled={save.isPending}>
             {save.isPending ? "Saving…" : isEdit ? "Save changes" : "Create quotation"}
           </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

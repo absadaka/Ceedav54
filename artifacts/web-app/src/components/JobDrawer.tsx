@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
@@ -133,16 +133,16 @@ export default function JobDrawer({ open, onOpenChange, job, defaultClientId, de
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-        <SheetHeader className="mb-6">
-          <SheetTitle>{isEdit ? `Edit ${job!.ref}` : "New job card"}</SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[540px] p-0 gap-0 flex flex-col max-h-[90vh]">
+        <DialogHeader className="px-6 py-5 border-b border-border shrink-0">
+          <DialogTitle>{isEdit ? `Edit ${job!.ref}` : "New job card"}</DialogTitle>
+          <DialogDescription>
             {isEdit ? "Update job details and assignments." : "Create a new job card for the workshop."}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Priority</Label>
@@ -233,17 +233,17 @@ export default function JobDrawer({ open, onOpenChange, job, defaultClientId, de
               onChange={e => set("internal_note", e.target.value)}
             />
           </div>
-
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1" disabled={mutation.isPending}>
-              {mutation.isPending ? "Saving…" : isEdit ? "Update job" : "Create job"}
-            </Button>
-          </div>
         </form>
-      </SheetContent>
-    </Sheet>
+
+        <DialogFooter className="px-6 py-4 border-t border-border shrink-0">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" onClick={handleSubmit} disabled={mutation.isPending}>
+            {mutation.isPending ? "Saving…" : isEdit ? "Update job" : "Create job"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
