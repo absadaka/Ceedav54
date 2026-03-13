@@ -7,9 +7,12 @@ import AdminLayout from "@/layouts/AdminLayout";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import TenantsPage from "@/pages/TenantsPage";
+import TenantDetailPage from "@/pages/TenantDetailPage";
 import BillingPage from "@/pages/BillingPage";
 import FlagsPage from "@/pages/FlagsPage";
 import ImpersonatePage from "@/pages/ImpersonatePage";
+import SystemHealthPage from "@/pages/SystemHealthPage";
+import SupportTicketsPage from "@/pages/SupportTicketsPage";
 import NotFoundPage from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -22,12 +25,15 @@ function ProtectedRouter() {
   return (
     <AdminLayout>
       <Switch>
-        <Route path="/" component={DashboardPage} />
-        <Route path="/dashboard" component={DashboardPage} />
-        <Route path="/tenants" component={TenantsPage} />
-        <Route path="/billing" component={BillingPage} />
-        <Route path="/flags" component={FlagsPage} />
+        <Route path="/"            component={DashboardPage} />
+        <Route path="/dashboard"   component={DashboardPage} />
+        <Route path="/tenants"     component={TenantsPage} />
+        <Route path="/tenants/:id" component={TenantDetailPage} />
+        <Route path="/billing"     component={BillingPage} />
+        <Route path="/flags"       component={FlagsPage} />
         <Route path="/impersonate" component={ImpersonatePage} />
+        <Route path="/tickets"     component={SupportTicketsPage} />
+        <Route path="/health"      component={SystemHealthPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </AdminLayout>
