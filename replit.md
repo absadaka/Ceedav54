@@ -84,7 +84,25 @@ ceeda/
 | Jobs | Live | Kanban + list views (7-lane incl. Delivered), job detail: live Start/Stop timer, assign-technician dialog, parts CRUD, photo URL upload, status history, QC section, Mark as delivered flow |
 | Clients/Vehicles | Live | Customer table, detail page, vehicle detail page |
 | Dashboard | Live | KPI strip, 7 live data sections |
-| Invoices | Scaffolded | Page + API route stubbed, pending full build |
+| Invoices | Live | Full CRUD, line items, payments, stats strip, detail page |
+
+### Invoice API Endpoints (`/api/invoices?tenant=<slug>`)
+- `GET /stats` — dashboard KPIs (draft/sent/partial/paid/overdue/void counts + totals)
+- `GET /` — paginated list with status/search filter
+- `POST /` — create blank invoice
+- `POST /from-job/:jobId` — create invoice pre-populated from job's parts list
+- `GET /:id` — full detail (invoice + line items + payments), uses Drizzle `alias()` for cashier joins
+- `PATCH /:id` — update fields (triggers recalc)
+- `DELETE /:id` — delete (draft/void only)
+- `GET /:id/lines` — list line items
+- `POST /:id/lines` — add line item (auto-recalcs subtotal/tax/total)
+- `PATCH /:id/lines/:lineId` — update line item (auto-recalcs)
+- `DELETE /:id/lines/:lineId` — remove line item (auto-recalcs)
+- `POST /:id/payments` — record payment (auto-updates paid_amount, sets partial/paid status)
+- `POST /:id/send` — draft → sent
+- `POST /:id/void` — void invoice
+
+**Key patterns**: `vehiclesTable.plate` (not `plate_number`), `alias(usersTable, "inv_cashier")` for multi-user joins
 
 ### Quotation API Endpoints (`/api/quotations?tenant=<slug>`)
 - `GET /` — paginated list with status filter
@@ -170,7 +188,8 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 | `/bookings` | BookingsPage — table with filter toolbar |
 | `/quotations` | QuotationsPage — table with filter toolbar |
 | `/jobs`          | JobsPage — live Kanban (6-lane) + List toggle, real-time lane counts, job cards with priority badges/elapsed time/tech initials, debounced search, New job drawer |
-| `/invoices` | InvoicesPage — status summary strip + table |
+| `/invoices`     | InvoicesPage — live list with stats strip (Draft/Overdue/Outstanding/Total paid), status filter tabs, search |
+| `/invoices/:id` | InvoiceDetailPage — customer/vehicle card, line items CRUD table, totals panel with discount+VAT, payment history, RecordPaymentDialog, SendPaymentLinkDialog (Stripe placeholder), void/delete actions |
 | `/team` | TeamPage — member table with role badges, stats strip |
 | `/settings` | SettingsPage — grouped nav hub (Workshop / Account / Developer) |
 

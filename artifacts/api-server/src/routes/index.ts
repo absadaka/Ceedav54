@@ -7,6 +7,7 @@ import vehiclesRouter    from "./vehicles";
 import bookingsRouter    from "./bookings";
 import quotationsRouter  from "./quotations";
 import jobsRouter        from "./jobs";
+import invoicesRouter    from "./invoices";
 import adminRouter       from "./admin";
 import authRouter        from "./auth";
 
@@ -20,6 +21,7 @@ router.use(vehiclesRouter);
 router.use("/bookings",   bookingsRouter);
 router.use("/quotations", quotationsRouter);
 router.use("/jobs",       jobsRouter);
+router.use("/invoices",   invoicesRouter);
 router.use(adminRouter);
 router.use(authRouter);
 
