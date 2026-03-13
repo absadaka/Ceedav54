@@ -1,28 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
-  LayoutDashboard,
-  Building2,
-  CreditCard,
-  Flag,
-  UserSearch,
-  Wrench,
-  ChevronLeft,
-  ChevronRight,
-  Bell,
-  LogOut,
-  ChevronDown,
-  AlertTriangle,
+  LayoutDashboard, Building2, CreditCard, Flag, UserSearch,
+  Wrench, ChevronLeft, ChevronRight, Bell, LogOut, ChevronDown,
+  AlertTriangle, Activity, LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -32,21 +19,33 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-const adminNav: NavItem[] = [
-  { label: "Dashboard",     href: "/dashboard",    icon: LayoutDashboard },
-  { label: "Tenants",       href: "/tenants",      icon: Building2 },
-  { label: "Billing",       href: "/billing",      icon: CreditCard },
-  { label: "Feature Flags", href: "/flags",        icon: Flag },
-  { label: "Impersonate",   href: "/impersonate",  icon: UserSearch },
-];
-
-interface SidebarLinkProps {
-  item: NavItem;
-  collapsed: boolean;
-  active: boolean;
+interface NavSection {
+  title?: string;
+  items: NavItem[];
 }
 
-function SidebarLink({ item, collapsed, active }: SidebarLinkProps) {
+const adminSections: NavSection[] = [
+  {
+    items: [
+      { label: "Dashboard",     href: "/dashboard",   icon: LayoutDashboard },
+      { label: "Tenants",       href: "/tenants",     icon: Building2 },
+      { label: "Billing",       href: "/billing",     icon: CreditCard },
+      { label: "Feature Flags", href: "/flags",       icon: Flag },
+    ],
+  },
+  {
+    title: "Support",
+    items: [
+      { label: "Impersonate",   href: "/impersonate", icon: UserSearch },
+      { label: "Tickets",       href: "/tickets",     icon: LifeBuoy },
+      { label: "System Health", href: "/health",      icon: Activity },
+    ],
+  },
+];
+
+function SidebarLink({ item, collapsed, active }: {
+  item: NavItem; collapsed: boolean; active: boolean;
+}) {
   const Icon = item.icon;
   return (
     <Link href={item.href}>
@@ -56,7 +55,7 @@ function SidebarLink({ item, collapsed, active }: SidebarLinkProps) {
           collapsed ? "justify-center px-2" : "",
           active
             ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         )}
         title={collapsed ? item.label : undefined}
       >
@@ -69,16 +68,20 @@ function SidebarLink({ item, collapsed, active }: SidebarLinkProps) {
 
 function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const [location] = useLocation();
-  const isActive = (href: string) => location === href || location.startsWith(href + "/");
+  const isActive = (href: string) => location === href || (href !== "/dashboard" && location.startsWith(href));
 
   return (
     <aside
       className={cn(
         "flex flex-col h-full bg-sidebar border-r border-sidebar-border transition-all duration-200 shrink-0",
-        collapsed ? "w-14" : "w-60"
+        collapsed ? "w-14" : "w-60",
       )}
     >
-      <div className={cn("flex items-center h-[52px] px-4 border-b border-sidebar-border gap-2.5", collapsed && "justify-center px-2")}>
+      {/* Logo */}
+      <div className={cn(
+        "flex items-center h-[52px] px-4 border-b border-sidebar-border gap-2.5",
+        collapsed && "justify-center px-2",
+      )}>
         <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0">
           <Wrench className="w-4 h-4 text-white" />
         </div>
@@ -90,17 +93,28 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-        {adminNav.map((item) => (
-          <SidebarLink
-            key={item.href}
-            item={item}
-            collapsed={collapsed}
-            active={isActive(item.href)}
-          />
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+        {adminSections.map((section, idx) => (
+          <div key={idx} className="space-y-0.5">
+            {section.title && !collapsed && (
+              <p className="text-[10px] font-semibold text-sidebar-foreground/40 uppercase tracking-wider px-3 py-1">
+                {section.title}
+              </p>
+            )}
+            {section.items.map((item) => (
+              <SidebarLink
+                key={item.href}
+                item={item}
+                collapsed={collapsed}
+                active={isActive(item.href)}
+              />
+            ))}
+          </div>
         ))}
       </nav>
 
+      {/* Collapse toggle */}
       <div className={cn("p-2 border-t border-sidebar-border", collapsed && "flex justify-center")}>
         <button
           onClick={onToggle}
@@ -158,11 +172,7 @@ function AdminTopBar() {
   );
 }
 
-interface AdminLayoutProps {
-  children: React.ReactNode;
-}
-
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
