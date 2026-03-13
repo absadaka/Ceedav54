@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Plus, MoreHorizontal, Search, Tag, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
-import SettingsLayout from "@/layouts/SettingsLayout";
 import { cn } from "@/lib/utils";
 
 const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
@@ -189,7 +188,7 @@ export default function ServicesPage() {
   }, {} as Record<string, number>);
 
   return (
-    <SettingsLayout>
+    <>
       <div className="space-y-5">
         <div className="flex items-start justify-between">
           <div>
@@ -361,6 +360,6 @@ export default function ServicesPage() {
       {editItem !== undefined && (
         <ItemDialog open={true} onClose={() => setEditItem(undefined)} item={editItem} />
       )}
-    </SettingsLayout>
+    </>
   );
 }

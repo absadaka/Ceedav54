@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Save, BarChart2, Calendar } from "lucide-react";
-import SettingsLayout from "@/layouts/SettingsLayout";
 
 const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -65,7 +64,7 @@ export default function ReportingPage() {
 
   if (isLoading) {
     return (
-      <SettingsLayout>
+
         <div className="space-y-5 max-w-2xl">
           <Skeleton className="h-7 w-32" />
           <div className="border border-border rounded-lg p-6 space-y-4">
@@ -73,12 +72,12 @@ export default function ReportingPage() {
             <Skeleton className="h-10 w-64" />
           </div>
         </div>
-      </SettingsLayout>
+
     );
   }
 
   return (
-    <SettingsLayout>
+
       <div className="space-y-6 max-w-2xl">
         <div className="flex items-start justify-between">
           <div>
@@ -162,6 +161,6 @@ export default function ReportingPage() {
           </Button>
         </div>
       </div>
-    </SettingsLayout>
+
   );
 }

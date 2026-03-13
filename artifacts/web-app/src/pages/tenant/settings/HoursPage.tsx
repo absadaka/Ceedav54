@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Save, Clock } from "lucide-react";
-import SettingsLayout from "@/layouts/SettingsLayout";
 import { cn } from "@/lib/utils";
 
 const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
@@ -71,7 +70,7 @@ export default function HoursPage() {
   const enabledCount = DAYS.filter((d) => schedule[d]?.enabled).length;
 
   return (
-    <SettingsLayout>
+
       <div className="space-y-6 max-w-2xl">
         <div className="flex items-start justify-between">
           <div>
@@ -165,6 +164,6 @@ export default function HoursPage() {
           </Button>
         </div>
       </div>
-    </SettingsLayout>
+
   );
 }
