@@ -14,7 +14,7 @@ import { statusClass, statusLabel } from "@/lib/status";
 import JobDrawer     from "@/components/JobDrawer";
 import StatusTransitionModal, { JOB_STATUSES } from "@/components/StatusTransitionModal";
 
-const TENANT = "demo-workshop";
+const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function KanbanSkeleton() {

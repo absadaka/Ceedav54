@@ -18,7 +18,7 @@ import VehicleDrawer, { type VehicleRow } from "@/components/VehicleDrawer";
 import { statusClass, statusLabel } from "@/lib/status";
 import { cn } from "@/lib/utils";
 
-const TENANT = "demo-workshop";
+const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
 
 /* ─── API types ──────────────────────────────────────────────────────────── */
 interface ClientInfo {

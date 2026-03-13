@@ -8,6 +8,7 @@ import bookingsRouter    from "./bookings";
 import quotationsRouter  from "./quotations";
 import jobsRouter        from "./jobs";
 import adminRouter       from "./admin";
+import authRouter        from "./auth";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use("/bookings",   bookingsRouter);
 router.use("/quotations", quotationsRouter);
 router.use("/jobs",       jobsRouter);
 router.use(adminRouter);
+router.use(authRouter);
 
 export default router;

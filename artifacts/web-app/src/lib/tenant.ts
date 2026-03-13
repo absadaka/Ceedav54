@@ -8,61 +8,63 @@ export interface TenantInfo {
   logoUrl?: string;
   primaryColor?: string;
   allowedAuthMethods: AuthMethod[];
-  ssoProviderName?: string; // e.g. "Microsoft Entra ID", "Okta"
+  ssoProviderName?: string;
   ssoEnabled: boolean;
   country?: string;
   currency?: string;
   timezone?: string;
 }
 
-/* ─── Mock data ─────────────────────────────────────────────────────────── */
-
-const MOCK_TENANTS: Record<string, TenantInfo> = {
-  "demo-workshop": {
-    slug: "demo-workshop",
-    name: "Demo Workshop",
-    allowedAuthMethods: ["password", "google", "magic_link", "passkey", "phone_otp"],
-    ssoEnabled: false,
-    country: "AE",
-    currency: "AED",
-    timezone: "Asia/Dubai",
-  },
-  "al-harbi-auto": {
-    slug: "al-harbi-auto",
-    name: "Al-Harbi Auto Centre",
-    allowedAuthMethods: ["password", "google", "magic_link", "sso"],
-    ssoEnabled: true,
-    ssoProviderName: "Microsoft Entra ID",
-    country: "SA",
-    currency: "SAR",
-    timezone: "Asia/Riyadh",
-  },
-  "fastfix-dubai": {
-    slug: "fastfix-dubai",
-    name: "FastFix Dubai",
-    allowedAuthMethods: ["password", "google", "phone_otp"],
-    ssoEnabled: false,
-    country: "AE",
-    currency: "AED",
-    timezone: "Asia/Dubai",
-  },
-};
+/* ─────────────────────────────────────────────────────────────────────────
+   getTenantSlug()
+   Reads the current tenant slug from the URL query param (?tenant=<slug>)
+   or from the path prefix (/:slug/…) as a fallback.
+   Safe to call anywhere — no hooks needed.
+────────────────────────────────────────────────────────────────────────── */
+export function getTenantSlug(): string {
+  if (typeof window === "undefined") return "demo-workshop";
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get("tenant");
+  if (fromQuery) return fromQuery;
+  // Path-prefix fallback: /<slug>/dashboard → slug
+  const first = window.location.pathname.split("/").filter(Boolean)[0] ?? "";
+  // Only treat as slug if it's not a known top-level route
+  const topLevel = new Set(["auth", "register", "pricing", "admin-console"]);
+  if (first && !topLevel.has(first)) return first;
+  return "demo-workshop";
+}
 
 /* ─── Resolver ──────────────────────────────────────────────────────────── */
 
 /**
  * Resolves tenant public info by slug.
- * In production: GET /api/tenants/:slug/public (unauthenticated endpoint).
+ * Calls GET /api/tenants/:slug/public — works for all tenants in the DB.
+ * Falls back to a generated placeholder if the API is unreachable.
  */
 export async function resolveTenant(slug: string): Promise<TenantInfo | null> {
-  // Simulate network latency
-  await new Promise<void>((r) => setTimeout(r, 80));
-
   if (!slug) return null;
 
-  if (MOCK_TENANTS[slug]) return MOCK_TENANTS[slug];
+  try {
+    const res = await fetch(`/api/tenants/${encodeURIComponent(slug)}/public`);
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        slug:               data.slug,
+        name:               data.name,
+        logoUrl:            data.logoUrl,
+        country:            data.country,
+        currency:           data.currency,
+        timezone:           data.timezone,
+        allowedAuthMethods: data.allowedAuthMethods ?? ["password", "google", "magic_link"],
+        ssoEnabled:         data.ssoEnabled ?? false,
+        ssoProviderName:    data.ssoProviderName,
+      };
+    }
+  } catch {
+    // Network error — fall through to placeholder
+  }
 
-  // Fallback: generate info from slug for any unknown tenant
+  // Placeholder for unknown slugs (offline / dev fallback)
   const name = slug
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))

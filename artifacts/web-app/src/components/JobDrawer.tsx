@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
-const TENANT = "demo-workshop";
+const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export interface JobRow {
