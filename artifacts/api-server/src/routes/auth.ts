@@ -1,19 +1,27 @@
 import { Router } from "express";
-import { scryptSync, timingSafeEqual } from "crypto";
+import { scrypt, timingSafeEqual } from "crypto";
 import { db, usersTable, tenantsTable } from "@workspace/db";
 import { eq, and, isNull } from "drizzle-orm";
 
 const router = Router();
 
-function verifyPassword(password: string, stored: string): boolean {
-  try {
-    const [salt, hash] = stored.split(":");
-    if (!salt || !hash) return false;
-    const attempt = scryptSync(password, salt, 64).toString("hex");
-    return timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(attempt, "hex"));
-  } catch {
-    return false;
-  }
+function verifyPassword(password: string, stored: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const [salt, hash] = stored.split(":");
+      if (!salt || !hash) return resolve(false);
+      scrypt(password, salt, 64, (err, derived) => {
+        if (err) return resolve(false);
+        try {
+          resolve(timingSafeEqual(Buffer.from(hash, "hex"), derived));
+        } catch {
+          resolve(false);
+        }
+      });
+    } catch {
+      resolve(false);
+    }
+  });
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -32,7 +40,7 @@ router.post("/auth/login", async (req, res) => {
     return res.status(400).json({ error: "Email and password are required." });
   }
 
-  const user = await db
+  const row = await db
     .select({
       id:            usersTable.id,
       name:          usersTable.name,
@@ -40,10 +48,20 @@ router.post("/auth/login", async (req, res) => {
       role:          usersTable.role,
       is_active:     usersTable.is_active,
       password_hash: usersTable.password_hash,
-      tenant_id:     usersTable.tenant_id,
       avatar_url:    usersTable.avatar_url,
+      tenant_id:     tenantsTable.id,
+      tenant_slug:   tenantsTable.slug,
+      tenant_name:   tenantsTable.name,
+      tenant_currency: tenantsTable.currency,
+      tenant_timezone: tenantsTable.timezone,
+      tenant_logo:   tenantsTable.logo_url,
+      tenant_status: tenantsTable.status,
     })
     .from(usersTable)
+    .leftJoin(
+      tenantsTable,
+      and(eq(tenantsTable.id, usersTable.tenant_id), isNull(tenantsTable.deleted_at)),
+    )
     .where(
       and(
         eq(usersTable.email, email.toLowerCase().trim()),
@@ -53,41 +71,30 @@ router.post("/auth/login", async (req, res) => {
     .limit(1)
     .then((rows) => rows[0] ?? null);
 
-  if (!user || !user.password_hash) {
+  if (!row || !row.password_hash) {
     return res.status(401).json({ error: "Incorrect email or password." });
   }
 
-  if (!user.is_active) {
+  if (!row.is_active) {
     return res.status(403).json({ error: "Your account has been deactivated. Contact your administrator." });
   }
 
-  const valid = verifyPassword(password, user.password_hash);
+  const valid = await verifyPassword(password, row.password_hash);
   if (!valid) {
     return res.status(401).json({ error: "Incorrect email or password." });
   }
 
-  let tenant = null;
-  if (user.tenant_id) {
-    tenant = await db
-      .select({
-        id:       tenantsTable.id,
-        slug:     tenantsTable.slug,
-        name:     tenantsTable.name,
-        currency: tenantsTable.currency,
-        timezone: tenantsTable.timezone,
-        logo_url: tenantsTable.logo_url,
-        status:   tenantsTable.status,
-      })
-      .from(tenantsTable)
-      .where(
-        and(
-          eq(tenantsTable.id, user.tenant_id),
-          isNull(tenantsTable.deleted_at),
-        )
-      )
-      .limit(1)
-      .then((rows) => rows[0] ?? null);
-  }
+  const tenant = row.tenant_id
+    ? {
+        id:       row.tenant_id,
+        slug:     row.tenant_slug!,
+        name:     row.tenant_name!,
+        currency: row.tenant_currency!,
+        timezone: row.tenant_timezone,
+        logo_url: row.tenant_logo,
+        status:   row.tenant_status!,
+      }
+    : null;
 
   if (tenantSlug && tenant && tenant.slug !== tenantSlug) {
     return res.status(403).json({ error: "This account does not belong to this workshop." });
@@ -96,6 +103,8 @@ router.post("/auth/login", async (req, res) => {
   if (tenant?.status === "suspended") {
     return res.status(403).json({ error: "This workshop account has been suspended." });
   }
+
+  const user = row;
 
   return res.json({
     user: {
