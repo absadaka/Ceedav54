@@ -179,7 +179,7 @@ router.post("/onboarding", async (req, res) => {
     slug: tenant.slug,
     tenantId: tenant.id,
     userId: user.id,
-    redirectTo: `/dashboard`,
+    redirectTo: `/dashboard?tenant=${tenant.slug}`,
   });
 });
 
