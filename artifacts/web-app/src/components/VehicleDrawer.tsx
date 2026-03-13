@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-const TENANT = "demo-workshop";
+const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
 
 export interface VehicleRow {
   id: string;

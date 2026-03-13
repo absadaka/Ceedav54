@@ -12,6 +12,7 @@
  *   DATABASE_URL=... pnpm --filter @workspace/db run seed
  */
 
+import { scryptSync, randomBytes } from "crypto";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema/index.js";
@@ -153,6 +154,18 @@ const FEATURE_FLAGS = [
 ];
 
 /* ─────────────────────────────────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────────────────────────────────── */
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+const DEMO_PASSWORD = hashPassword("Admin@123");
+
+/* ─────────────────────────────────────────────────────────────────────────
    SEED RUNNER
 ───────────────────────────────────────────────────────────────────────── */
 
@@ -247,11 +260,11 @@ async function seed() {
       role:           "owner",
       is_active:      true,
       email_verified: true,
-      // password_hash would be set by auth layer — omitted here
+      password_hash:  DEMO_PASSWORD,
     })
     .onConflictDoUpdate({
       target: usersTable.email,
-      set: { name: "Ahmed Al-Rashidi", updated_at: new Date() },
+      set: { name: "Ahmed Al-Rashidi", password_hash: DEMO_PASSWORD, updated_at: new Date() },
     })
     .returning();
 
@@ -267,10 +280,10 @@ async function seed() {
   const staffMap: Record<string, string> = { [owner.email]: owner.id };
   for (const s of staffData) {
     const [user] = await db.insert(usersTable)
-      .values({ tenant_id: tenant.id, is_active: true, email_verified: true, ...s })
+      .values({ tenant_id: tenant.id, is_active: true, email_verified: true, password_hash: DEMO_PASSWORD, ...s })
       .onConflictDoUpdate({
         target: usersTable.email,
-        set: { name: s.name, updated_at: new Date() },
+        set: { name: s.name, password_hash: DEMO_PASSWORD, updated_at: new Date() },
       })
       .returning();
     staffMap[s.email] = user.id;

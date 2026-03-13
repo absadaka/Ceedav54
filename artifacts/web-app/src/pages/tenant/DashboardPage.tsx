@@ -255,10 +255,11 @@ function DataTable({ cols, children }: { cols: string[]; children: React.ReactNo
 /* ─── Dashboard page ─────────────────────────────────────────────────────── */
 
 export default function DashboardPage() {
+  const tenant = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
   const { data, isLoading, error, refetch, isFetching } = useQuery<DashboardData>({
-    queryKey: ["dashboard"],
+    queryKey: ["dashboard", tenant],
     queryFn: async () => {
-      const res = await fetch("/api/dashboard?tenant=demo-workshop");
+      const res = await fetch(`/api/dashboard?tenant=${tenant}`);
       if (!res.ok) throw new Error("Failed to load dashboard");
       return res.json();
     },

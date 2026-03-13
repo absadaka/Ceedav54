@@ -26,7 +26,7 @@ import { toast }    from "sonner";
 import JobDrawer, { type JobRow } from "@/components/JobDrawer";
 import StatusTransitionModal, { JOB_STATUSES } from "@/components/StatusTransitionModal";
 
-const TENANT = "demo-workshop";
+const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const PRIORITY_BADGE: Record<string, string> = {

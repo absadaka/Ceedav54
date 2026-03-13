@@ -25,7 +25,7 @@ import {
 import { toast } from "sonner";
 import QuotationDrawer, { type QuotationRow } from "@/components/QuotationDrawer";
 
-const TENANT = "demo-workshop";
+const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_META: Record<string, { label: string; color: string }> = {

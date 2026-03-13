@@ -63,8 +63,8 @@ function PasswordForm({ tenant, onSuccess }: { tenant: TenantInfo; onSuccess: ()
     try {
       await authService.signIn(email, password, tenant.slug);
       onSuccess();
-    } catch {
-      setError("Incorrect email or password.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Incorrect email or password.");
     } finally {
       setLoading(false);
     }
@@ -228,7 +228,9 @@ export default function TenantLoginPage() {
     });
   }, [tenantSlug]);
 
-  const onSuccess = () => navigate("/dashboard");
+  const onSuccess = () => {
+    window.location.href = `/dashboard?tenant=${tenantSlug}`;
+  };
 
   const hasMethod = (m: AuthMethod) =>
     !tenant || tenant.allowedAuthMethods.includes(m);

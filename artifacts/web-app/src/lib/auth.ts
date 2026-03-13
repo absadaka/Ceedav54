@@ -150,17 +150,103 @@ const MOCK_SESSIONS: AuthSession[] = [
   },
 ];
 
+const SESSION_KEY = "ceeda_session";
+
+interface StoredSession {
+  userId: string;
+  tenantSlug: string;
+  tenantId: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatarUrl?: string;
+}
+
+function readStoredSession(): StoredSession | null {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(s: StoredSession) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function storedToUser(s: StoredSession): AuthUser {
+  return {
+    id:          s.userId,
+    email:       s.email,
+    name:        s.name,
+    avatarUrl:   s.avatarUrl,
+    role:        s.role,
+    tenantId:    s.tenantId,
+    tenantSlug:  s.tenantSlug,
+  };
+}
+
 class StubAuthService implements IAuthService {
-  async getSession() { return MOCK_SESSION; }
-  async getUser() { return MOCK_USER; }
-  async signIn() { await delay(); return { user: MOCK_USER, session: MOCK_SESSION }; }
+  async getSession(): Promise<AuthSession | null> {
+    const stored = readStoredSession();
+    if (!stored) return null;
+    return { ...MOCK_SESSION, userId: stored.userId };
+  }
+
+  async getUser(): Promise<AuthUser | null> {
+    const stored = readStoredSession();
+    if (!stored) return null;
+    return storedToUser(stored);
+  }
+
+  async signIn(email: string, password: string, tenantSlug?: string): Promise<AuthResult> {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, tenantSlug }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Login failed.");
+
+    const user: AuthUser = {
+      id:         data.user.id,
+      email:      data.user.email,
+      name:       data.user.name,
+      role:       data.user.role,
+      avatarUrl:  data.user.avatarUrl,
+      tenantId:   data.user.tenantId ?? "",
+      tenantSlug: data.tenant?.slug ?? tenantSlug ?? "",
+    };
+
+    writeSession({
+      userId:     user.id,
+      tenantSlug: user.tenantSlug,
+      tenantId:   user.tenantId,
+      name:       user.name,
+      email:      user.email,
+      role:       user.role,
+      avatarUrl:  user.avatarUrl,
+    });
+
+    return { user, session: { ...MOCK_SESSION, userId: user.id } };
+  }
+
   async signInWithGoogle() { await delay(); return { user: MOCK_USER, session: MOCK_SESSION }; }
   async signInWithPasskey() { await delay(); return { user: MOCK_USER, session: MOCK_SESSION }; }
   async sendMagicLink() { await delay(); }
   async sendPhoneOtp() { await delay(); }
   async verifyPhoneOtp() { await delay(); return { user: MOCK_USER, session: MOCK_SESSION }; }
   async initiateSSO(slug: string) { await delay(); window.location.href = `/${slug}/dashboard`; }
-  async signOut() { await delay(); }
+
+  async signOut(): Promise<void> {
+    clearSession();
+  }
+
   async listSessions() { await delay(); return MOCK_SESSIONS; }
   async revokeSession() { await delay(); }
   async revokeAllOtherSessions() { await delay(); }
