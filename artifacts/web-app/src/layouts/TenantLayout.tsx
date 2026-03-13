@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import CommandPalette, { useCommandPalette } from "@/components/CommandPalette";
+import { useAuth } from "@/hooks/useAuth";
 
 /* ─── Nav definition ─────────────────────────────────────────────────────── */
 
@@ -357,11 +358,13 @@ export default function TenantLayout({
   children,
   tenantSlug,
   tenantName,
-  showAdmin = true,
+  showAdmin,
 }: TenantLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
+  const { isManager } = useAuth();
+  const adminVisible = showAdmin !== undefined ? showAdmin : isManager;
 
   /* Close mobile drawer on resize to desktop */
   useEffect(() => {
@@ -380,7 +383,7 @@ export default function TenantLayout({
           collapsed={collapsed}
           onToggle={() => setCollapsed((v) => !v)}
           tenantSlug={tenantSlug}
-          showAdmin={showAdmin}
+          showAdmin={adminVisible}
         />
       </div>
 
@@ -414,7 +417,7 @@ export default function TenantLayout({
               collapsed={false}
               onToggle={() => {}}
               tenantSlug={tenantSlug}
-              showAdmin={showAdmin}
+              showAdmin={adminVisible}
               onNavClick={() => setMobileOpen(false)}
             />
           </div>
