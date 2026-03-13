@@ -191,7 +191,16 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 | `/invoices`     | InvoicesPage — live list with stats strip (Draft/Overdue/Outstanding/Total paid), status filter tabs, search |
 | `/invoices/:id` | InvoiceDetailPage — customer/vehicle card, line items CRUD table, totals panel with discount+VAT, payment history, RecordPaymentDialog, SendPaymentLinkDialog (Stripe placeholder), void/delete actions |
 | `/team` | TeamPage — member table with role badges, stats strip |
-| `/settings` | SettingsPage — grouped nav hub (Workshop / Account / Developer) |
+| `/settings` | SettingsPage — grouped hub (Workshop / Sales & Finance / Communication / Account / Developer) |
+| `/settings/business` | BusinessPage — logo upload, identity, contact, social links; PATCH /settings/business |
+| `/settings/hours` | HoursPage — per-day toggle + open/close time selectors; PATCH /settings/hours |
+| `/settings/services` | ServicesPage — catalog CRUD table with type filter chips, Add/Edit/Delete dialog, active toggle |
+| `/settings/team` | SettingsTeamPage — wrapped in SettingsLayout |
+| `/settings/sales` | SalesPage — VAT rate, quote validity, payment terms, auto-invoice, invoice notes |
+| `/settings/reporting` | ReportingPage — fiscal year start, coming-soon dashboard widgets, exports |
+| `/settings/billing` | BillingPage — current plan status, 3-plan comparison cards, payment method, invoice history |
+| `/settings/comms` | CommsPage — email sender, SMS sender ID, notification trigger toggles |
+| `/settings/integrations` | IntegrationsPage — Stripe / WhatsApp / Twilio cards with enable+config dialogs |
 
 **Routing**: `/clients` kept as backward-compat alias for `/customers`.
 
