@@ -1,73 +1,105 @@
 import { Link } from "wouter";
 import {
-  Building2, Clock, Tag, UsersRound, ShoppingCart, BarChart2,
-  CreditCard, MessageSquare, Plug2, Shield, Monitor, Laptop2,
-  ChevronRight,
+  Building2, Wrench, CalendarClock, Tag, CreditCard,
+  UsersRound, MessageSquare, Plug2, BarChart2,
 } from "lucide-react";
 
-interface SettingsSection {
+interface Card {
   title: string;
   description: string;
   href: string;
   icon: React.ElementType;
-  badge?: string;
+  iconBg: string;
+  iconColor: string;
 }
 
-const GROUPS: { label: string; sections: SettingsSection[] }[] = [
+const CARDS: Card[] = [
   {
-    label: "Workshop",
-    sections: [
-      { title: "Business profile",   description: "Name, logo, address, phone, website, social links", href: "/settings/business",    icon: Building2 },
-      { title: "Office hours",       description: "Opening times displayed to customers",              href: "/settings/hours",       icon: Clock },
-      { title: "Services & pricing", description: "Master catalog of services, parts and packages",    href: "/settings/services",    icon: Tag },
-      { title: "Users & roles",      description: "Manage team members and role permissions",          href: "/settings/team",        icon: UsersRound },
-    ],
+    title: "Business setup",
+    description: "Customize business details, logo, address and contact information.",
+    href: "/settings/business",
+    icon: Building2,
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-600",
   },
   {
-    label: "Sales & Finance",
-    sections: [
-      { title: "Sales",          description: "Tax rates, invoice defaults and quote settings",        href: "/settings/sales",      icon: ShoppingCart },
-      { title: "Reporting",      description: "Fiscal year, dashboard widgets and exports",            href: "/settings/reporting",  icon: BarChart2 },
-      { title: "Billing & plan", description: "Subscription, payment methods and invoice history",     href: "/settings/billing",    icon: CreditCard },
-    ],
+    title: "Services",
+    description: "Manage your automotive services catalog, pricing, and categories.",
+    href: "/settings/services",
+    icon: Wrench,
+    iconBg: "bg-violet-50",
+    iconColor: "text-violet-500",
   },
   {
-    label: "Communication",
-    sections: [
-      { title: "Comms setup",   description: "Email, SMS and notification trigger configuration", href: "/settings/comms",        icon: MessageSquare },
-      { title: "Integrations",  description: "Stripe, WhatsApp, SMS and more",                   href: "/settings/integrations", icon: Plug2 },
-    ],
+    title: "Scheduling",
+    description: "Set your opening hours, manage bookable resources and online booking preferences.",
+    href: "/settings/hours",
+    icon: CalendarClock,
+    iconBg: "bg-green-50",
+    iconColor: "text-green-600",
   },
   {
-    label: "Account",
-    sections: [
-      { title: "Security",        description: "Password and two-factor authentication",          href: "/account/security", icon: Shield },
-      { title: "Sessions",        description: "Active browser and device sessions",              href: "/account/sessions", icon: Monitor },
-      { title: "Trusted devices", description: "Remembered browsers and devices",                href: "/account/devices",  icon: Laptop2 },
-    ],
+    title: "Sales",
+    description: "Configure payment methods, taxes, receipts, service charges and gift cards.",
+    href: "/settings/sales",
+    icon: Tag,
+    iconBg: "bg-purple-50",
+    iconColor: "text-purple-600",
+  },
+  {
+    title: "Billing",
+    description: "Manage invoices, messaging balance, add-ons and your subscription plan.",
+    href: "/settings/billing",
+    icon: CreditCard,
+    iconBg: "bg-orange-50",
+    iconColor: "text-orange-500",
+  },
+  {
+    title: "Users",
+    description: "Manage permissions, team members and their roles.",
+    href: "/settings/team",
+    icon: UsersRound,
+    iconBg: "bg-red-50",
+    iconColor: "text-red-500",
+  },
+  {
+    title: "Communications",
+    description: "Email, SMS and notification trigger configuration.",
+    href: "/settings/comms",
+    icon: MessageSquare,
+    iconBg: "bg-sky-50",
+    iconColor: "text-sky-500",
+  },
+  {
+    title: "Integrations",
+    description: "Connect Stripe, WhatsApp, SMS and other third-party tools.",
+    href: "/settings/integrations",
+    icon: Plug2,
+    iconBg: "bg-teal-50",
+    iconColor: "text-teal-600",
+  },
+  {
+    title: "Reporting",
+    description: "Fiscal year settings, dashboard widgets and data exports.",
+    href: "/settings/reporting",
+    icon: BarChart2,
+    iconBg: "bg-slate-100",
+    iconColor: "text-slate-500",
   },
 ];
 
-function SettingsRow({ section }: { section: SettingsSection }) {
-  const Icon = section.icon;
+function SettingsCard({ card }: { card: Card }) {
+  const Icon = card.icon;
   return (
-    <Link href={section.href}>
-      <div className="flex items-center gap-4 px-5 py-4 hover:bg-muted/50 transition-colors cursor-pointer group">
-        <div className="w-9 h-9 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 group-hover:bg-muted/80 transition-colors">
-          <Icon className="w-4 h-4 text-muted-foreground" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-foreground">{section.title}</p>
-            {section.badge && (
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                {section.badge}
-              </span>
-            )}
+    <Link href={card.href}>
+      <div className="bg-white border border-border rounded-2xl p-6 cursor-pointer hover:shadow-md hover:border-border/80 transition-all duration-150 h-full flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${card.iconBg}`}>
+            <Icon className={`w-5 h-5 ${card.iconColor}`} />
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{section.description}</p>
+          <h3 className="text-[15px] font-semibold text-foreground leading-snug">{card.title}</h3>
         </div>
-        <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0" />
+        <p className="text-sm text-muted-foreground leading-relaxed">{card.description}</p>
       </div>
     </Link>
   );
@@ -75,26 +107,17 @@ function SettingsRow({ section }: { section: SettingsSection }) {
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="page-title">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Configure your workshop profile, integrations and account preferences.
-        </p>
+    <div className="max-w-4xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-foreground">Workspace settings</h1>
+        <p className="text-sm text-muted-foreground mt-1">Manage settings for your workshop.</p>
       </div>
 
-      {GROUPS.map((group) => (
-        <div key={group.label}>
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 mb-2 px-0.5">
-            {group.label}
-          </p>
-          <div className="bg-background border border-border rounded-lg overflow-hidden divide-y divide-border">
-            {group.sections.map((section) => (
-              <SettingsRow key={section.href} section={section} />
-            ))}
-          </div>
-        </div>
-      ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {CARDS.map((card) => (
+          <SettingsCard key={card.href} card={card} />
+        ))}
+      </div>
     </div>
   );
 }
