@@ -24,29 +24,33 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-function buildNav(prefix = ""): {
+function buildNav(tenantSlug?: string): {
   main: NavItem[];
   workspace: NavItem[];
   admin: NavItem[];
 } {
+  // Main + workspace pages live at flat paths with ?tenant= query param
+  const q = tenantSlug ? `?tenant=${tenantSlug}` : "";
+  // Admin + account pages live at /:slug/admin/* and /:slug/account/*
+  const slugPrefix = tenantSlug ? `/${tenantSlug}` : "";
   return {
     main: [
-      { label: "Dashboard",  href: `${prefix}/dashboard`,  icon: LayoutDashboard },
-      { label: "Customers",  href: `${prefix}/customers`,  icon: Users },
-      { label: "Bookings",   href: `${prefix}/bookings`,   icon: CalendarCheck },
-      { label: "Quotations", href: `${prefix}/quotations`, icon: FileText },
-      { label: "Jobs",       href: `${prefix}/jobs`,       icon: Wrench },
-      { label: "Invoices",   href: `${prefix}/invoices`,   icon: Receipt },
+      { label: "Dashboard",  href: `/dashboard${q}`,  icon: LayoutDashboard },
+      { label: "Customers",  href: `/customers${q}`,  icon: Users },
+      { label: "Bookings",   href: `/bookings${q}`,   icon: CalendarCheck },
+      { label: "Quotations", href: `/quotations${q}`, icon: FileText },
+      { label: "Jobs",       href: `/jobs${q}`,       icon: Wrench },
+      { label: "Invoices",   href: `/invoices${q}`,   icon: Receipt },
     ],
     workspace: [
-      { label: "Team",     href: `${prefix}/team`,     icon: UsersRound },
-      { label: "Settings", href: `${prefix}/settings`, icon: Settings },
+      { label: "Team",     href: `/team${q}`,     icon: UsersRound },
+      { label: "Settings", href: `/settings${q}`, icon: Settings },
     ],
     admin: [
-      { label: "Users",     href: `${prefix}/admin/users`,     icon: Users },
-      { label: "SSO",       href: `${prefix}/admin/sso`,       icon: Shield },
-      { label: "Audit log", href: `${prefix}/admin/audit`,     icon: Activity },
-      { label: "API keys",  href: `${prefix}/admin/api-keys`,  icon: Key },
+      { label: "Users",     href: `${slugPrefix}/admin/users`,     icon: Users },
+      { label: "SSO",       href: `${slugPrefix}/admin/sso`,       icon: Shield },
+      { label: "Audit log", href: `${slugPrefix}/admin/audit`,     icon: Activity },
+      { label: "API keys",  href: `${slugPrefix}/admin/api-keys`,  icon: Key },
     ],
   };
 }
@@ -112,12 +116,13 @@ function Sidebar({
   onNavClick?: () => void;
 }) {
   const [location] = useLocation();
-  const prefix = tenantSlug ? `/${tenantSlug}` : "";
-  const nav = buildNav(prefix);
+  const nav = buildNav(tenantSlug);
 
   function isActive(href: string) {
-    if (href === `${prefix}/dashboard`) return location === href;
-    return location === href || location.startsWith(href + "/");
+    // Strip query string from both sides for comparison
+    const hrefPath = href.split("?")[0];
+    if (hrefPath === "/dashboard") return location === hrefPath;
+    return location === hrefPath || location.startsWith(hrefPath + "/");
   }
 
   return (
