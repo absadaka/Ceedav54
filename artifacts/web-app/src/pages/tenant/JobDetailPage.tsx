@@ -2,7 +2,7 @@ import {
   ArrowLeft, Wrench, User, Car, Clock, AlertTriangle, Plus,
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
-  Link as LinkIcon, X,
+  Link as LinkIcon, X, Receipt,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -328,6 +328,20 @@ export default function JobDetailPage() {
   const [noteText,       setNoteText]       = useState("");
   const [timerNote,      setTimerNote]      = useState("");
 
+  const createInvoiceMutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/invoices/from-job/${id}?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success(`Invoice ${data.invoice?.ref} created`);
+      navigate(`/invoices/${data.invoice?.id}`);
+    },
+    onError: () => toast.error("Failed to create invoice"),
+  });
+
   const { data, isLoading } = useQuery<DetailData>({
     queryKey: ["job", id],
     queryFn:  () => fetch(`${API}/api/jobs/${id}?tenant=${TENANT}`).then(r => r.json()),
@@ -502,6 +516,15 @@ export default function JobDetailPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {(job.status === "completed" || job.status === "delivered") && (
+                <DropdownMenuItem
+                  onClick={() => createInvoiceMutation.mutate()}
+                  disabled={createInvoiceMutation.isPending}
+                >
+                  <Receipt className="w-3.5 h-3.5 mr-2" />
+                  {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem className="text-destructive" onClick={() => setDeleteOpen(true)}>
                 <Trash2 className="w-3.5 h-3.5 mr-2" />Delete job
               </DropdownMenuItem>
@@ -734,11 +757,23 @@ export default function JobDetailPage() {
                       </div>
                     ))}
                   </div>
-                  {job.status === "completed" && (
-                    <Button size="sm" className="mt-2 bg-teal-600 hover:bg-teal-700" onClick={() => setStatusOpen(true)}>
-                      Mark as delivered
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {job.status === "completed" && (
+                      <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => setStatusOpen(true)}>
+                        Mark as delivered
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      disabled={createInvoiceMutation.isPending}
+                      onClick={() => createInvoiceMutation.mutate()}
+                    >
+                      <Receipt className="w-3.5 h-3.5" />
+                      {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
                     </Button>
-                  )}
+                  </div>
                 </div>
               )}
 

@@ -31,7 +31,8 @@ import QuotationsPage     from "@/pages/tenant/QuotationsPage";
 import QuotationDetailPage from "@/pages/tenant/QuotationDetailPage";
 import JobsPage       from "@/pages/tenant/JobsPage";
 import JobDetailPage  from "@/pages/tenant/JobDetailPage";
-import InvoicesPage from "@/pages/tenant/InvoicesPage";
+import InvoicesPage       from "@/pages/tenant/InvoicesPage";
+import InvoiceDetailPage  from "@/pages/tenant/InvoiceDetailPage";
 import TeamPage from "@/pages/tenant/TeamPage";
 import SettingsPage from "@/pages/tenant/SettingsPage";
 import SettingsTeamPage from "@/pages/tenant/settings/TeamPage";
@@ -174,7 +175,8 @@ function AppRouter() {
           <Route path="/quotations"     component={QuotationsPage} />
           <Route path="/jobs/:id" component={JobDetailPage} />
           <Route path="/jobs"    component={JobsPage} />
-          <Route path="/invoices" component={InvoicesPage} />
+          <Route path="/invoices/:id" component={InvoiceDetailPage} />
+          <Route path="/invoices"    component={InvoicesPage} />
           {/* Team — top-level section */}
           <Route path="/team" component={TeamPage} />
           {/* Settings hub + sub-pages */}
