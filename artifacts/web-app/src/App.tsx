@@ -157,8 +157,9 @@ function AppRouter() {
   }
 
   if (zone === "legacy-tenant-app") {
+    const tenantSlug = new URLSearchParams(window.location.search).get("tenant") ?? undefined;
     return (
-      <TenantLayout>
+      <TenantLayout tenantSlug={tenantSlug}>
         <Switch>
           <Route path="/dashboard" component={DashboardPage} />
           {/* Customers — canonical; /clients kept for backward compat */}
