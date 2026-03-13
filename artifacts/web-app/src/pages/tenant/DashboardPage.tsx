@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import {
@@ -9,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import BookingDrawer from "@/components/BookingDrawer";
 
 /* ─── API types ──────────────────────────────────────────────────────────── */
 
@@ -256,6 +258,7 @@ function DataTable({ cols, children }: { cols: string[]; children: React.ReactNo
 
 export default function DashboardPage() {
   const tenant = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { data, isLoading, error, refetch, isFetching } = useQuery<DashboardData>({
     queryKey: ["dashboard", tenant],
     queryFn: async () => {
@@ -277,6 +280,7 @@ export default function DashboardPage() {
   })();
 
   return (
+    <>
     <div className="space-y-5">
 
       {/* ── Header ────────────────────────────────────────────────────── */}
@@ -296,9 +300,9 @@ export default function DashboardPage() {
           >
             <RefreshCw className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />
           </button>
-          <Link href="/bookings/new">
-            <Button size="sm" className="gap-1.5"><Plus className="w-4 h-4" />New booking</Button>
-          </Link>
+          <Button size="sm" className="gap-1.5" onClick={() => setDrawerOpen(true)}>
+            <Plus className="w-4 h-4" />New booking
+          </Button>
         </div>
       </div>
 
@@ -687,5 +691,8 @@ export default function DashboardPage() {
       </Section>
 
     </div>
+
+    <BookingDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </>
   );
 }
