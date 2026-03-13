@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, FileText, Edit, Trash2, Send, CheckCircle2, XCircle,
-  ArrowRight, Plus, X, User, Car, Clock, Loader2, MessageSquare,
+  ArrowRight, Plus, X, User, Car, Clock, Loader2,
   MoreHorizontal, AlertTriangle,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
@@ -600,16 +600,6 @@ export default function QuotationDetailPage() {
             </div>
           </div>
 
-          {/* Send / approval action banners */}
-          {qt.status === "draft" && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50/60 px-4 py-3 flex items-center gap-3">
-              <MessageSquare className="w-4 h-4 text-blue-600 shrink-0" />
-              <p className="text-sm text-blue-800">
-                This quotation is a draft. Click <strong>"Send to customer"</strong> to mark it as sent and notify the customer.
-              </p>
-            </div>
-          )}
-
           {/* Advance payments */}
           <div className="rounded-lg border border-border bg-background overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
@@ -649,21 +639,6 @@ export default function QuotationDetailPage() {
             </div>
           </div>
 
-          {/* WhatsApp / Email send placeholder */}
-          <div className="rounded-lg border border-border bg-muted/20 px-4 py-4 space-y-2">
-            <p className="text-sm font-semibold">Send to customer</p>
-            <p className="text-xs text-muted-foreground">
-              Delivery integrations (WhatsApp, email) will be available after connecting your communication channels in Settings.
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8 opacity-60" disabled>
-                <MessageSquare className="w-3.5 h-3.5" />WhatsApp
-              </Button>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8 opacity-60" disabled>
-                <Send className="w-3.5 h-3.5" />Email
-              </Button>
-            </div>
-          </div>
         </div>
       </div>
 
