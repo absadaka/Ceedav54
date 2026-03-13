@@ -109,12 +109,13 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
     enabled: open && !!clientId,
   });
 
-  const { data: advisors = [] } = useQuery({
+  const { data: advisorsRaw = [] } = useQuery({
     queryKey: ["booking-advisors"],
     queryFn: () =>
       fetch(`${API}/api/bookings/meta/advisors?tenant=${TENANT}`).then(r => r.json()),
     enabled: open,
   });
+  const advisors: any[] = Array.isArray(advisorsRaw) ? advisorsRaw : [];
 
   const save = useMutation({
     mutationFn: async () => {
