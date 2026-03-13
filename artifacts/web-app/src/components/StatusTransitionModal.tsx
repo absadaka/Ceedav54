@@ -16,8 +16,6 @@ export const JOB_STATUSES = [
   { key: "waiting",       label: "New",            color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
   { key: "in_progress",  label: "In progress",    color: "bg-orange-100 text-orange-800 border-orange-300" },
   { key: "waiting_parts",label: "Waiting parts",  color: "bg-purple-100 text-purple-800 border-purple-300" },
-  { key: "on_hold",      label: "On hold",        color: "bg-gray-100   text-gray-700   border-gray-300"   },
-  { key: "qc",           label: "QC Review",      color: "bg-blue-100   text-blue-800   border-blue-300"   },
   { key: "completed",    label: "Completed",      color: "bg-green-100  text-green-800  border-green-300"  },
   { key: "delivered",    label: "Delivered",      color: "bg-teal-100   text-teal-800   border-teal-300"   },
 ] as const;

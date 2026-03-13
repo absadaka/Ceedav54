@@ -69,39 +69,42 @@ function elapsed(d: string) {
 
 function KanbanCard({ job, onClick }: { job: KanbanJob; onClick: () => void }) {
   return (
-    <div onClick={onClick} className="bg-background border border-border rounded-lg p-3 space-y-2 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all group">
-      <div className="flex items-start justify-between gap-1.5">
-        <span className="text-[11px] font-mono font-semibold text-muted-foreground">{job.ref}</span>
-        {job.priority !== "normal" && (
-          <span className={cn("text-[10px] font-medium border rounded px-1 py-0.5 shrink-0", PRIORITY_COLORS[job.priority])}>{job.priority}</span>
-        )}
+    <div onClick={onClick} className="bg-background border border-border rounded-lg p-3 h-[148px] flex flex-col justify-between cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all group">
+      <div className="space-y-1.5">
+        <div className="flex items-start justify-between gap-1.5">
+          <span className="text-[11px] font-mono font-semibold text-muted-foreground">{job.ref}</span>
+          {job.priority !== "normal" && (
+            <span className={cn("text-[10px] font-medium border rounded px-1 py-0.5 shrink-0", PRIORITY_COLORS[job.priority])}>{job.priority}</span>
+          )}
+        </div>
+        <p className="text-xs text-foreground line-clamp-2 leading-relaxed min-h-[2.5em]">
+          {job.customer_concern ?? "—"}
+        </p>
       </div>
-      {job.customer_concern && <p className="text-xs text-foreground line-clamp-2 leading-relaxed">{job.customer_concern}</p>}
       <div className="space-y-1">
-        {job.client_name && (
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <User className="w-3 h-3 shrink-0" /><span className="truncate">{job.client_name}</span>
-          </div>
-        )}
-        {job.plate_number && (
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Car className="w-3 h-3 shrink-0" />
-            <span className="font-mono">{job.plate_number}</span>
-            {job.make && <span className="text-muted-foreground/60">· {job.make} {job.model}</span>}
-          </div>
-        )}
+        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <User className="w-3 h-3 shrink-0" />
+          <span className="truncate">{job.client_name ?? "—"}</span>
+        </div>
+        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <Car className="w-3 h-3 shrink-0" />
+          <span className="font-mono">{job.plate_number ?? "—"}</span>
+          {job.make && <span className="text-muted-foreground/60 truncate">· {job.make} {job.model}</span>}
+        </div>
       </div>
-      <div className="flex items-center justify-between pt-1">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
           <Clock className="w-3 h-3" />{elapsed(job.started_at ?? job.created_at)}
         </div>
-        {job.technician_name && (
-          <span className="text-[10px] bg-muted rounded-full px-2 py-0.5 font-medium truncate max-w-[80px]">
-            {job.technician_name.split(" ")[0]}
-          </span>
-        )}
-        {job.bay && <span className="text-[10px] text-muted-foreground">Bay {job.bay}</span>}
-        <ChevronRight className="w-3 h-3 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+        <div className="flex items-center gap-1.5">
+          {job.technician_name && (
+            <span className="text-[10px] bg-muted rounded-full px-2 py-0.5 font-medium truncate max-w-[80px]">
+              {job.technician_name.split(" ")[0]}
+            </span>
+          )}
+          {job.bay && <span className="text-[10px] text-muted-foreground">Bay {job.bay}</span>}
+          <ChevronRight className="w-3 h-3 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+        </div>
       </div>
     </div>
   );
