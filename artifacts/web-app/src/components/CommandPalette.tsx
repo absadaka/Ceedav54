@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
   LayoutDashboard, Users, CalendarCheck, FileText,
-  Wrench, Receipt, UsersRound, Settings, Shield,
-  Activity, Key, Building2,
+  Wrench, Receipt, UsersRound, Building2, Shield,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -33,8 +32,6 @@ function buildEntries(prefix = ""): NavEntry[] {
     { label: "Team",         href: `${prefix}/team`,        icon: UsersRound,      group: "Workspace" },
     { label: "Shop settings",href: `${prefix}/settings`,    icon: Building2,       group: "Workspace" },
     { label: "Security",     href: `${prefix}/account/security`,  icon: Shield,   group: "Account" },
-    { label: "Audit log",    href: `${prefix}/admin/audit`,       icon: Activity, group: "Admin" },
-    { label: "API keys",     href: `${prefix}/admin/api-keys`,    icon: Key,      group: "Admin" },
   ];
 }
 

@@ -35,7 +35,6 @@ import InvoicesPage       from "@/pages/tenant/InvoicesPage";
 import InvoiceDetailPage  from "@/pages/tenant/InvoiceDetailPage";
 import TeamPage from "@/pages/tenant/TeamPage";
 import SettingsPage          from "@/pages/tenant/SettingsPage";
-import SettingsTeamPage      from "@/pages/tenant/settings/TeamPage";
 import SettingsBusinessPage  from "@/pages/tenant/settings/BusinessPage";
 import SettingsHoursPage     from "@/pages/tenant/settings/HoursPage";
 import SettingsServicesPage  from "@/pages/tenant/settings/ServicesPage";
@@ -50,9 +49,6 @@ import AccountDevicesPage from "@/pages/tenant/account/DevicesPage";
 
 // Tenant admin pages
 import AdminUsersPage from "@/pages/tenant/admin/UsersPage";
-import AdminSsoPage from "@/pages/tenant/admin/SsoPage";
-import AdminAuditPage from "@/pages/tenant/admin/AuditPage";
-import AdminApiKeysPage from "@/pages/tenant/admin/ApiKeysPage";
 
 import NotFoundPage from "@/pages/NotFoundPage";
 
@@ -121,10 +117,6 @@ function TenantSlugApp() {
         <Route path="/:tenant/account/security" component={AccountSecurityPage} />
         <Route path="/:tenant/account/sessions" component={AccountSessionsPage} />
         <Route path="/:tenant/account/devices" component={AccountDevicesPage} />
-        <Route path="/:tenant/admin/users" component={AdminUsersPage} />
-        <Route path="/:tenant/admin/sso" component={AdminSsoPage} />
-        <Route path="/:tenant/admin/audit" component={AdminAuditPage} />
-        <Route path="/:tenant/admin/api-keys" component={AdminApiKeysPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </TenantLayout>
@@ -191,7 +183,7 @@ function AppRouter() {
           <Route path="/settings/business"     component={SettingsBusinessPage} />
           <Route path="/settings/hours"        component={SettingsHoursPage} />
           <Route path="/settings/services"     component={SettingsServicesPage} />
-          <Route path="/settings/team"         component={SettingsTeamPage} />
+          <Route path="/settings/team"         component={AdminUsersPage} />
           <Route path="/settings/sales"        component={SettingsSalesPage} />
           <Route path="/settings/reporting"    component={SettingsReportingPage} />
           <Route path="/settings/billing"      component={SettingsBillingPage} />
