@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
@@ -114,16 +114,16 @@ export default function VehicleDrawer({ open, onClose, vehicle, clientId, onSucc
   }
 
   return (
-    <Sheet open={open} onOpenChange={v => !v && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-        <SheetHeader className="mb-6">
-          <SheetTitle>{isEdit ? "Edit vehicle" : "Add vehicle"}</SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="sm:max-w-[500px] p-0 gap-0 flex flex-col max-h-[90vh]">
+        <DialogHeader className="px-6 py-5 border-b border-border shrink-0">
+          <DialogTitle>{isEdit ? "Edit vehicle" : "Add vehicle"}</DialogTitle>
+          <DialogDescription>
             {isEdit ? "Update vehicle details." : "Register a new vehicle for this customer."}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={submit} className="space-y-5">
+        <form onSubmit={submit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           <div className="space-y-1.5">
             <Label htmlFor="vplate">Plate number <span className="text-destructive">*</span></Label>
             <Input id="vplate" value={form.plate} onChange={field("plate")} placeholder="e.g. A 12345 B" className="uppercase" />
@@ -195,17 +195,17 @@ export default function VehicleDrawer({ open, onClose, vehicle, clientId, onSucc
           </div>
 
           {err && <p className="text-sm text-destructive">{err}</p>}
-
-          <div className="flex gap-2 pt-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={mutation.isPending}>
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1" disabled={mutation.isPending}>
-              {mutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Add vehicle"}
-            </Button>
-          </div>
         </form>
-      </SheetContent>
-    </Sheet>
+
+        <DialogFooter className="px-6 py-4 border-t border-border shrink-0">
+          <Button type="button" variant="outline" onClick={onClose} disabled={mutation.isPending}>
+            Cancel
+          </Button>
+          <Button type="submit" onClick={submit} disabled={mutation.isPending}>
+            {mutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Add vehicle"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

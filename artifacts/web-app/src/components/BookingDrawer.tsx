@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
@@ -145,14 +145,14 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   });
 
   return (
-    <Sheet open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <SheetContent className="w-full sm:max-w-[520px] flex flex-col gap-0 p-0">
-        <SheetHeader className="px-6 py-5 border-b border-border">
-          <SheetTitle>{isEdit ? "Edit booking" : "New booking"}</SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="sm:max-w-[540px] p-0 gap-0 flex flex-col max-h-[90vh]">
+        <DialogHeader className="px-6 py-5 border-b border-border shrink-0">
+          <DialogTitle>{isEdit ? "Edit booking" : "New booking"}</DialogTitle>
+          <DialogDescription>
             {isEdit ? `Editing ${booking!.ref}` : "Schedule a service appointment"}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {/* Date & Time */}
@@ -260,13 +260,13 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
+        <DialogFooter className="px-6 py-4 border-t border-border shrink-0">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => save.mutate()} disabled={save.isPending || !date || !time}>
             {save.isPending ? "Saving…" : isEdit ? "Save changes" : "Create booking"}
           </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
