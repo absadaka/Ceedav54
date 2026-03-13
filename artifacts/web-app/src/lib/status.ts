@@ -20,6 +20,7 @@ export const STATUS_CLASSES: Record<string, string> = {
   paid:          "bg-green-50   text-green-800   border-green-200",
   overdue:       "bg-red-50     text-red-800     border-red-200",
   void:          "bg-gray-100   text-gray-600    border-gray-200",
+  delivered:     "bg-teal-50    text-teal-800    border-teal-200",
 };
 
 export function statusLabel(status: string): string {

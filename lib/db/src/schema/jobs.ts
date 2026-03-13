@@ -12,7 +12,7 @@ export const quoteStatusEnum = pgEnum("quote_status", [
 ]);
 
 export const jobStatusEnum = pgEnum("job_status", [
-  "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed",
+  "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered",
 ]);
 
 export const jobPriorityEnum = pgEnum("job_priority", [

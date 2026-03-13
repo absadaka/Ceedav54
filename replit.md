@@ -81,7 +81,7 @@ ceeda/
 |---|---|---|
 | Bookings | Live | Full CRUD, 7-status flow, advisor meta, stat strip, booking detail page |
 | Quotations | Live | Full CRUD, line items CRUD with auto-recalc, advance payments, send/approve/reject/convert-to-job flow |
-| Jobs | Live | Kanban + list views, job detail with parts/time/photos/history tabs |
+| Jobs | Live | Kanban + list views (7-lane incl. Delivered), job detail: live Start/Stop timer, assign-technician dialog, parts CRUD, photo URL upload, status history, QC section, Mark as delivered flow |
 | Clients/Vehicles | Live | Customer table, detail page, vehicle detail page |
 | Dashboard | Live | KPI strip, 7 live data sections |
 | Invoices | Scaffolded | Page + API route stubbed, pending full build |

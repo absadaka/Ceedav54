@@ -1,9 +1,10 @@
 import {
   ArrowLeft, Wrench, User, Car, Clock, AlertTriangle, Plus,
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
-  Edit, Trash2, MoreHorizontal,
+  Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
+  Link as LinkIcon, X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Button }  from "@/components/ui/button";
@@ -13,6 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input }    from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label }    from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -36,6 +43,12 @@ const PRIORITY_BADGE: Record<string, string> = {
   low:    "bg-gray-100 text-gray-600 border-gray-300",
 };
 
+/* ── label overrides so "waiting" shows as "New" in UI ──────────────────── */
+const STATUS_DISPLAY: Record<string, string> = Object.fromEntries(
+  JOB_STATUSES.map(s => [s.key, s.label])
+);
+function jobStatusLabel(s: string) { return STATUS_DISPLAY[s] ?? statusLabel(s); }
+
 function fmtDate(d: string | null) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-AE", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -48,6 +61,16 @@ function fmtMinutes(m: number) {
   return h > 0 ? `${h}h ${min}m` : `${min}m`;
 }
 
+function fmtElapsed(ms: number) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+  return `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+}
+
+/* ─── interfaces ─────────────────────────────────────────────────────────── */
 interface JobDetail {
   id: string; ref: string; seq: number; status: string; priority: string;
   bay: string | null; started_at: string | null; completed_at: string | null; qc_at: string | null;
@@ -63,32 +86,26 @@ interface JobDetail {
   qc_by: string | null; qc_by_name: string | null;
   quotation_id: string | null; booking_id: string | null;
 }
-
 interface StatusHistoryEntry {
   id: string; from_status: string | null; to_status: string;
   note: string | null; created_at: string; changed_by_name: string | null;
 }
-
 interface Assignment {
   id: string; technician_id: string; technician_name: string | null;
   technician_email: string | null; is_lead: string;
   notes: string | null; assigned_at: string; released_at: string | null;
 }
-
 interface TimeLog {
   id: string; technician_id: string | null; started_at: string;
   ended_at: string | null; minutes: number | null; notes: string | null;
 }
-
 interface Part {
   id: string; sort_order: number; part_number: string | null;
   description: string; qty: string; unit_price: string; line_total: string; created_at: string;
 }
-
 interface Photo {
   id: string; url: string; caption: string | null; photo_type: string; created_at: string;
 }
-
 interface DetailData {
   job: JobDetail;
   statusHistory: StatusHistoryEntry[];
@@ -100,20 +117,24 @@ interface DetailData {
   quotation: { ref: string; total: string; status: string } | null;
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+/* ─── StatCard ───────────────────────────────────────────────────────────── */
+function StatCard({ icon: Icon, label, value, accent }: { icon: React.ElementType; label: string; value: string; accent?: boolean }) {
   return (
-    <div className="border border-border rounded-lg bg-background p-4 flex gap-3 items-start">
-      <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-        <Icon className="w-4 h-4 text-primary" />
+    <div className={cn("border rounded-lg bg-background p-4 flex gap-3 items-start",
+      accent ? "border-orange-200 bg-orange-50/40" : "border-border")}>
+      <div className={cn("w-8 h-8 rounded-md flex items-center justify-center shrink-0",
+        accent ? "bg-orange-100" : "bg-primary/10")}>
+        <Icon className={cn("w-4 h-4", accent ? "text-orange-600" : "text-primary")} />
       </div>
       <div>
         <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</div>
-        <div className="text-base font-semibold mt-0.5">{value}</div>
+        <div className={cn("text-base font-semibold mt-0.5", accent && "text-orange-700")}>{value}</div>
       </div>
     </div>
   );
 }
 
+/* ─── AddPartForm ─────────────────────────────────────────────────────────── */
 function AddPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
   const [form, setForm] = useState({ description: "", part_number: "", qty: "1", unit_price: "0" });
   const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }));
@@ -153,11 +174,7 @@ function AddPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => void })
           <Input type="number" min="0" step="0.01" value={form.unit_price} onChange={e => set("unit_price", e.target.value)} className="h-8 text-sm" />
         </div>
         <div className="flex items-end">
-          <Button
-            size="sm" disabled={!form.description || mutation.isPending}
-            onClick={() => mutation.mutate()}
-            className="w-full"
-          >
+          <Button size="sm" disabled={!form.description || mutation.isPending} onClick={() => mutation.mutate()} className="w-full">
             {mutation.isPending ? "Adding…" : "Add"}
           </Button>
         </div>
@@ -166,17 +183,150 @@ function AddPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => void })
   );
 }
 
+/* ─── LiveTimer ───────────────────────────────────────────────────────────── */
+function LiveTimer({ startedAt }: { startedAt: string }) {
+  const [elapsed, setElapsed] = useState(Date.now() - new Date(startedAt).getTime());
+  useEffect(() => {
+    const t = setInterval(() => setElapsed(Date.now() - new Date(startedAt).getTime()), 1000);
+    return () => clearInterval(t);
+  }, [startedAt]);
+  return <span className="font-mono tabular-nums text-orange-600 font-bold text-lg">{fmtElapsed(elapsed)}</span>;
+}
+
+/* ─── AssignTechDialog ────────────────────────────────────────────────────── */
+function AssignTechDialog({ jobId, open, onClose }: { jobId: string; open: boolean; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [techId, setTechId] = useState("");
+  const [isLead, setIsLead] = useState(false);
+  const [notes, setNotes] = useState("");
+
+  const { data: techData } = useQuery({
+    queryKey: ["technicians"],
+    queryFn: () => fetch(`${API}/api/jobs/meta/technicians?tenant=${TENANT}`).then(r => r.json()),
+    staleTime: 60_000,
+  });
+  const technicians: Array<{ id: string; name: string; role: string }> = techData?.data ?? [];
+
+  const mutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/jobs/${jobId}/assign?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ technician_id: techId, is_lead: String(isLead), notes: notes || null }),
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", jobId] });
+      toast.success("Technician assigned");
+      onClose();
+      setTechId(""); setIsLead(false); setNotes("");
+    },
+    onError: () => toast.error("Failed to assign technician"),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="sm:max-w-[380px]">
+        <DialogHeader>
+          <DialogTitle>Assign technician</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label>Technician</Label>
+            <Select value={techId} onValueChange={setTechId}>
+              <SelectTrigger><SelectValue placeholder="Select technician…" /></SelectTrigger>
+              <SelectContent>
+                {technicians.map(t => (
+                  <SelectItem key={t.id} value={t.id}>{t.name} <span className="text-muted-foreground text-xs">({t.role})</span></SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="isLead" checked={isLead} onChange={e => setIsLead(e.target.checked)} className="rounded" />
+            <Label htmlFor="isLead" className="cursor-pointer font-normal">Set as lead technician</Label>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input placeholder="e.g. Handle engine bay only" value={notes} onChange={e => setNotes(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button disabled={!techId || mutation.isPending} onClick={() => mutation.mutate()}>
+            {mutation.isPending ? "Assigning…" : "Assign"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ─── AddPhotoForm ────────────────────────────────────────────────────────── */
+function AddPhotoForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
+  const [url, setUrl] = useState("");
+  const [caption, setCaption] = useState("");
+  const [type, setType] = useState("general");
+
+  const PHOTO_TYPES = ["before", "after", "damage", "parts", "general"];
+
+  const mutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/jobs/${jobId}/photos?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, caption: caption || null, photo_type: type }),
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      onAdded();
+      setUrl(""); setCaption(""); setType("general");
+      toast.success("Photo added");
+    },
+    onError: () => toast.error("Failed to add photo"),
+  });
+
+  return (
+    <div className="border border-dashed border-border rounded-lg p-4 mt-3 space-y-3 bg-muted/20">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+        <LinkIcon className="w-3.5 h-3.5" />Add photo by URL
+      </p>
+      <div className="space-y-1">
+        <Label className="text-xs">Photo URL *</Label>
+        <Input placeholder="https://example.com/photo.jpg" value={url} onChange={e => setUrl(e.target.value)} className="h-8 text-sm" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Type</Label>
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PHOTO_TYPES.map(t => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Caption</Label>
+          <Input placeholder="Optional" value={caption} onChange={e => setCaption(e.target.value)} className="h-8 text-sm" />
+        </div>
+      </div>
+      <Button size="sm" disabled={!url || mutation.isPending} onClick={() => mutation.mutate()} className="w-full">
+        {mutation.isPending ? "Adding…" : "Add photo"}
+      </Button>
+    </div>
+  );
+}
+
+/* ─── Main component ──────────────────────────────────────────────────────── */
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const qc = useQueryClient();
 
-  const [editOpen, setEditOpen] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [showAddPart, setShowAddPart] = useState(false);
-  const [noteText, setNoteText] = useState("");
-  const [savingNote, setSavingNote] = useState(false);
+  const [editOpen,       setEditOpen]       = useState(false);
+  const [statusOpen,     setStatusOpen]     = useState(false);
+  const [deleteOpen,     setDeleteOpen]     = useState(false);
+  const [assignOpen,     setAssignOpen]     = useState(false);
+  const [showAddPart,    setShowAddPart]    = useState(false);
+  const [showAddPhoto,   setShowAddPhoto]   = useState(false);
+  const [noteText,       setNoteText]       = useState("");
+  const [timerNote,      setTimerNote]      = useState("");
 
   const { data, isLoading } = useQuery<DetailData>({
     queryKey: ["job", id],
@@ -204,6 +354,22 @@ export default function JobDetailPage() {
     onError: () => toast.error("Failed to remove part"),
   });
 
+  const removePhotoMutation = useMutation({
+    mutationFn: (photoId: string) =>
+      fetch(`${API}/api/jobs/${id}/photos/${photoId}?tenant=${TENANT}`, { method: "DELETE" })
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Photo removed"); },
+    onError: () => toast.error("Failed to remove photo"),
+  });
+
+  const releaseAssignMutation = useMutation({
+    mutationFn: (assignId: string) =>
+      fetch(`${API}/api/jobs/${id}/assign/${assignId}?tenant=${TENANT}`, { method: "DELETE" })
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Technician released"); },
+    onError: () => toast.error("Failed to release technician"),
+  });
+
   const techNotesMutation = useMutation({
     mutationFn: (technician_note: string) =>
       fetch(`${API}/api/jobs/${id}?tenant=${TENANT}`, {
@@ -214,9 +380,37 @@ export default function JobDetailPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["job", id] });
       toast.success("Notes saved");
-      setSavingNote(false);
     },
-    onError: () => { toast.error("Failed to save notes"); setSavingNote(false); },
+    onError: () => toast.error("Failed to save notes"),
+  });
+
+  const startTimerMutation = useMutation({
+    mutationFn: () =>
+      fetch(`${API}/api/jobs/${id}/time?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "start", notes: timerNote || null }),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      toast.success("Timer started");
+      setTimerNote("");
+    },
+    onError: () => toast.error("Failed to start timer"),
+  });
+
+  const stopTimerMutation = useMutation({
+    mutationFn: () =>
+      fetch(`${API}/api/jobs/${id}/time?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "stop" }),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      toast.success("Timer stopped");
+    },
+    onError: () => toast.error("Failed to stop timer"),
   });
 
   if (isLoading) {
@@ -245,6 +439,7 @@ export default function JobDetailPage() {
   const { job, statusHistory, assignments, timeLogs, totalMinutes, parts, photos, quotation } = data;
   const currentLane = JOB_STATUSES.find(s => s.key === job.status);
   const partsTotal  = parts.reduce((sum, p) => sum + parseFloat(p.line_total), 0);
+  const runningLog  = timeLogs.find(l => !l.ended_at);
 
   const asJobRow: JobRow = {
     id: job.id, ref: job.ref, status: job.status, priority: job.priority,
@@ -275,13 +470,18 @@ export default function JobDetailPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-semibold font-mono">{job.ref}</h1>
               <Badge variant="outline" className={cn("text-xs font-medium border", currentLane?.color)}>
-                {statusLabel(job.status)}
+                {jobStatusLabel(job.status)}
               </Badge>
               <Badge variant="outline" className={cn("text-xs font-medium border", PRIORITY_BADGE[job.priority])}>
                 {job.priority}
               </Badge>
               {job.bay && (
                 <span className="text-xs text-muted-foreground bg-muted rounded px-1.5 py-0.5">Bay {job.bay}</span>
+              )}
+              {runningLog && (
+                <span className="text-xs bg-orange-100 text-orange-700 border border-orange-200 rounded px-1.5 py-0.5 flex items-center gap-1 animate-pulse">
+                  <Clock className="w-3 h-3" />Timer running
+                </span>
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">Created {fmtDate(job.created_at)}</p>
@@ -312,14 +512,14 @@ export default function JobDetailPage() {
 
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={Timer} label="Labor time" value={fmtMinutes(totalMinutes)} />
+        <StatCard icon={Timer} label="Labor time" value={fmtMinutes(totalMinutes)} accent={!!runningLog} />
         <StatCard icon={Package} label="Parts used" value={`${parts.length} items`} />
         <StatCard icon={Camera} label="Photos" value={`${photos.length}`} />
         <StatCard icon={History} label="Status changes" value={`${statusHistory.length}`} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left column — info cards */}
+        {/* Left column */}
         <div className="space-y-4">
           {/* Customer & vehicle */}
           <div className="border border-border rounded-lg bg-background p-4 space-y-3">
@@ -376,7 +576,12 @@ export default function JobDetailPage() {
 
           {/* Team */}
           <div className="border border-border rounded-lg bg-background p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Team</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Team</p>
+              <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={() => setAssignOpen(true)}>
+                <UserPlus className="w-3 h-3" />Assign
+              </Button>
+            </div>
             <div className="space-y-2">
               <div>
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Advisor</p>
@@ -384,21 +589,27 @@ export default function JobDetailPage() {
               </div>
               <div>
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Lead technician</p>
-                <p className="text-sm font-medium">{job.technician_name ?? <span className="text-muted-foreground">Unassigned</span>}</p>
+                <p className="text-sm font-medium">{job.technician_name ?? <span className="text-muted-foreground/50">Unassigned</span>}</p>
               </div>
               {assignments.length > 0 && (
                 <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">Assigned</p>
-                  <div className="space-y-1">
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">All assigned</p>
+                  <div className="space-y-1.5">
                     {assignments.map(a => (
-                      <div key={a.id} className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
+                      <div key={a.id} className="flex items-center gap-2 group">
+                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold shrink-0">
                           {a.technician_name?.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase() ?? "?"}
                         </div>
-                        <span className="text-xs">{a.technician_name}</span>
+                        <span className="text-xs flex-1 truncate">{a.technician_name}</span>
                         {a.is_lead === "true" && (
-                          <span className="text-[10px] bg-primary/10 text-primary rounded px-1">lead</span>
+                          <span className="text-[10px] bg-primary/10 text-primary rounded px-1 shrink-0">lead</span>
                         )}
+                        <button
+                          onClick={() => releaseAssignMutation.mutate(a.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/40 hover:text-destructive p-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -442,7 +653,7 @@ export default function JobDetailPage() {
         {/* Right column — tabs */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="work">
-            <TabsList className="mb-4">
+            <TabsList className="mb-4 flex-wrap h-auto gap-1">
               <TabsTrigger value="work">Work</TabsTrigger>
               <TabsTrigger value="parts">Parts ({parts.length})</TabsTrigger>
               <TabsTrigger value="time">Time ({fmtMinutes(totalMinutes)})</TabsTrigger>
@@ -450,7 +661,7 @@ export default function JobDetailPage() {
               <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
             </TabsList>
 
-            {/* Work tab */}
+            {/* ── Work tab ─────────────────────────────────────────────── */}
             <TabsContent value="work" className="space-y-4 mt-0">
               {/* Customer concern */}
               <div className="border border-border rounded-lg bg-background p-4 space-y-2">
@@ -477,18 +688,18 @@ export default function JobDetailPage() {
                 />
                 <Button
                   size="sm"
-                  disabled={savingNote || techNotesMutation.isPending}
-                  onClick={() => { setSavingNote(true); techNotesMutation.mutate(noteText || job.technician_note || ""); }}
+                  disabled={techNotesMutation.isPending}
+                  onClick={() => techNotesMutation.mutate(noteText || job.technician_note || "")}
                 >
                   {techNotesMutation.isPending ? "Saving…" : "Save notes"}
                 </Button>
               </div>
 
-              {/* QC */}
-              {(job.status === "qc" || job.status === "completed" || job.qc_note) && (
+              {/* QC review */}
+              {(job.status === "qc" || job.status === "completed" || job.status === "delivered" || job.qc_note) && (
                 <div className="border border-blue-200 rounded-lg bg-blue-50/50 p-4 space-y-2">
                   <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />QC review
+                    <CheckCircle2 className="w-3.5 h-3.5" />QC review / completion check
                   </p>
                   {job.qc_by_name && (
                     <p className="text-xs text-muted-foreground">By {job.qc_by_name} · {fmtDate(job.qc_at)}</p>
@@ -496,6 +707,38 @@ export default function JobDetailPage() {
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {job.qc_note ?? <span className="text-muted-foreground/50 italic">No QC note yet</span>}
                   </p>
+                  {job.status !== "qc" && job.status !== "completed" && job.status !== "delivered" && (
+                    <Button size="sm" variant="outline" className="text-blue-700 border-blue-300" onClick={() => setStatusOpen(true)}>
+                      Send to QC
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Completion checklist hint */}
+              {(job.status === "completed" || job.status === "delivered") && (
+                <div className="border border-green-200 rounded-lg bg-green-50/50 p-4 space-y-1.5">
+                  <p className="text-xs font-semibold text-green-800 uppercase tracking-wide flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />Completion summary
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+                    {[
+                      ["Mileage in",   job.mileage_in  ? `${parseInt(job.mileage_in).toLocaleString()} km`  : "—"],
+                      ["Mileage out",  job.mileage_out ? `${parseInt(job.mileage_out).toLocaleString()} km` : "—"],
+                      ["Labor time",   fmtMinutes(totalMinutes)],
+                      ["Parts",        `${parts.length} item(s) · ${partsTotal.toFixed(2)} AED`],
+                    ].map(([k, v]) => (
+                      <div key={k as string}>
+                        <span className="text-muted-foreground">{k}: </span>
+                        <span className="font-medium">{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {job.status === "completed" && (
+                    <Button size="sm" className="mt-2 bg-teal-600 hover:bg-teal-700" onClick={() => setStatusOpen(true)}>
+                      Mark as delivered
+                    </Button>
+                  )}
                 </div>
               )}
 
@@ -508,7 +751,7 @@ export default function JobDetailPage() {
               )}
             </TabsContent>
 
-            {/* Parts tab */}
+            {/* ── Parts tab ────────────────────────────────────────────── */}
             <TabsContent value="parts" className="mt-0">
               <div className="border border-border rounded-lg bg-background overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
@@ -541,10 +784,8 @@ export default function JobDetailPage() {
                           <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.unit_price).toFixed(2)}</td>
                           <td className="px-4 py-2.5 text-right text-sm font-medium">{parseFloat(p.line_total).toFixed(2)}</td>
                           <td className="px-2 py-2">
-                            <button
-                              onClick={() => removePartMutation.mutate(p.id)}
-                              className="text-muted-foreground/40 hover:text-destructive transition-colors p-1"
-                            >
+                            <button onClick={() => removePartMutation.mutate(p.id)}
+                              className="text-muted-foreground/40 hover:text-destructive transition-colors p-1">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </td>
@@ -560,32 +801,89 @@ export default function JobDetailPage() {
                     </tbody>
                   </table>
                 )}
-
                 {showAddPart && (
                   <div className="px-4 pb-4">
-                    <AddPartForm
-                      jobId={job.id}
-                      onAdded={() => {
-                        qc.invalidateQueries({ queryKey: ["job", id] });
-                        setShowAddPart(false);
-                      }}
-                    />
+                    <AddPartForm jobId={job.id} onAdded={() => {
+                      qc.invalidateQueries({ queryKey: ["job", id] });
+                      setShowAddPart(false);
+                    }} />
                   </div>
                 )}
               </div>
             </TabsContent>
 
-            {/* Time tab */}
-            <TabsContent value="time" className="mt-0">
+            {/* ── Time tab ─────────────────────────────────────────────── */}
+            <TabsContent value="time" className="mt-0 space-y-3">
+              {/* Timer control card */}
+              <div className={cn(
+                "border rounded-lg p-4",
+                runningLog ? "border-orange-200 bg-orange-50/50" : "border-border bg-background",
+              )}>
+                {runningLog ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                      <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide">Timer running</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-0.5">Elapsed time</p>
+                        <LiveTimer startedAt={runningLog.started_at} />
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-100"
+                        disabled={stopTimerMutation.isPending}
+                        onClick={() => stopTimerMutation.mutate()}
+                      >
+                        <Square className="w-3.5 h-3.5 fill-current" />
+                        {stopTimerMutation.isPending ? "Stopping…" : "Stop timer"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Started at {new Date(runningLog.started_at).toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                      <Timer className="w-3.5 h-3.5" />Labor time tracker
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Optional note for this session…"
+                        value={timerNote}
+                        onChange={e => setTimerNote(e.target.value)}
+                        className="h-8 text-sm flex-1"
+                      />
+                      <Button
+                        size="sm"
+                        className="gap-1.5 shrink-0"
+                        disabled={startTimerMutation.isPending}
+                        onClick={() => startTimerMutation.mutate()}
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        {startTimerMutation.isPending ? "Starting…" : "Start timer"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Total logged: <span className="font-semibold">{fmtMinutes(totalMinutes)}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Logs table */}
               <div className="border border-border rounded-lg bg-background overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Labor time logs</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Time logs</p>
                   <span className="text-xs font-medium text-muted-foreground">Total: {fmtMinutes(totalMinutes)}</span>
                 </div>
                 {timeLogs.length === 0 ? (
                   <div className="p-8 text-center text-sm text-muted-foreground/50">
                     <Timer className="w-8 h-8 mx-auto mb-2 text-muted-foreground/20" />
-                    No time logs yet. Use the mobile app to start the timer.
+                    No time logs yet. Start the timer above.
                   </div>
                 ) : (
                   <table className="w-full text-sm">
@@ -599,14 +897,18 @@ export default function JobDetailPage() {
                     </thead>
                     <tbody>
                       {timeLogs.map(l => (
-                        <tr key={l.id} className="border-b border-border last:border-0">
+                        <tr key={l.id} className={cn("border-b border-border last:border-0", !l.ended_at && "bg-orange-50/30")}>
                           <td className="px-4 py-2.5 text-xs">{fmtDate(l.started_at)}</td>
                           <td className="px-4 py-2.5 text-xs">
                             {l.ended_at
                               ? fmtDate(l.ended_at)
-                              : <span className="text-orange-600 font-medium flex items-center gap-1"><Clock className="w-3 h-3" />Running</span>}
+                              : <span className="text-orange-600 font-medium flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />Running
+                                </span>}
                           </td>
-                          <td className="px-4 py-2.5 text-right font-medium text-sm">{l.minutes ? fmtMinutes(l.minutes) : "—"}</td>
+                          <td className="px-4 py-2.5 text-right font-medium text-sm">
+                            {l.minutes ? fmtMinutes(l.minutes) : "—"}
+                          </td>
                           <td className="px-4 py-2.5 text-xs text-muted-foreground hidden sm:table-cell">{l.notes ?? "—"}</td>
                         </tr>
                       ))}
@@ -614,40 +916,58 @@ export default function JobDetailPage() {
                   </table>
                 )}
               </div>
-              <div className="mt-3 p-3 border border-dashed border-border rounded-lg bg-muted/20 text-xs text-muted-foreground text-center">
-                Timer start/stop is available in the mobile technician app. API: <code className="font-mono">POST /api/jobs/:id/time</code>
-              </div>
             </TabsContent>
 
-            {/* Photos tab */}
-            <TabsContent value="photos" className="mt-0">
-              <div className="border border-border rounded-lg bg-background p-4">
-                {photos.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <Camera className="w-8 h-8 mx-auto mb-2 text-muted-foreground/20" />
-                    <p className="text-sm text-muted-foreground/60">No photos yet</p>
-                    <p className="text-xs text-muted-foreground/40 mt-1">Photos are uploaded from the mobile technician app</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {photos.map(p => (
-                      <div key={p.id} className="relative group rounded-lg overflow-hidden border border-border aspect-square bg-muted">
-                        <img src={p.url} alt={p.caption ?? "Job photo"} className="w-full h-full object-cover" />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 p-2">
-                          <span className="text-[10px] text-white font-medium">{p.photo_type}</span>
-                          {p.caption && <p className="text-[10px] text-white/80 line-clamp-1">{p.caption}</p>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="mt-3 p-3 border border-dashed border-border rounded-lg bg-muted/20 text-xs text-muted-foreground text-center">
-                  Photo upload available via mobile app or API: <code className="font-mono">POST /api/jobs/:id/photos</code>
+            {/* ── Photos tab ───────────────────────────────────────────── */}
+            <TabsContent value="photos" className="mt-0 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">{photos.length} photo{photos.length !== 1 ? "s" : ""} attached</p>
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowAddPhoto(p => !p)}>
+                  <Upload className="w-3 h-3" />{showAddPhoto ? "Cancel" : "Add photo"}
+                </Button>
+              </div>
+
+              {showAddPhoto && (
+                <AddPhotoForm jobId={job.id} onAdded={() => {
+                  qc.invalidateQueries({ queryKey: ["job", id] });
+                  setShowAddPhoto(false);
+                }} />
+              )}
+
+              {photos.length === 0 ? (
+                <div className="border border-dashed border-border rounded-lg p-12 text-center">
+                  <Camera className="w-10 h-10 mx-auto mb-3 text-muted-foreground/20" />
+                  <p className="text-sm text-muted-foreground/60 font-medium">No photos yet</p>
+                  <p className="text-xs text-muted-foreground/40 mt-1">Add photos via URL above or from the mobile technician app</p>
                 </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {photos.map(p => (
+                    <div key={p.id} className="relative group rounded-lg overflow-hidden border border-border aspect-square bg-muted">
+                      <img src={p.url} alt={p.caption ?? "Job photo"} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 p-2">
+                        <span className="text-[10px] text-white font-medium capitalize">{p.photo_type}</span>
+                        {p.caption && <p className="text-[10px] text-white/80 line-clamp-1">{p.caption}</p>}
+                      </div>
+                      <button
+                        onClick={() => removePhotoMutation.mutate(p.id)}
+                        className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity
+                                   bg-black/50 hover:bg-red-600 rounded p-1 text-white"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="p-3 border border-dashed border-border rounded-lg bg-muted/20 text-xs text-muted-foreground text-center">
+                Native camera upload available in the mobile technician app
               </div>
             </TabsContent>
 
-            {/* History tab */}
+            {/* ── History tab ─────────────────────────────────────────── */}
             <TabsContent value="history" className="mt-0">
               <div className="border border-border rounded-lg bg-background overflow-hidden">
                 {statusHistory.length === 0 ? (
@@ -659,7 +979,8 @@ export default function JobDetailPage() {
                         <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
                           <div className={cn(
                             "w-2.5 h-2.5 rounded-full border-2",
-                            h.to_status === "completed" ? "border-green-500 bg-green-500"
+                            h.to_status === "delivered" ? "border-teal-500 bg-teal-500"
+                              : h.to_status === "completed" ? "border-green-500 bg-green-500"
                               : h.to_status === "in_progress" ? "border-orange-500 bg-orange-500"
                               : h.to_status === "qc" ? "border-blue-500 bg-blue-500"
                               : "border-muted-foreground/40 bg-muted",
@@ -671,13 +992,13 @@ export default function JobDetailPage() {
                             {h.from_status && (
                               <>
                                 <Badge variant="outline" className={cn("text-[10px] border", statusClass(h.from_status))}>
-                                  {statusLabel(h.from_status)}
+                                  {jobStatusLabel(h.from_status)}
                                 </Badge>
                                 <ChevronRight className="w-3 h-3 text-muted-foreground" />
                               </>
                             )}
                             <Badge variant="outline" className={cn("text-[10px] border", statusClass(h.to_status))}>
-                              {statusLabel(h.to_status)}
+                              {jobStatusLabel(h.to_status)}
                             </Badge>
                           </div>
                           {h.note && <p className="text-xs text-muted-foreground mt-1">{h.note}</p>}
@@ -695,12 +1016,8 @@ export default function JobDetailPage() {
         </div>
       </div>
 
-      {/* Modals */}
-      <JobDrawer
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        job={asJobRow}
-      />
+      {/* ── Modals ─────────────────────────────────────────────────────── */}
+      <JobDrawer open={editOpen} onOpenChange={setEditOpen} job={asJobRow} />
 
       <StatusTransitionModal
         open={statusOpen}
@@ -710,6 +1027,8 @@ export default function JobDetailPage() {
         currentStatus={job.status}
         onSuccess={() => qc.invalidateQueries({ queryKey: ["job", id] })}
       />
+
+      <AssignTechDialog jobId={job.id} open={assignOpen} onClose={() => setAssignOpen(false)} />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>

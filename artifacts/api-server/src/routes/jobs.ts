@@ -17,7 +17,7 @@ async function resolveTenant(slug: string) {
   return t ?? null;
 }
 
-const VALID_STATUSES = ["waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed"] as const;
+const VALID_STATUSES = ["waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered"] as const;
 type JobStatus = typeof VALID_STATUSES[number];
 
 /* ─── GET /jobs ───────────────────────────────────────────────────────────── */
@@ -422,6 +422,35 @@ router.put("/:id", async (req, res) => {
     return res.json({ job });
   } catch (err) {
     console.error("PUT /jobs/:id", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ─── DELETE /jobs/:id ───────────────────────────────────────────────────── */
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const [existing] = await db
+      .select({ id: jobsTable.id })
+      .from(jobsTable)
+      .where(and(eq(jobsTable.id, req.params.id), eq(jobsTable.tenant_id, tenant.id)))
+      .limit(1);
+    if (!existing) return res.status(404).json({ error: "Job not found" });
+
+    await db.delete(jobPhotosTable).where(and(eq(jobPhotosTable.job_id, req.params.id), eq(jobPhotosTable.tenant_id, tenant.id)));
+    await db.delete(jobPartsTable).where(and(eq(jobPartsTable.job_id, req.params.id), eq(jobPartsTable.tenant_id, tenant.id)));
+    await db.delete(jobTimeLogsTable).where(and(eq(jobTimeLogsTable.job_id, req.params.id), eq(jobTimeLogsTable.tenant_id, tenant.id)));
+    await db.delete(jobAssignmentsTable).where(and(eq(jobAssignmentsTable.job_id, req.params.id), eq(jobAssignmentsTable.tenant_id, tenant.id)));
+    await db.delete(jobStatusHistoryTable).where(and(eq(jobStatusHistoryTable.job_id, req.params.id), eq(jobStatusHistoryTable.tenant_id, tenant.id)));
+    await db.delete(jobsTable).where(and(eq(jobsTable.id, req.params.id), eq(jobsTable.tenant_id, tenant.id)));
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("DELETE /jobs/:id", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
