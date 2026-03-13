@@ -62,7 +62,7 @@ router.get("/meta/advisors", async (req, res) => {
         eq(usersTable.tenant_id, tenant.id),
         isNull(usersTable.deleted_at),
         or(
-          eq(usersTable.role, "advisor"),
+          eq(usersTable.role, "service_advisor"),
           eq(usersTable.role, "admin"),
           eq(usersTable.role, "owner"),
         ),
