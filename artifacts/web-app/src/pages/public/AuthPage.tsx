@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
-import { ArrowRight, Mail, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
+import { ArrowRight, Mail, Lock, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react";
+import { authService } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,12 +53,22 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [magicSent, setMagicSent] = useState(false);
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
+    try {
+      const result = await authService.signIn(email, password);
+      const slug = result.user.tenantSlug;
+      window.location.href = slug ? `/dashboard?tenant=${slug}` : "/dashboard";
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Sign in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleMagic = (e: React.FormEvent) => {
@@ -109,6 +120,13 @@ export default function AuthPage() {
                   or sign in with email
                 </span>
               </div>
+
+              {error && (
+                <div className="flex items-start gap-2 rounded-md bg-red-50 border border-red-200 px-3 py-2.5 mb-4 text-sm text-red-700">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
 
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-1.5">
