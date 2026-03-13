@@ -34,9 +34,16 @@ import JobDetailPage  from "@/pages/tenant/JobDetailPage";
 import InvoicesPage       from "@/pages/tenant/InvoicesPage";
 import InvoiceDetailPage  from "@/pages/tenant/InvoiceDetailPage";
 import TeamPage from "@/pages/tenant/TeamPage";
-import SettingsPage from "@/pages/tenant/SettingsPage";
-import SettingsTeamPage from "@/pages/tenant/settings/TeamPage";
-import SettingsShopPage from "@/pages/tenant/settings/ShopPage";
+import SettingsPage          from "@/pages/tenant/SettingsPage";
+import SettingsTeamPage      from "@/pages/tenant/settings/TeamPage";
+import SettingsBusinessPage  from "@/pages/tenant/settings/BusinessPage";
+import SettingsHoursPage     from "@/pages/tenant/settings/HoursPage";
+import SettingsServicesPage  from "@/pages/tenant/settings/ServicesPage";
+import SettingsSalesPage     from "@/pages/tenant/settings/SalesPage";
+import SettingsReportingPage from "@/pages/tenant/settings/ReportingPage";
+import SettingsBillingPage   from "@/pages/tenant/settings/BillingPage";
+import SettingsCommsPage     from "@/pages/tenant/settings/CommsPage";
+import SettingsIntegrationsPage from "@/pages/tenant/settings/IntegrationsPage";
 import AccountSecurityPage from "@/pages/tenant/account/SecurityPage";
 import AccountSessionsPage from "@/pages/tenant/account/SessionsPage";
 import AccountDevicesPage from "@/pages/tenant/account/DevicesPage";
@@ -180,9 +187,16 @@ function AppRouter() {
           {/* Team — top-level section */}
           <Route path="/team" component={TeamPage} />
           {/* Settings hub + sub-pages */}
-          <Route path="/settings" component={SettingsPage} />
-          <Route path="/settings/team" component={SettingsTeamPage} />
-          <Route path="/settings/shop" component={SettingsShopPage} />
+          <Route path="/settings"              component={SettingsPage} />
+          <Route path="/settings/business"     component={SettingsBusinessPage} />
+          <Route path="/settings/hours"        component={SettingsHoursPage} />
+          <Route path="/settings/services"     component={SettingsServicesPage} />
+          <Route path="/settings/team"         component={SettingsTeamPage} />
+          <Route path="/settings/sales"        component={SettingsSalesPage} />
+          <Route path="/settings/reporting"    component={SettingsReportingPage} />
+          <Route path="/settings/billing"      component={SettingsBillingPage} />
+          <Route path="/settings/comms"        component={SettingsCommsPage} />
+          <Route path="/settings/integrations" component={SettingsIntegrationsPage} />
           {/* Account sub-pages */}
           <Route path="/account/security" component={AccountSecurityPage} />
           <Route path="/account/sessions" component={AccountSessionsPage} />

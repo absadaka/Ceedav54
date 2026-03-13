@@ -9,6 +9,7 @@ import quotationsRouter  from "./quotations";
 import jobsRouter        from "./jobs";
 import invoicesRouter    from "./invoices";
 import teamRouter        from "./team";
+import settingsRouter    from "./settings";
 import adminRouter       from "./admin";
 import authRouter        from "./auth";
 
@@ -24,6 +25,7 @@ router.use("/quotations", quotationsRouter);
 router.use("/jobs",       jobsRouter);
 router.use("/invoices",   invoicesRouter);
 router.use("/team",       teamRouter);
+router.use(settingsRouter);
 router.use(adminRouter);
 router.use(authRouter);
 
