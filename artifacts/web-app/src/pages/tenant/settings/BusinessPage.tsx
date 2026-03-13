@@ -9,7 +9,6 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Upload, Save, Globe, Phone, Mail, MapPin, Building2, Instagram, Facebook, Twitter, Linkedin, Youtube } from "lucide-react";
-import SettingsLayout from "@/layouts/SettingsLayout";
 import { cn } from "@/lib/utils";
 
 const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
@@ -118,7 +117,7 @@ export default function BusinessPage() {
 
   if (isLoading) {
     return (
-      <SettingsLayout>
+
         <div className="space-y-5 max-w-2xl">
           <Skeleton className="h-7 w-40" />
           {[1, 2, 3].map((i) => (
@@ -130,12 +129,12 @@ export default function BusinessPage() {
             </div>
           ))}
         </div>
-      </SettingsLayout>
+
     );
   }
 
   return (
-    <SettingsLayout>
+
       <div className="space-y-6 max-w-2xl">
         <div className="flex items-start justify-between">
           <div>
@@ -274,6 +273,6 @@ export default function BusinessPage() {
           </Button>
         </div>
       </div>
-    </SettingsLayout>
+
   );
 }

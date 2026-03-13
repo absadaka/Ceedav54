@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreditCard, Zap, Check, ArrowRight, Receipt, CalendarClock } from "lucide-react";
-import SettingsLayout from "@/layouts/SettingsLayout";
 import { cn } from "@/lib/utils";
 
 const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
@@ -73,7 +72,7 @@ export default function BillingPage() {
   const trialEnd = data?.tenant?.trial_ends_at;
 
   return (
-    <SettingsLayout>
+
       <div className="space-y-6 max-w-3xl">
         <div>
           <h1 className="page-title">Billing & plan</h1>
@@ -212,6 +211,6 @@ export default function BillingPage() {
           </div>
         </div>
       </div>
-    </SettingsLayout>
+
   );
 }

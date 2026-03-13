@@ -7,7 +7,6 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Save, Mail, MessageSquare, Bell, Phone } from "lucide-react";
-import SettingsLayout from "@/layouts/SettingsLayout";
 
 const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -96,7 +95,7 @@ export default function CommsPage() {
 
   if (isLoading) {
     return (
-      <SettingsLayout>
+
         <div className="space-y-5 max-w-2xl">
           <Skeleton className="h-7 w-40" />
           {[1, 2, 3].map((i) => (
@@ -106,12 +105,12 @@ export default function CommsPage() {
             </div>
           ))}
         </div>
-      </SettingsLayout>
+
     );
   }
 
   return (
-    <SettingsLayout>
+
       <div className="space-y-6 max-w-2xl">
         <div className="flex items-start justify-between">
           <div>
@@ -240,6 +239,6 @@ export default function CommsPage() {
           </Button>
         </div>
       </div>
-    </SettingsLayout>
+
   );
 }

@@ -12,7 +12,6 @@ import {
   CreditCard, MessageSquare, Phone, ChevronRight,
   CheckCircle2, AlertCircle, ExternalLink, Plug2,
 } from "lucide-react";
-import SettingsLayout from "@/layouts/SettingsLayout";
 import { cn } from "@/lib/utils";
 
 const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
@@ -276,7 +275,7 @@ export default function IntegrationsPage() {
   const connectedCount = INTEGRATIONS.filter((i) => integrations[i.type]?.enabled).length;
 
   return (
-    <SettingsLayout>
+    <>
       <div className="space-y-6 max-w-2xl">
         <div>
           <h1 className="page-title">Integrations</h1>
@@ -353,6 +352,6 @@ export default function IntegrationsPage() {
           currentConfig={integrations[configuring.type] ?? {}}
         />
       )}
-    </SettingsLayout>
+    </>
   );
 }

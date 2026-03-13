@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
-import SettingsLayout from "@/layouts/SettingsLayout";
 
 const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
 const API = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -94,7 +93,7 @@ export default function SalesPage() {
 
   if (isLoading) {
     return (
-      <SettingsLayout>
+
         <div className="space-y-5 max-w-2xl">
           <Skeleton className="h-7 w-32" />
           {[1, 2].map((i) => (
@@ -104,12 +103,12 @@ export default function SalesPage() {
             </div>
           ))}
         </div>
-      </SettingsLayout>
+
     );
   }
 
   return (
-    <SettingsLayout>
+
       <div className="space-y-6 max-w-2xl">
         <div className="flex items-start justify-between">
           <div>
@@ -203,6 +202,6 @@ export default function SalesPage() {
           </Button>
         </div>
       </div>
-    </SettingsLayout>
+
   );
 }
