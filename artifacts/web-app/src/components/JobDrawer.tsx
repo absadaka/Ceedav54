@@ -194,10 +194,13 @@ export default function JobDrawer({ open, onOpenChange, job, defaultClientId, de
 
           <div className="space-y-1.5">
             <Label>Assign technician</Label>
-            <Select value={form.technician_id} onValueChange={v => set("technician_id", v)}>
+            <Select
+              value={form.technician_id || "__none"}
+              onValueChange={v => set("technician_id", v === "__none" ? "" : v)}
+            >
               <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
+                <SelectItem value="__none">Unassigned</SelectItem>
                 {technicians.map(t => (
                   <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                 ))}
