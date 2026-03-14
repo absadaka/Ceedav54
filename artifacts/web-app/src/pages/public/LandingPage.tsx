@@ -125,8 +125,8 @@ function HeroSection() {
     >
       <div className="relative w-full max-w-[1400px] mx-auto px-6 text-center">
         <h1
-          className="font-black text-gray-950 tracking-tight leading-[0.88] mb-16"
-          style={{ fontSize: "clamp(3.5rem, 10.5vw, 9.5rem)" }}
+          className="font-black text-gray-950 tracking-tight leading-[0.88] mb-16 max-w-4xl mx-auto"
+          style={{ fontSize: "clamp(2.8rem, 7.5vw, 7rem)" }}
         >
           Run Your Auto Workshop Smarter.
         </h1>
