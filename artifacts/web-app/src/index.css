@@ -174,14 +174,13 @@
   }
 
   html {
-    font-size: 14px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
     @apply bg-background text-foreground font-sans;
-    font-size: 0.9286rem; /* 13px */
+    font-size: 0.9286rem;
     line-height: 1.55;
   }
 
