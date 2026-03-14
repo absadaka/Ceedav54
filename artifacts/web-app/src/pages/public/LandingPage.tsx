@@ -532,8 +532,8 @@ export default function LandingPage() {
       <FeaturesSection />
       <JourneySection />
       <TestimonialsSection />
-      <GrowSection />
       <CtaSection />
+      <GrowSection />
     </div>
   );
 }
