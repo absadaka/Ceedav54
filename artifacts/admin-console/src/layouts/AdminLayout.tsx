@@ -94,10 +94,10 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
         collapsed && "justify-center px-2",
       )}>
         {collapsed ? (
-          <span className="text-sidebar-foreground" style={{ fontFamily: "'Dubai', sans-serif", fontSize: 16, fontWeight: 700, lineHeight: 1 }}>c&gt;</span>
+          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 20, fontWeight: 700, lineHeight: 1, color: "#ffffff" }}>c&gt;</span>
         ) : (
           <div className="flex flex-col min-w-0">
-            <span className="text-sidebar-foreground" style={{ fontFamily: "'Dubai', sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1 }}>ceeda&gt;</span>
+            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 24, fontWeight: 700, lineHeight: 1, color: "#ffffff" }}>ceeda&gt;</span>
             <span className="text-[10px] text-sidebar-foreground/60 leading-tight mt-0.5">Platform Admin</span>
           </div>
         )}
