@@ -91,8 +91,8 @@
   --popover-foreground: 221 39% 11%;
   --popover-border:     221 13% 91%;
 
-  /* Primary action — indigo */
-  --primary:            239 84% 67%;     /* #6366F1 — accent-500 */
+  /* Primary action — purple */
+  --primary:            287 68% 68%;     /* #cd77e5 */
   --primary-foreground: 0 0% 100%;       /* white */
 
   /* Secondary — soft gray */
