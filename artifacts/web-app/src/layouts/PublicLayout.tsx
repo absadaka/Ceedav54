@@ -95,7 +95,7 @@ function PublicNav() {
               <Button variant="outline" size="sm" className="w-full">Sign in</Button>
             </Link>
             <Link href="/register" onClick={() => setMenuOpen(false)}>
-              <Button size="sm" className="w-full">Create your shop</Button>
+              <Button size="sm" className="w-full bg-[#cd77e5] border-[#cd77e5]">Create your shop</Button>
             </Link>
           </div>
         </div>
