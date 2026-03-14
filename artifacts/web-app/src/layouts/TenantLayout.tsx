@@ -71,11 +71,11 @@ function SidebarLink({
       <span
         onClick={onClick}
         className={cn(
-          "flex items-center gap-3 rounded-md text-sm font-medium transition-colors cursor-pointer select-none",
+          "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors cursor-pointer select-none",
           collapsed ? "px-2 py-2 justify-center" : "px-3 py-2",
           active
-            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+            ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-primary shadow-sm"
+            : "text-sidebar-foreground/70 hover:bg-black/5 hover:text-sidebar-foreground"
         )}
       >
         <Icon className="w-[18px] h-[18px] shrink-0" />
@@ -139,7 +139,7 @@ function Sidebar({
           <Wrench className="w-[14px] h-[14px] text-white" />
         </div>
         {!collapsed && (
-          <span className="text-[15px] font-semibold text-sidebar-primary-foreground tracking-tight">
+          <span className="text-[15px] font-semibold text-sidebar-foreground tracking-tight">
             CEEDA
           </span>
         )}
@@ -398,7 +398,7 @@ export default function TenantLayout({
                 <div className="w-7 h-7 rounded-[6px] bg-primary flex items-center justify-center shrink-0">
                   <Wrench className="w-[14px] h-[14px] text-white" />
                 </div>
-                <span className="text-[15px] font-semibold text-sidebar-primary-foreground">CEEDA</span>
+                <span className="text-[15px] font-semibold text-sidebar-foreground">CEEDA</span>
               </div>
               <button
                 onClick={() => setMobileOpen(false)}
