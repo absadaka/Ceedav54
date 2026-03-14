@@ -18,14 +18,6 @@ function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: bool
         className="inline-flex items-center leading-none font-bold"
         style={{ fontSize: sz, fontFamily: "'Dubai', sans-serif", lineHeight: 1 }}
       >
-        {/* Pink box containing "c" — full size, same font */}
-        <span
-          className="inline-flex items-center justify-center bg-[#c87dd8] rounded-[5px]"
-          style={{ color: "#0a0a0a", padding: "0.08em 0.12em", lineHeight: 1, marginRight: "0.03em" }}
-        >
-          c
-        </span>
-        {/* "eeda" in Dubai font */}
         <span style={{ color: textColor, lineHeight: 1 }}>eeda</span>
       </span>
     </Link>
