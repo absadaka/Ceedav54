@@ -154,7 +154,7 @@ function PublicFooter() {
         </div>
 
         <div className="mt-12 pt-6 border-t border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-slate-500">© {new Date().getFullYear()} CEEDA Technologies. All rights reserved.</p>
+          <p className="text-xs text-slate-500">© {new Date().getFullYear()} ceeda&gt; Technologies. All rights reserved.</p>
           <div className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
             <p className="text-xs text-slate-500">All systems operational</p>
