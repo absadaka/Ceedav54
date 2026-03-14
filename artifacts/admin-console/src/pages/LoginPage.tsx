@@ -20,7 +20,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="mb-4">
-            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>ceeda&gt;</span>
+            <span className="text-foreground" style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1 }}>ceeda&gt;</span>
           </div>
           <h1 className="text-lg font-semibold text-foreground">Platform Admin</h1>
           <p className="text-sm text-muted-foreground mt-1">Internal access only</p>

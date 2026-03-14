@@ -1,10 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, CreditCard, Flag, UserSearch,
-  Wrench, ChevronLeft, ChevronRight, Bell, LogOut, ChevronDown,
-  AlertTriangle, Activity, LifeBuoy,
+  ChevronLeft, ChevronRight, Bell, LogOut, ChevronDown,
+  AlertTriangle, Activity, LifeBuoy, Sun, Moon,
 } from "lucide-react";
+
+function useTheme() {
+  const [dark, setDark] = useState(() =>
+    typeof window !== "undefined" && localStorage.getItem("admin-theme") === "dark"
+  );
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("admin-theme", dark ? "dark" : "light");
+  }, [dark]);
+  return { dark, toggle: () => setDark((v) => !v) };
+}
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,10 +94,10 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
         collapsed && "justify-center px-2",
       )}>
         {collapsed ? (
-          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 16, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>c&gt;</span>
+          <span className="text-sidebar-foreground" style={{ fontFamily: "'Dubai', sans-serif", fontSize: 16, fontWeight: 700, lineHeight: 1 }}>c&gt;</span>
         ) : (
           <div className="flex flex-col min-w-0">
-            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>ceeda&gt;</span>
+            <span className="text-sidebar-foreground" style={{ fontFamily: "'Dubai', sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1 }}>ceeda&gt;</span>
             <span className="text-[10px] text-sidebar-foreground/60 leading-tight mt-0.5">Platform Admin</span>
           </div>
         )}
@@ -132,7 +143,7 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
   );
 }
 
-function AdminTopBar() {
+function AdminTopBar({ dark, onToggleTheme }: { dark: boolean; onToggleTheme: () => void }) {
   return (
     <header className="h-[52px] flex items-center justify-between px-6 bg-background border-b border-border shrink-0">
       <div className="flex items-center gap-2">
@@ -143,6 +154,15 @@ function AdminTopBar() {
       </div>
 
       <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-8 h-8"
+          aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+          onClick={onToggleTheme}
+        >
+          {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </Button>
         <Button variant="ghost" size="icon" className="w-8 h-8" aria-label="Notifications">
           <Bell className="w-4 h-4" />
         </Button>
@@ -173,12 +193,13 @@ function AdminTopBar() {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const { dark, toggle } = useTheme();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <AdminTopBar />
+        <AdminTopBar dark={dark} onToggleTheme={toggle} />
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-[1280px] mx-auto p-6">{children}</div>
         </main>
