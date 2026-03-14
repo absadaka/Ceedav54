@@ -1,6 +1,7 @@
+import { useRef } from "react";
 import { Link } from "wouter";
 import {
-  ArrowRight, CheckCircle2, ChevronRight, CalendarCheck,
+  ArrowRight, CheckCircle2, ChevronRight, ChevronLeft, CalendarCheck,
   FileText, Wrench, Receipt, MessageSquare, BarChart3,
   Star, TrendingUp, Clock, Shield,
 } from "lucide-react";
@@ -97,6 +98,44 @@ const plans = [
     features: ["Unlimited users", "Everything in Pro", "SSO & custom domain", "Dedicated account manager", "SLA guarantee"],
     cta: "Talk to sales",
     href: "/auth",
+  },
+];
+
+const growStats = [
+  {
+    value: "26%",
+    label: "More clients",
+    body: "Win new customers and keep them coming back with automated reminders and a seamless booking experience.",
+  },
+  {
+    value: "89%",
+    label: "Fewer no-shows",
+    body: "Reduce no-shows and last-minute cancellations by collecting deposits and sending WhatsApp reminders automatically.",
+  },
+  {
+    value: "20%",
+    label: "More revenue",
+    body: "Upsell services during the job and capture add-ons through digital job cards that customers can approve instantly.",
+  },
+  {
+    value: "290%",
+    label: "More online bookings",
+    body: "Your public booking page works 24/7 — capturing appointments while you sleep, weekend or weekday.",
+  },
+  {
+    value: "12%",
+    label: "Higher retention",
+    body: "Customers who receive follow-up messages and service history summaries return more often and spend more.",
+  },
+  {
+    value: "392%",
+    label: "Return on investment",
+    body: "Most workshops cover the full annual cost of CEEDA within the first month through time saved on admin.",
+  },
+  {
+    value: "41%",
+    label: "Booked after hours",
+    body: "Your workshop keeps taking bookings overnight and on weekends through your online booking link.",
   },
 ];
 
@@ -377,6 +416,72 @@ function PricingSection() {
   );
 }
 
+function GrowSection() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  function slide(dir: "left" | "right") {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: dir === "right" ? 320 : -320, behavior: "smooth" });
+  }
+
+  return (
+    <section className="py-20 bg-white border-t border-border">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <div className="mb-10">
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3">
+            Grow Your Business
+          </h2>
+          <p className="text-base text-muted-foreground max-w-xl">
+            At CEEDA, we want to help you grow your workshop, attract new clients and boost revenue.{" "}
+            <Link href="/register" className="text-primary hover:underline font-medium">
+              See how workshops grow with CEEDA →
+            </Link>
+          </p>
+        </div>
+
+        {/* Carousel */}
+        <div className="relative">
+          <div
+            ref={scrollRef}
+            className="flex gap-4 overflow-x-auto scroll-smooth pb-2"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {growStats.map((stat) => (
+              <div
+                key={stat.label}
+                className="min-w-[240px] max-w-[240px] border border-border rounded-xl p-6 flex flex-col gap-3 hover:border-primary/30 hover:shadow-md transition-all duration-200 bg-white shrink-0"
+              >
+                <p className="text-4xl font-bold text-primary leading-none">{stat.value}</p>
+                <p className="text-sm font-semibold text-foreground">{stat.label}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{stat.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Arrows */}
+          <div className="flex items-center gap-2 mt-6">
+            <button
+              onClick={() => slide("left")}
+              className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => slide("right")}
+              className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CtaSection() {
   return (
     <section className="py-24 bg-primary relative overflow-hidden">
@@ -424,6 +529,7 @@ export default function LandingPage() {
       <FeaturesSection />
       <JourneySection />
       <TestimonialsSection />
+      <GrowSection />
       <CtaSection />
     </div>
   );
