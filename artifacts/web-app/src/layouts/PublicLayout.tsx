@@ -110,7 +110,7 @@ function PublicFooter() {
 
   return (
     <footer
-      className="relative bg-[#1a1a1a] bg-cover bg-center"
+      className="relative bg-[#1a1a1a] bg-cover bg-center mt-16"
       style={{ backgroundImage: "url('/footer-bg.png')" }}
     >
       <div className="absolute inset-0 bg-[#1a1a1a]/85" />
