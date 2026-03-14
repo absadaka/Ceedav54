@@ -18,7 +18,7 @@ function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: bool
         className="inline-flex items-center leading-none font-bold"
         style={{ fontSize: sz, fontFamily: "'Dubai', sans-serif", lineHeight: 1 }}
       >
-        <span style={{ color: textColor, lineHeight: 1 }}>eeda</span>
+        <span style={{ color: textColor, lineHeight: 1 }}>ceeda</span>
       </span>
     </Link>
   );
