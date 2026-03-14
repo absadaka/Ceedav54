@@ -208,12 +208,18 @@ function FeaturesSection() {
               </div>
 
               <div className="flex-1 w-full max-w-md lg:max-w-none">
-                <div className={`rounded-2xl border border-border bg-gradient-to-br p-8 h-64 flex items-center justify-center ${
-                  i === 0 ? "from-blue-50 to-indigo-50" :
-                  i === 1 ? "from-violet-50 to-purple-50" :
-                  "from-emerald-50 to-green-50"
-                }`}>
-                  <feature.icon className={`w-24 h-24 ${feature.accent.split(" ")[1]} opacity-30`} />
+                <div className="rounded-2xl border border-border overflow-hidden h-72 lg:h-80">
+                  <img
+                    src={
+                      i === 0
+                        ? "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80"
+                        : i === 1
+                        ? "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?auto=format&fit=crop&w=800&q=80"
+                        : "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=800&q=80"
+                    }
+                    alt={feature.label}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </div>
             </div>
