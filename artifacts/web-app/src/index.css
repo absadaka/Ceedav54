@@ -130,7 +130,7 @@
   --chart-5:            0 84% 60%;       /* red */
 
   /* Tenant app sidebar — flat light gray, darker gray active item */
-  --sidebar:                  220 9% 91%;      /* #e6e8ec light gray */
+  --sidebar:                  0 0% 96%;        /* #f5f5f5 */
   --sidebar-foreground:       220 10% 18%;     /* near-black text */
   --sidebar-border:           220 9% 85%;      /* subtle divider */
   --sidebar-primary:          220 10% 18%;     /* same as foreground */
