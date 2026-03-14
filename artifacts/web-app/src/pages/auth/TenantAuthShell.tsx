@@ -76,7 +76,7 @@ export default function TenantAuthShell({
                 <ArrowLeft className="w-4 h-4" />
                 {backLabel}
               </Link>
-              <span className="text-xs text-muted-foreground/50 font-medium">CEEDA</span>
+              <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 16, fontWeight: 700, lineHeight: 1, color: "#0a0a0a", opacity: 0.4 }}>ceeda&gt;</span>
             </div>
 
             {/* Tenant brand */}
@@ -94,8 +94,8 @@ export default function TenantAuthShell({
         <div className="text-center pb-6 px-6">
           <p className="text-xs text-muted-foreground">
             Secured by{" "}
-            <Link href="/" className="font-medium hover:underline">
-              CEEDA
+            <Link href="/" className="font-medium hover:underline" style={{ fontFamily: "'Dubai', sans-serif", fontWeight: 700 }}>
+              ceeda&gt;
             </Link>{" "}
             · <Link href="#privacy" className="hover:underline">Privacy</Link>
             {" "}· <Link href="#terms" className="hover:underline">Terms</Link>

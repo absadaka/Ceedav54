@@ -106,14 +106,7 @@ export default function AuthImageCarousel({ className }: AuthImageCarouselProps)
       </div>
 
       <div className="absolute top-6 left-6">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20">
-            <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4">
-              <path d="M3 2h2v12H3V2zm8 4H9V2H7v12h2V10h2l2-2-2-2z" fill="white"/>
-            </svg>
-          </div>
-          <span className="text-sm font-semibold text-white">CEEDA</span>
-        </div>
+        <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 1, color: "#ffffff" }}>ceeda&gt;</span>
       </div>
     </div>
   );
