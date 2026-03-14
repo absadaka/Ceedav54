@@ -27,17 +27,6 @@ function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: bool
         </span>
         {/* "eeda" in Dubai font */}
         <span style={{ color: textColor, lineHeight: 1 }}>eeda</span>
-        {/* ">" in Baloo Da 2 */}
-        <span
-          style={{
-            fontFamily: "'Baloo Da 2', cursive",
-            color: textColor,
-            lineHeight: 1,
-            fontWeight: 700,
-          }}
-        >
-          &gt;
-        </span>
       </span>
     </Link>
   );
