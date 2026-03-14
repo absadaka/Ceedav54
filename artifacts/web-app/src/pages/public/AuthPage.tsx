@@ -89,13 +89,8 @@ export default function AuthPage() {
 
           {/* Wordmark */}
           <div className="mb-8">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4">
-                  <path d="M3 2h2v12H3V2zm8 4H9V2H7v12h2V10h2l2-2-2-2z" fill="white"/>
-                </svg>
-              </div>
-              <span className="text-base font-bold text-foreground tracking-tight">CEEDA</span>
+            <div className="mb-6">
+              <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 26, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>ceeda&gt;</span>
             </div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Welcome back</h1>
             <p className="text-sm text-muted-foreground mt-1.5">

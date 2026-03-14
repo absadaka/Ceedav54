@@ -7,6 +7,7 @@ import {
   Menu, X, Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/layouts/PublicLayout";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -135,13 +136,10 @@ function Sidebar({
           collapsed ? "justify-center" : "px-4 gap-2.5"
         )}
       >
-        <div className="w-7 h-7 rounded-[6px] bg-primary flex items-center justify-center shrink-0">
-          <Wrench className="w-[14px] h-[14px] text-white" />
-        </div>
-        {!collapsed && (
-          <span className="text-[15px] font-semibold text-sidebar-foreground tracking-tight">
-            CEEDA
-          </span>
+        {collapsed ? (
+          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>c&gt;</span>
+        ) : (
+          <Logo size="sm" />
         )}
       </div>
 
@@ -415,11 +413,8 @@ export default function TenantLayout({
           <div className="absolute left-0 top-0 h-full w-[220px] shadow-2xl flex flex-col">
             {/* Close button row */}
             <div className="flex items-center justify-between h-[52px] px-4 bg-sidebar border-b border-sidebar-border">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-[6px] bg-primary flex items-center justify-center shrink-0">
-                  <Wrench className="w-[14px] h-[14px] text-white" />
-                </div>
-                <span className="text-[15px] font-semibold text-sidebar-foreground">CEEDA</span>
+              <div className="flex items-center">
+                <Logo size="sm" />
               </div>
               <button
                 onClick={() => setMobileOpen(false)}

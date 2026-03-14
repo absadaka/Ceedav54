@@ -1038,12 +1038,7 @@ export default function RegisterPage() {
         <div className="w-full max-w-[400px]">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-                <Wrench className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-[15px] font-bold text-foreground tracking-tight">CEEDA</span>
-            </div>
+            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 24, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>ceeda&gt;</span>
             <p className="text-sm text-muted-foreground">
               Already a member?{" "}
               <Link href="/auth" className="text-primary font-medium hover:underline">Sign in</Link>
