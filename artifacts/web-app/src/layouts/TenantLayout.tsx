@@ -132,7 +132,7 @@ function Sidebar({
       {/* Logo */}
       <div
         className={cn(
-          "flex items-center h-[72px] shrink-0 border-b border-sidebar-border",
+          "flex items-center h-[52px] shrink-0 border-b border-sidebar-border",
           collapsed ? "justify-center" : "px-4 gap-2.5"
         )}
       >
@@ -144,7 +144,7 @@ function Sidebar({
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-6 px-2 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
         {/* Main */}
         {nav.main.map((item) => (
           <SidebarLink
