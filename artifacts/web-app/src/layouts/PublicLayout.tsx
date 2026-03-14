@@ -10,35 +10,34 @@ const navLinks = [
 ];
 
 function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: boolean }) {
-  if (!light) {
-    // Main page navbar — use the real logo image
-    return (
-      <Link href="/" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
-        <img
-          src="/logo-main.png"
-          alt="ceeda>"
-          className={size === "sm" ? "h-7" : "h-8"}
-          style={{ width: "auto" }}
-        />
-      </Link>
-    );
-  }
-
-  // Footer (light) — text version until footer logo is provided
+  const sz = size === "sm" ? 22 : 26;
+  const textColor = light ? "#ffffff" : "#0a0a0a";
   return (
     <Link href="/" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
       <span
-        className="inline-flex items-center leading-none font-bold text-white"
-        style={{ fontSize: size === "sm" ? 22 : 26, fontFamily: "'Dubai', sans-serif", lineHeight: 1 }}
+        className="inline-flex items-center leading-none font-bold"
+        style={{ fontSize: sz, fontFamily: "'Dubai', sans-serif", lineHeight: 1 }}
       >
+        {/* Pink box containing "c" — full size, same font */}
         <span
           className="inline-flex items-center justify-center bg-[#c87dd8] rounded-[5px]"
           style={{ color: "#0a0a0a", padding: "0.08em 0.12em", lineHeight: 1, marginRight: "0.03em" }}
         >
           c
         </span>
-        <span style={{ lineHeight: 1 }}>eeda</span>
-        <span style={{ fontFamily: "'Baloo Da 2', cursive", lineHeight: 1, fontWeight: 700 }}>&gt;</span>
+        {/* "eeda" in Dubai font */}
+        <span style={{ color: textColor, lineHeight: 1 }}>eeda</span>
+        {/* ">" in Baloo Da 2 */}
+        <span
+          style={{
+            fontFamily: "'Baloo Da 2', cursive",
+            color: textColor,
+            lineHeight: 1,
+            fontWeight: 700,
+          }}
+        >
+          &gt;
+        </span>
       </span>
     </Link>
   );
