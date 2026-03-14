@@ -19,11 +19,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 font-semibold text-foreground mb-4">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-              <Wrench className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl">CEEDA</span>
+          <div className="mb-4">
+            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>ceeda&gt;</span>
           </div>
           <h1 className="text-lg font-semibold text-foreground">Platform Admin</h1>
           <p className="text-sm text-muted-foreground mt-1">Internal access only</p>

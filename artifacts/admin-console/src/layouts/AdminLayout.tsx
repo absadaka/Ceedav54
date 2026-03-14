@@ -82,13 +82,12 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
         "flex items-center h-[52px] px-4 border-b border-sidebar-border gap-2.5",
         collapsed && "justify-center px-2",
       )}>
-        <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0">
-          <Wrench className="w-4 h-4 text-white" />
-        </div>
-        {!collapsed && (
+        {collapsed ? (
+          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 16, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>c&gt;</span>
+        ) : (
           <div className="flex flex-col min-w-0">
-            <span className="text-[13px] font-semibold text-sidebar-accent-foreground leading-tight truncate">CEEDA</span>
-            <span className="text-[10px] text-sidebar-foreground/60 leading-tight">Platform Admin</span>
+            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>ceeda&gt;</span>
+            <span className="text-[10px] text-sidebar-foreground/60 leading-tight mt-0.5">Platform Admin</span>
           </div>
         )}
       </div>
