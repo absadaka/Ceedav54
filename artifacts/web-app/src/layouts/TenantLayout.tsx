@@ -71,7 +71,7 @@ function SidebarLink({
       <span
         onClick={onClick}
         className={cn(
-          "flex items-center gap-3 rounded-lg text-[16px] font-normal transition-colors cursor-pointer select-none",
+          "flex items-center gap-3 rounded-lg text-[15px] font-normal transition-colors cursor-pointer select-none",
           collapsed ? "px-2 py-2.5 justify-center" : "px-3 py-2.5",
           active
             ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
@@ -204,7 +204,7 @@ function Sidebar({
             <Link href={`/${tenantSlug ?? ""}/logout`}>
               <span
                 className={cn(
-                  "flex items-center gap-3 rounded-lg text-[16px] font-normal transition-colors cursor-pointer select-none w-full",
+                  "flex items-center gap-3 rounded-lg text-[15px] font-normal transition-colors cursor-pointer select-none w-full",
                   collapsed ? "px-2 py-2.5 justify-center" : "px-3 py-2.5",
                   "text-sidebar-foreground/75 hover:bg-black/[0.06] hover:text-sidebar-foreground"
                 )}
