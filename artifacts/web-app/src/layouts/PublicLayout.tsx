@@ -10,19 +10,33 @@ const navLinks = [
 ];
 
 function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: boolean }) {
-  const textSize = size === "sm" ? "text-[22px]" : "text-[26px]";
+  const sz = size === "sm" ? 22 : 26;
+  const textColor = light ? "#ffffff" : "#0a0a0a";
   return (
     <Link href="/" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
-      <span className={cn("font-black tracking-tight leading-none inline-flex items-center gap-0", textSize)}>
-        {/* Pink "c" badge — same font size, square padded box */}
+      <span
+        className="inline-flex items-center leading-none font-bold"
+        style={{ fontSize: sz, fontFamily: "'Dubai', sans-serif", lineHeight: 1 }}
+      >
+        {/* Pink box containing "c" — full size, same font */}
         <span
-          className="inline-flex items-center justify-center bg-[#c87dd8] text-gray-950 rounded-[5px] px-[0.13em] py-[0.05em] mr-[0.04em]"
-          style={{ lineHeight: 1 }}
+          className="inline-flex items-center justify-center bg-[#c87dd8] rounded-[5px]"
+          style={{ color: "#0a0a0a", padding: "0.08em 0.12em", lineHeight: 1, marginRight: "0.03em" }}
         >
           c
         </span>
-        <span className={light ? "text-white" : "text-gray-950"} style={{ lineHeight: 1 }}>
-          eeda&gt;
+        {/* "eeda" in Dubai font */}
+        <span style={{ color: textColor, lineHeight: 1 }}>eeda</span>
+        {/* ">" in Baloo Da 2 */}
+        <span
+          style={{
+            fontFamily: "'Baloo Da 2', cursive",
+            color: textColor,
+            lineHeight: 1,
+            fontWeight: 700,
+          }}
+        >
+          &gt;
         </span>
       </span>
     </Link>
