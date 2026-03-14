@@ -109,8 +109,12 @@ function PublicFooter() {
   if (isAuthPage) return null;
 
   return (
-    <footer className="bg-[#0d1b2e]">
-      <div className="max-w-6xl mx-auto px-6 py-14">
+    <footer
+      className="relative bg-[#0d1b2e] bg-cover bg-center"
+      style={{ backgroundImage: "url('/footer-bg.png')" }}
+    >
+      <div className="absolute inset-0 bg-[#0d1b2e]/70" />
+      <div className="relative max-w-6xl mx-auto px-6 py-14">
         <div className="flex flex-col lg:flex-row justify-between gap-12">
           <div className="space-y-4 max-w-xs">
             <Logo light />
