@@ -9,9 +9,9 @@ const navLinks = [
   { label: "Pricing", href: "/pricing" },
 ];
 
-function Logo({ size = "md" }: { size?: "sm" | "md" }) {
+function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: boolean }) {
   return (
-    <Link href="/" className="flex items-center gap-2 font-semibold text-foreground hover:opacity-80 transition-opacity shrink-0">
+    <Link href="/" className={cn("flex items-center gap-2 font-semibold hover:opacity-80 transition-opacity shrink-0", light ? "text-white" : "text-foreground")}>
       <div className={cn(
         "rounded-lg bg-primary flex items-center justify-center",
         size === "sm" ? "w-6 h-6" : "w-7 h-7"
@@ -109,17 +109,17 @@ function PublicFooter() {
   if (isAuthPage) return null;
 
   return (
-    <footer className="border-t border-border bg-white">
+    <footer className="bg-[#0d1b2e]">
       <div className="max-w-6xl mx-auto px-6 py-14">
         <div className="flex flex-col lg:flex-row justify-between gap-12">
           <div className="space-y-4 max-w-xs">
-            <Logo />
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <Logo light />
+            <p className="text-sm text-slate-400 leading-relaxed">
               The workshop management platform built for modern automotive businesses. From check-in to invoice.
             </p>
             <div className="flex items-center gap-3 pt-1">
               {["twitter", "linkedin"].map((s) => (
-                <a key={s} href="#" className="w-8 h-8 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors">
+                <a key={s} href="#" className="w-8 h-8 rounded-md border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors">
                   <span className="text-[10px] font-medium uppercase">{s[0]}</span>
                 </a>
               ))}
@@ -128,31 +128,31 @@ function PublicFooter() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-10 text-sm">
             <div className="space-y-3">
-              <p className="font-semibold text-foreground text-xs uppercase tracking-wider">Product</p>
+              <p className="font-semibold text-slate-300 text-xs uppercase tracking-wider">Product</p>
               {[["Features", "/#features"], ["Pricing", "/pricing"], ["Changelog", "#changelog"], ["Roadmap", "#roadmap"]].map(([label, href]) => (
-                <Link key={`product-${label}`} href={href} className="block text-muted-foreground hover:text-foreground transition-colors">{label}</Link>
+                <Link key={`product-${label}`} href={href} className="block text-slate-400 hover:text-white transition-colors">{label}</Link>
               ))}
             </div>
             <div className="space-y-3">
-              <p className="font-semibold text-foreground text-xs uppercase tracking-wider">Company</p>
+              <p className="font-semibold text-slate-300 text-xs uppercase tracking-wider">Company</p>
               {[["About", "#about"], ["Blog", "#blog"], ["Careers", "#careers"], ["Contact", "#contact"]].map(([label, href]) => (
-                <Link key={`company-${label}`} href={href} className="block text-muted-foreground hover:text-foreground transition-colors">{label}</Link>
+                <Link key={`company-${label}`} href={href} className="block text-slate-400 hover:text-white transition-colors">{label}</Link>
               ))}
             </div>
             <div className="space-y-3">
-              <p className="font-semibold text-foreground text-xs uppercase tracking-wider">Legal</p>
+              <p className="font-semibold text-slate-300 text-xs uppercase tracking-wider">Legal</p>
               {[["Privacy", "#privacy"], ["Terms", "#terms"], ["Security", "#security"], ["Cookies", "#cookies"]].map(([label, href]) => (
-                <Link key={`legal-${label}`} href={href} className="block text-muted-foreground hover:text-foreground transition-colors">{label}</Link>
+                <Link key={`legal-${label}`} href={href} className="block text-slate-400 hover:text-white transition-colors">{label}</Link>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} CEEDA Technologies. All rights reserved.</p>
+        <div className="mt-12 pt-6 border-t border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-xs text-slate-500">© {new Date().getFullYear()} CEEDA Technologies. All rights reserved.</p>
           <div className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            <p className="text-xs text-muted-foreground">All systems operational</p>
+            <p className="text-xs text-slate-500">All systems operational</p>
           </div>
         </div>
       </div>
