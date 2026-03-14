@@ -143,7 +143,7 @@ const growStats = [
 
 function AnnouncementBanner() {
   return (
-    <div className="bg-primary text-white text-center py-2.5 px-4 text-sm font-medium flex items-center justify-center gap-2">
+    <div className="text-white text-center py-2.5 px-4 text-sm font-medium flex items-center justify-center gap-2 bg-[#000000]">
       <span className="hidden sm:inline">New: WhatsApp invoice delivery with instant payment collection.</span>
       <span className="sm:hidden">New: WhatsApp invoicing →</span>
       <Link href="/pricing" className="underline underline-offset-2 font-semibold inline-flex items-center gap-1 opacity-90 hover:opacity-100">
