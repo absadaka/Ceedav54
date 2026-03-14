@@ -90,7 +90,7 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
     >
       {/* Logo */}
       <div className={cn(
-        "flex items-center h-[52px] px-4 border-b border-sidebar-border gap-2.5",
+        "flex items-center h-[72px] px-4 border-b border-sidebar-border gap-2.5",
         collapsed && "justify-center px-2",
       )}>
         {collapsed ? (
@@ -104,7 +104,7 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+      <nav className="flex-1 overflow-y-auto py-6 px-2 space-y-4">
         {adminSections.map((section, idx) => (
           <div key={idx} className="space-y-0.5">
             {section.title && !collapsed && (
