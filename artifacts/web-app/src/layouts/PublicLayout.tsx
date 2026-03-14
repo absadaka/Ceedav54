@@ -111,11 +111,9 @@ function PublicFooter() {
 
   return (
     <footer
-      className="relative bg-[#1a1a1a] bg-cover bg-center mt-16"
-      style={{ backgroundImage: "url('/footer-bg.png')" }}
+      className="relative bg-[#000000] mt-16"
     >
-      <div className="absolute inset-0 bg-[#1a1a1a]/85" />
-      <div className="relative max-w-6xl mx-auto px-6 py-14 border-t-[#000000] border-r-[#000000] border-b-[#000000] border-l-[#000000]">
+      <div className="max-w-6xl mx-auto px-6 py-14">
         <div className="flex flex-col lg:flex-row justify-between gap-12">
           <div className="space-y-4 max-w-xs">
             <Logo light />
