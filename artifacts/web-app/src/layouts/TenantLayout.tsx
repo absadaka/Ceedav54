@@ -71,11 +71,11 @@ function SidebarLink({
       <span
         onClick={onClick}
         className={cn(
-          "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors cursor-pointer select-none",
-          collapsed ? "px-2 py-2 justify-center" : "px-3 py-2",
+          "flex items-center gap-3 rounded-lg text-[15px] font-normal transition-colors cursor-pointer select-none",
+          collapsed ? "px-2 py-2.5 justify-center" : "px-3 py-2.5",
           active
-            ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-primary shadow-sm"
-            : "text-sidebar-foreground/70 hover:bg-black/5 hover:text-sidebar-foreground"
+            ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-primary shadow-sm font-medium"
+            : "text-sidebar-foreground/75 hover:bg-black/5 hover:text-sidebar-foreground"
         )}
       >
         <Icon className="w-[18px] h-[18px] shrink-0" />
@@ -162,7 +162,7 @@ function Sidebar({
         <div className={cn("pt-4 pb-1")}>
           {collapsed
             ? <div className="border-t border-sidebar-border mx-1" />
-            : <p className="px-2 pb-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">Workspace</p>
+            : <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">Workspace</p>
           }
         </div>
         {nav.workspace.map((item) => (
@@ -181,7 +181,7 @@ function Sidebar({
             <div className={cn("pt-4 pb-1")}>
               {collapsed
                 ? <div className="border-t border-sidebar-border mx-1" />
-                : <p className="px-2 pb-0.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">Admin</p>
+                : <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">Admin</p>
               }
             </div>
             {nav.admin.map((item) => (
