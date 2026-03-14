@@ -484,8 +484,11 @@ function GrowSection() {
 
 function CtaSection() {
   return (
-    <section className="py-24 bg-primary relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_120%,rgba(255,255,255,0.1),transparent)]" />
+    <section
+      className="py-24 relative overflow-hidden bg-cover bg-center"
+      style={{ backgroundImage: "url('/cta-bg.webp')" }}
+    >
+      <div className="absolute inset-0 bg-black/40" />
       <div className="relative max-w-3xl mx-auto px-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-6">
           {[Clock, Shield, TrendingUp].map((Icon, i) => (
