@@ -74,8 +74,8 @@ function SidebarLink({
           "flex items-center gap-3 rounded-lg text-[15px] font-normal transition-colors cursor-pointer select-none",
           collapsed ? "px-2 py-2.5 justify-center" : "px-3 py-2.5",
           active
-            ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-primary shadow-sm font-medium"
-            : "text-sidebar-foreground/75 hover:bg-black/5 hover:text-sidebar-foreground"
+            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+            : "text-sidebar-foreground/75 hover:bg-black/[0.06] hover:text-sidebar-foreground"
         )}
       >
         <Icon className="w-[18px] h-[18px] shrink-0" />
