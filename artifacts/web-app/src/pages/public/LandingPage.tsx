@@ -424,7 +424,6 @@ export default function LandingPage() {
       <FeaturesSection />
       <JourneySection />
       <TestimonialsSection />
-      <PricingSection />
       <CtaSection />
     </div>
   );
