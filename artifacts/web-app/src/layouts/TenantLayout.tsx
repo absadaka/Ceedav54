@@ -197,6 +197,27 @@ function Sidebar({
         )}
       </nav>
 
+      {/* Sign out */}
+      <div className="shrink-0 px-2 pb-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link href={`/${tenantSlug ?? ""}/logout`}>
+              <span
+                className={cn(
+                  "flex items-center gap-3 rounded-lg text-[15px] font-normal transition-colors cursor-pointer select-none w-full",
+                  collapsed ? "px-2 py-2.5 justify-center" : "px-3 py-2.5",
+                  "text-sidebar-foreground/75 hover:bg-black/[0.06] hover:text-sidebar-foreground"
+                )}
+              >
+                <LogOut className="w-[18px] h-[18px] shrink-0" />
+                {!collapsed && <span className="truncate leading-none">Sign out</span>}
+              </span>
+            </Link>
+          </TooltipTrigger>
+          {collapsed && <TooltipContent side="right">Sign out</TooltipContent>}
+        </Tooltip>
+      </div>
+
       {/* Desktop collapse toggle */}
       <div className="shrink-0 p-2 border-t border-sidebar-border hidden md:flex justify-center">
         <button
