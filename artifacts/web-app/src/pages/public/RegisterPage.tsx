@@ -1038,7 +1038,9 @@ export default function RegisterPage() {
         <div className="w-full max-w-[400px]">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 24, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>ceeda&gt;</span>
+            <Link href="/" className="hover:opacity-75 transition-opacity">
+              <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 24, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>ceeda&gt;</span>
+            </Link>
             <p className="text-sm text-muted-foreground">
               Already a member?{" "}
               <Link href="/auth" className="text-primary font-medium hover:underline">Sign in</Link>
