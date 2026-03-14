@@ -63,7 +63,7 @@ function PublicNav() {
             </Button>
           </Link>
           <Link href="/register">
-            <Button size="sm" className="shadow-sm">
+            <Button size="sm" className="shadow-sm bg-[#cd77e5]">
               Create your shop
             </Button>
           </Link>
