@@ -10,15 +10,20 @@ const navLinks = [
 ];
 
 function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: boolean }) {
-  const textSize = size === "sm" ? "text-xl" : "text-2xl";
-  const boxSize = size === "sm" ? "w-[1.15em] h-[1.15em] text-[0.9em]" : "w-[1.15em] h-[1.15em] text-[0.9em]";
+  const textSize = size === "sm" ? "text-[22px]" : "text-[26px]";
   return (
     <Link href="/" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
-      <span className={cn("font-black tracking-tight leading-none flex items-center", textSize, light ? "text-white" : "text-gray-950")}>
-        <span className={cn("inline-flex items-center justify-center rounded-[0.22em] bg-[#c87dd8] text-gray-950 mr-[0.03em]", boxSize)}>
+      <span className={cn("font-black tracking-tight leading-none inline-flex items-center gap-0", textSize)}>
+        {/* Pink "c" badge — same font size, square padded box */}
+        <span
+          className="inline-flex items-center justify-center bg-[#c87dd8] text-gray-950 rounded-[5px] px-[0.13em] py-[0.05em] mr-[0.04em]"
+          style={{ lineHeight: 1 }}
+        >
           c
         </span>
-        eeda&gt;
+        <span className={light ? "text-white" : "text-gray-950"} style={{ lineHeight: 1 }}>
+          eeda&gt;
+        </span>
       </span>
     </Link>
   );
