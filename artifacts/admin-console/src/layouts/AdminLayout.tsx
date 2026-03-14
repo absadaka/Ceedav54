@@ -145,7 +145,7 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
 
 function AdminTopBar({ dark, onToggleTheme }: { dark: boolean; onToggleTheme: () => void }) {
   return (
-    <header className="h-[52px] flex items-center justify-between px-6 bg-background border-b border-border shrink-0">
+    <header className="h-[72px] flex items-center justify-between px-6 bg-background border-b border-border shrink-0">
       <div className="flex items-center gap-2">
         <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
           <AlertTriangle className="w-3 h-3" />
