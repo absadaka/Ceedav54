@@ -153,6 +153,15 @@
   --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
+/* Sidebar-only light theme — applied to <aside> only */
+.sidebar-light {
+  --sidebar:                   0 0% 98%;
+  --sidebar-foreground:        221 39% 11%;
+  --sidebar-border:            221 13% 88%;
+  --sidebar-accent:            220 14% 94%;
+  --sidebar-accent-foreground: 221 39% 11%;
+}
+
 .dark {
   --button-outline: rgba(255, 255, 255, 0.10);
   --badge-outline: rgba(255, 255, 255, 0.05);

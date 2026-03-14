@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, CreditCard, Flag, UserSearch,
@@ -6,15 +6,16 @@ import {
   AlertTriangle, Activity, LifeBuoy, Sun, Moon,
 } from "lucide-react";
 
-function useTheme() {
-  const [dark, setDark] = useState(() =>
-    typeof window !== "undefined" && localStorage.getItem("admin-theme") === "dark"
+function useSidebarTheme() {
+  const [light, setLight] = useState(() =>
+    typeof window !== "undefined" && localStorage.getItem("admin-sidebar") === "light"
   );
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-    localStorage.setItem("admin-theme", dark ? "dark" : "light");
-  }, [dark]);
-  return { dark, toggle: () => setDark((v) => !v) };
+  const toggle = () => setLight((v) => {
+    const next = !v;
+    localStorage.setItem("admin-sidebar", next ? "light" : "dark");
+    return next;
+  });
+  return { light, toggle };
 }
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ function SidebarLink({ item, collapsed, active }: {
   );
 }
 
-function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+function AdminSidebar({ collapsed, onToggle, light }: { collapsed: boolean; onToggle: () => void; light: boolean }) {
   const [location] = useLocation();
   const isActive = (href: string) => location === href || (href !== "/dashboard" && location.startsWith(href));
 
@@ -86,6 +87,7 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
       className={cn(
         "flex flex-col h-full bg-sidebar border-r border-sidebar-border transition-all duration-200 shrink-0",
         collapsed ? "w-14" : "w-60",
+        light && "sidebar-light",
       )}
     >
       {/* Logo */}
@@ -94,10 +96,10 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
         collapsed && "justify-center px-2",
       )}>
         {collapsed ? (
-          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 26, fontWeight: 700, lineHeight: 1, color: "#ffffff" }}>c&gt;</span>
+          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 26, fontWeight: 700, lineHeight: 1, color: light ? "#0a0a0a" : "#ffffff" }}>c&gt;</span>
         ) : (
           <div className="flex flex-col min-w-0">
-            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 32, fontWeight: 700, lineHeight: 1, color: "#ffffff" }}>ceeda&gt;</span>
+            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 32, fontWeight: 700, lineHeight: 1, color: light ? "#0a0a0a" : "#ffffff" }}>ceeda&gt;</span>
             <span className="text-[10px] text-sidebar-foreground/60 leading-tight mt-0.5">Platform Admin</span>
           </div>
         )}
@@ -143,7 +145,7 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
   );
 }
 
-function AdminTopBar({ dark, onToggleTheme }: { dark: boolean; onToggleTheme: () => void }) {
+function AdminTopBar({ sidebarLight, onToggleTheme }: { sidebarLight: boolean; onToggleTheme: () => void }) {
   return (
     <header className="h-[72px] flex items-center justify-between px-6 bg-background border-b border-border shrink-0">
       <div className="flex items-center gap-2">
@@ -158,10 +160,10 @@ function AdminTopBar({ dark, onToggleTheme }: { dark: boolean; onToggleTheme: ()
           variant="ghost"
           size="icon"
           className="w-8 h-8"
-          aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label={sidebarLight ? "Switch to dark sidebar" : "Switch to light sidebar"}
           onClick={onToggleTheme}
         >
-          {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {sidebarLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
         </Button>
         <Button variant="ghost" size="icon" className="w-8 h-8" aria-label="Notifications">
           <Bell className="w-4 h-4" />
@@ -193,13 +195,13 @@ function AdminTopBar({ dark, onToggleTheme }: { dark: boolean; onToggleTheme: ()
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
-  const { dark, toggle } = useTheme();
+  const { light, toggle } = useSidebarTheme();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+      <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} light={light} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <AdminTopBar dark={dark} onToggleTheme={toggle} />
+        <AdminTopBar sidebarLight={light} onToggleTheme={toggle} />
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-[1280px] mx-auto p-6">{children}</div>
         </main>
