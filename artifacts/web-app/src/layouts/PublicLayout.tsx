@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, Wrench, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,15 +10,16 @@ const navLinks = [
 ];
 
 function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: boolean }) {
+  const textSize = size === "sm" ? "text-xl" : "text-2xl";
+  const boxSize = size === "sm" ? "w-[1.15em] h-[1.15em] text-[0.9em]" : "w-[1.15em] h-[1.15em] text-[0.9em]";
   return (
-    <Link href="/" className={cn("flex items-center gap-2 font-semibold hover:opacity-80 transition-opacity shrink-0", light ? "text-white" : "text-foreground")}>
-      <div className={cn(
-        "rounded-lg bg-primary flex items-center justify-center",
-        size === "sm" ? "w-6 h-6" : "w-7 h-7"
-      )}>
-        <Wrench className={cn("text-white", size === "sm" ? "w-3.5 h-3.5" : "w-4 h-4")} />
-      </div>
-      <span className={cn("tracking-tight font-bold", size === "sm" ? "text-sm" : "text-[15px]")}>CEEDA</span>
+    <Link href="/" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
+      <span className={cn("font-black tracking-tight leading-none flex items-center", textSize, light ? "text-white" : "text-gray-950")}>
+        <span className={cn("inline-flex items-center justify-center rounded-[0.22em] bg-[#c87dd8] text-gray-950 mr-[0.03em]", boxSize)}>
+          c
+        </span>
+        eeda&gt;
+      </span>
     </Link>
   );
 }
