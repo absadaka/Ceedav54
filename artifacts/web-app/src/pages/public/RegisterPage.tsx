@@ -338,12 +338,36 @@ function Step1Account({
 }) {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleEmailChange = (v: string) => {
+    setEmail(v);
+    if (emailError) setEmailError("");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
     setLoading(true);
-    setTimeout(() => { setLoading(false); onNext(); }, 300);
+    setEmailError("");
+    try {
+      const res = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!data.available) {
+        setEmailError("An account with this email already exists. Please sign in instead.");
+        setLoading(false);
+        return;
+      }
+      onNext();
+    } catch {
+      toast.error("Could not verify email. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -380,10 +404,17 @@ function Step1Account({
         <WizardField label="Email address">
           <Input
             type="email" placeholder="you@workshop.com" value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-12 rounded-xl border-gray-200 text-base"
+            onChange={(e) => handleEmailChange(e.target.value)}
+            className={cn("h-12 rounded-xl text-base", emailError ? "border-red-400 focus-visible:ring-red-300" : "border-gray-200")}
             autoComplete="email" required
           />
+          {emailError && (
+            <p className="text-sm text-red-500 mt-1 flex items-center gap-1.5">
+              <span className="inline-block w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">!</span>
+              {emailError}{" "}
+              <Link href="/auth" className="underline font-medium text-red-600 hover:text-red-700">Sign in</Link>
+            </p>
+          )}
         </WizardField>
 
         <WizardField label="Password">
