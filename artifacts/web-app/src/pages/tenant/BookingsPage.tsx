@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import {
   CalendarCheck, Plus, Search, Calendar, Clock,
   User, Car, ChevronRight, MoreHorizontal, CheckCircle2,
-  XCircle, RefreshCw, List, ChevronLeft,
+  RefreshCw, List, ChevronLeft,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
@@ -25,13 +25,9 @@ const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_META: Record<string, { label: string; color: string; dot: string }> = {
-  pending:     { label: "Pending",     color: "bg-yellow-100 text-yellow-800 border-yellow-200", dot: "bg-yellow-400" },
-  confirmed:   { label: "Confirmed",   color: "bg-blue-100 text-blue-800 border-blue-200",       dot: "bg-blue-400" },
-  checked_in:  { label: "Checked In",  color: "bg-indigo-100 text-indigo-800 border-indigo-200", dot: "bg-indigo-400" },
-  in_progress: { label: "In Progress", color: "bg-violet-100 text-violet-800 border-violet-200", dot: "bg-violet-400" },
-  completed:   { label: "Completed",   color: "bg-green-100 text-green-800 border-green-200",    dot: "bg-green-500" },
-  cancelled:   { label: "Cancelled",   color: "bg-red-100 text-red-800 border-red-200",          dot: "bg-red-400" },
-  no_show:     { label: "No-show",     color: "bg-gray-100 text-gray-600 border-gray-200",       dot: "bg-gray-400" },
+  pending:    { label: "Pending",    color: "bg-yellow-100 text-yellow-800 border-yellow-200", dot: "bg-yellow-400" },
+  confirmed:  { label: "Confirmed",  color: "bg-blue-100 text-blue-800 border-blue-200",       dot: "bg-blue-400" },
+  checked_in: { label: "Checked In", color: "bg-indigo-100 text-indigo-800 border-indigo-200", dot: "bg-indigo-400" },
 };
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -283,11 +279,10 @@ export default function BookingsPage() {
       </div>
 
       {/* Stat strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Today · Pending"     value={sumFor("pending")}     color="text-yellow-600" />
-        <StatCard label="Today · Confirmed"   value={sumFor("confirmed")}   color="text-blue-600" />
-        <StatCard label="Today · In Progress" value={sumFor("in_progress")} color="text-violet-600" />
-        <StatCard label="Today · Completed"   value={sumFor("completed")}   color="text-green-600" />
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard label="Today · Pending"    value={sumFor("pending")}    color="text-yellow-600" />
+        <StatCard label="Today · Confirmed"  value={sumFor("confirmed")}  color="text-blue-600" />
+        <StatCard label="Today · Checked In" value={sumFor("checked_in")} color="text-indigo-600" />
       </div>
 
       {/* Toolbar */}
@@ -457,33 +452,16 @@ export default function BookingsPage() {
                               <DropdownMenuItem onClick={() => { setEditing(row); setDrawerOpen(true); }}>
                                 Edit booking
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {row.status === "pending" && (
-                                <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "confirmed" })}>
-                                  <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-blue-600" />Confirm
-                                </DropdownMenuItem>
-                              )}
-                              {(row.status === "confirmed" || row.status === "pending") && (
-                                <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "checked_in" })}>
-                                  Check in
-                                </DropdownMenuItem>
-                              )}
-                              {row.status === "checked_in" && (
-                                <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "in_progress" })}>
-                                  <RefreshCw className="w-3.5 h-3.5 mr-2 text-violet-600" />Start service
-                                </DropdownMenuItem>
-                              )}
-                              {!["completed", "cancelled", "no_show"].includes(row.status) && (
+                              {(row.status === "pending" || row.status === "confirmed") && (
                                 <>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "completed" })}>
-                                    <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-green-600" />Mark completed
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "cancelled" })} className="text-red-600">
-                                    <XCircle className="w-3.5 h-3.5 mr-2" />Cancel
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "no_show" })} className="text-muted-foreground">
-                                    No-show
+                                  {row.status === "pending" && (
+                                    <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "confirmed" })}>
+                                      <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-blue-600" />Confirm
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "checked_in" })}>
+                                    <RefreshCw className="w-3.5 h-3.5 mr-2 text-indigo-600" />Check in
                                   </DropdownMenuItem>
                                 </>
                               )}

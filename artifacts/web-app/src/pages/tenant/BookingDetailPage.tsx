@@ -21,13 +21,9 @@ const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_META: Record<string, { label: string; color: string; next: string[] }> = {
-  pending:    { label: "Pending",     color: "bg-yellow-100 text-yellow-800 border-yellow-200", next: ["confirmed", "checked_in", "cancelled", "no_show"] },
-  confirmed:  { label: "Confirmed",   color: "bg-blue-100 text-blue-800 border-blue-200",       next: ["checked_in", "cancelled", "no_show"] },
-  checked_in: { label: "Checked In",  color: "bg-indigo-100 text-indigo-800 border-indigo-200", next: ["in_progress", "cancelled"] },
-  in_progress:{ label: "In Progress", color: "bg-violet-100 text-violet-800 border-violet-200", next: ["completed"] },
-  completed:  { label: "Completed",   color: "bg-green-100 text-green-800 border-green-200",    next: [] },
-  cancelled:  { label: "Cancelled",   color: "bg-red-100 text-red-800 border-red-200",          next: [] },
-  no_show:    { label: "No-show",     color: "bg-gray-100 text-gray-600 border-gray-200",       next: [] },
+  pending:    { label: "Pending",    color: "bg-yellow-100 text-yellow-800 border-yellow-200", next: ["confirmed", "checked_in"] },
+  confirmed:  { label: "Confirmed",  color: "bg-blue-100 text-blue-800 border-blue-200",       next: ["checked_in"] },
+  checked_in: { label: "Checked In", color: "bg-indigo-100 text-indigo-800 border-indigo-200", next: [] },
 };
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -70,28 +66,23 @@ export default function BookingDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       }).then(r => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["booking", id] }); qc.invalidateQueries({ queryKey: ["bookings"] }); toast.success("Status updated"); },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["booking", id] });
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
+      if (data.job) {
+        toast.success(`Checked in · Job ${data.job.ref} created`);
+        navigate(`/jobs/${data.job.id}?tenant=${TENANT}`);
+      } else {
+        toast.success("Status updated");
+      }
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
   const deleteBk = useMutation({
     mutationFn: () => fetch(`${API}/api/bookings/${id}?tenant=${TENANT}`, { method: "DELETE" }).then(r => r.json()),
     onSuccess: () => { toast.success("Booking deleted"); navigate("/bookings"); },
-  });
-
-  const startJob = useMutation({
-    mutationFn: () =>
-      fetch(`${API}/api/bookings/${id}/start-job?tenant=${TENANT}`, { method: "POST" })
-        .then(r => r.json().then(d => ({ ok: r.ok, ...d }))),
-    onSuccess: (data) => {
-      if (!data.ok) { toast.error(data.error ?? "Failed to start job"); return; }
-      toast.success(`Job ${data.job?.ref} created`);
-      qc.invalidateQueries({ queryKey: ["booking", id] });
-      qc.invalidateQueries({ queryKey: ["bookings"] });
-      qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
-      navigate(`/jobs/${data.job.id}?tenant=${TENANT}`);
-    },
-    onError: (e: any) => toast.error(e.message),
   });
 
   if (isLoading) {
@@ -145,10 +136,10 @@ export default function BookingDetailPage() {
           )}
           {nextSteps.includes("checked_in") && (
             <Button size="sm" className="gap-1.5" onClick={() => transition.mutate("checked_in")} disabled={transition.isPending}>
-              Check in
+              <RefreshCw className="w-3.5 h-3.5" />Check in
             </Button>
           )}
-          {bk.job_id ? (
+          {bk.job_id && (
             <Button
               size="sm"
               variant="outline"
@@ -156,23 +147,6 @@ export default function BookingDetailPage() {
               onClick={() => navigate(`/jobs/${bk.job_id}?tenant=${TENANT}`)}
             >
               <ExternalLink className="w-3.5 h-3.5" />View job card
-            </Button>
-          ) : nextSteps.includes("in_progress") && (
-            <Button
-              size="sm"
-              className="gap-1.5 bg-violet-600 hover:bg-violet-700"
-              onClick={() => startJob.mutate()}
-              disabled={startJob.isPending || transition.isPending}
-            >
-              {bk.booking_type === "inspection"
-                ? <><ClipboardList className="w-3.5 h-3.5" />Start inspection</>
-                : <><Wrench className="w-3.5 h-3.5" />Start service</>
-              }
-            </Button>
-          )}
-          {nextSteps.includes("completed") && (
-            <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700" onClick={() => transition.mutate("completed")} disabled={transition.isPending}>
-              <CheckCircle2 className="w-3.5 h-3.5" />Complete
             </Button>
           )}
 
@@ -189,13 +163,9 @@ export default function BookingDetailPage() {
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-[11px] text-muted-foreground font-medium py-1">Change status</DropdownMenuLabel>
               {([
-                { key: "pending",     label: "Pending",     cls: "text-yellow-700" },
-                { key: "confirmed",   label: "Confirmed",   cls: "text-blue-700"   },
-                { key: "checked_in",  label: "Checked In",  cls: "text-indigo-700" },
-                { key: "in_progress", label: "In Progress", cls: "text-violet-700" },
-                { key: "completed",   label: "Completed",   cls: "text-green-700"  },
-                { key: "cancelled",   label: "Cancelled",   cls: "text-red-600"    },
-                { key: "no_show",     label: "No-show",     cls: "text-muted-foreground" },
+                { key: "pending",    label: "Pending",    cls: "text-yellow-700" },
+                { key: "confirmed",  label: "Confirmed",  cls: "text-blue-700"   },
+                { key: "checked_in", label: "Checked In", cls: "text-indigo-700" },
               ] as const).filter(s => s.key !== bk.status).map(s => (
                 <DropdownMenuItem
                   key={s.key}
@@ -329,7 +299,7 @@ export default function BookingDetailPage() {
         <div className="flex items-center gap-1 flex-wrap">
           {Object.entries(STATUS_META).map(([s, m], i, arr) => {
             const isCurrent = s === bk.status;
-            const isPast    = Object.keys(STATUS_META).indexOf(bk.status) > i && !["cancelled", "no_show"].includes(bk.status);
+            const isPast    = Object.keys(STATUS_META).indexOf(bk.status) > i;
             return (
               <div key={s} className="flex items-center gap-1">
                 <span className={`text-xs px-2 py-1 rounded-full border font-medium ${
