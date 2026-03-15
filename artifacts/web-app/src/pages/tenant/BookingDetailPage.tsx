@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, CalendarCheck, Edit, User, Car, Clock, Calendar,
   CheckCircle2, XCircle, RefreshCw, ChevronRight, FileText, MoreHorizontal,
+  Wrench, ClipboardList,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,6 +79,21 @@ export default function BookingDetailPage() {
     onSuccess: () => { toast.success("Booking deleted"); navigate("/bookings"); },
   });
 
+  const startJob = useMutation({
+    mutationFn: () =>
+      fetch(`${API}/api/bookings/${id}/start-job?tenant=${TENANT}`, { method: "POST" })
+        .then(r => r.json().then(d => ({ ok: r.ok, ...d }))),
+    onSuccess: (data) => {
+      if (!data.ok) { toast.error(data.error ?? "Failed to start job"); return; }
+      toast.success(`Job ${data.job?.ref} created`);
+      qc.invalidateQueries({ queryKey: ["booking", id] });
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
+      navigate(`/jobs/${data.job.id}`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-5">
@@ -133,8 +149,16 @@ export default function BookingDetailPage() {
             </Button>
           )}
           {nextSteps.includes("in_progress") && (
-            <Button size="sm" className="gap-1.5 bg-violet-600 hover:bg-violet-700" onClick={() => transition.mutate("in_progress")} disabled={transition.isPending}>
-              <RefreshCw className="w-3.5 h-3.5" />Start service
+            <Button
+              size="sm"
+              className="gap-1.5 bg-violet-600 hover:bg-violet-700"
+              onClick={() => startJob.mutate()}
+              disabled={startJob.isPending || transition.isPending}
+            >
+              {bk.booking_type === "inspection"
+                ? <><ClipboardList className="w-3.5 h-3.5" />Start inspection</>
+                : <><Wrench className="w-3.5 h-3.5" />Start service</>
+              }
             </Button>
           )}
           {nextSteps.includes("completed") && (

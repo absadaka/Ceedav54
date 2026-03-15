@@ -32,8 +32,9 @@ router.get("/", async (req, res) => {
     const limit  = Math.min(100, parseInt((req.query.limit as string) ?? "50"));
     const offset = (page - 1) * limit;
     const q      = ((req.query.q as string) ?? "").trim();
-    const status = req.query.status as string | undefined;
-    const techId = req.query.technician_id as string | undefined;
+    const status   = req.query.status as string | undefined;
+    const techId   = req.query.technician_id as string | undefined;
+    const jobType  = req.query.job_type as string | undefined;
 
     const advisorAlias = alias(usersTable, "adv");
     const techAlias    = alias(usersTable, "tech");
@@ -48,6 +49,9 @@ router.get("/", async (req, res) => {
     }
     if (techId) {
       conditions.push(eq(jobsTable.technician_id, techId));
+    }
+    if (jobType === "service" || jobType === "inspection") {
+      conditions.push(eq(jobsTable.job_type, jobType));
     }
     if (q) {
       conditions.push(
@@ -68,6 +72,7 @@ router.get("/", async (req, res) => {
           id:             jobsTable.id,
           ref:            jobsTable.ref,
           seq:            jobsTable.seq,
+          job_type:       jobsTable.job_type,
           status:         jobsTable.status,
           priority:       jobsTable.priority,
           bay:            jobsTable.bay,
@@ -126,17 +131,22 @@ router.get("/", async (req, res) => {
 
 router.get("/kanban", async (req, res) => {
   try {
-    const slug   = (req.query.tenant as string) ?? "demo-workshop";
-    const tenant = await resolveTenant(slug);
+    const slug     = (req.query.tenant   as string) ?? "demo-workshop";
+    const jobType  = (req.query.job_type as string) ?? "";
+    const tenant   = await resolveTenant(slug);
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
     const advisorAlias = alias(usersTable, "adv");
     const techAlias    = alias(usersTable, "tech");
 
+    const conditions = [eq(jobsTable.tenant_id, tenant.id)];
+    if (jobType) conditions.push(eq(jobsTable.job_type, jobType));
+
     const jobs = await db
       .select({
         id:           jobsTable.id,
         ref:          jobsTable.ref,
+        job_type:     jobsTable.job_type,
         status:       jobsTable.status,
         priority:     jobsTable.priority,
         bay:          jobsTable.bay,
@@ -157,7 +167,7 @@ router.get("/kanban", async (req, res) => {
       .leftJoin(vehiclesTable, eq(jobsTable.vehicle_id, vehiclesTable.id))
       .leftJoin(advisorAlias, eq(jobsTable.advisor_id, advisorAlias.id))
       .leftJoin(techAlias, eq(jobsTable.technician_id, techAlias.id))
-      .where(and(eq(jobsTable.tenant_id, tenant.id)))
+      .where(and(...conditions))
       .orderBy(jobsTable.seq);
 
     const lanes: Record<string, typeof jobs> = {

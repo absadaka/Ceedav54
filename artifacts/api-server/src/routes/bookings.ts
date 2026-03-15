@@ -3,7 +3,7 @@ import { sql, eq, and, or, desc, ilike, isNull, gte, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
-  bookingsTable,
+  bookingsTable, jobsTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -85,6 +85,7 @@ router.get("/", async (req, res) => {
         .select({
           id:           bookingsTable.id,
           ref:          bookingsTable.ref,
+          booking_type: bookingsTable.booking_type,
           status:       bookingsTable.status,
           source:       bookingsTable.source,
           scheduled_at: bookingsTable.scheduled_at,
@@ -167,6 +168,7 @@ router.get("/:id", async (req, res) => {
         id:           bookingsTable.id,
         ref:          bookingsTable.ref,
         seq:          bookingsTable.seq,
+        booking_type: bookingsTable.booking_type,
         status:       bookingsTable.status,
         source:       bookingsTable.source,
         scheduled_at: bookingsTable.scheduled_at,
@@ -218,6 +220,7 @@ router.post("/", async (req, res) => {
       client_id, vehicle_id, advisor_id,
       scheduled_at, duration_min = 60,
       source = "phone", notes, mileage_in,
+      booking_type = "service",
     } = req.body;
 
     if (!scheduled_at) return res.status(400).json({ error: "scheduled_at is required" });
@@ -237,6 +240,7 @@ router.post("/", async (req, res) => {
         tenant_id: tenant.id,
         seq,
         ref,
+        booking_type: (booking_type === "inspection" ? "inspection" : "service") as "service" | "inspection",
         client_id:    client_id    || null,
         vehicle_id:   vehicle_id   || null,
         advisor_id:   advisor_id   || null,
@@ -266,6 +270,7 @@ router.put("/:id", async (req, res) => {
     const {
       client_id, vehicle_id, advisor_id,
       scheduled_at, duration_min, source, notes, mileage_in,
+      booking_type,
     } = req.body;
 
     const updates: Record<string, any> = { updated_at: new Date() };
@@ -277,6 +282,7 @@ router.put("/:id", async (req, res) => {
     if (source       !== undefined) updates.source       = source;
     if (notes        !== undefined) updates.notes        = notes || null;
     if (mileage_in   !== undefined) updates.mileage_in   = mileage_in || null;
+    if (booking_type !== undefined) updates.booking_type = booking_type === "inspection" ? "inspection" : "service";
 
     const [booking] = await db
       .update(bookingsTable)
@@ -314,6 +320,66 @@ router.post("/:id/status", async (req, res) => {
     res.json({ booking });
   } catch (e: any) {
     console.error("POST /bookings/:id/status", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* ─── POST /bookings/:id/start-job ───────────────────────────────────────── */
+router.post("/:id/start-job", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    // Load the booking
+    const [booking] = await db
+      .select()
+      .from(bookingsTable)
+      .where(and(eq(bookingsTable.id, req.params.id), eq(bookingsTable.tenant_id, tenant.id), isNull(bookingsTable.deleted_at)))
+      .limit(1);
+
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    if (["cancelled", "no_show"].includes(booking.status)) {
+      return res.status(400).json({ error: "Cannot start a job for a cancelled or no-show booking" });
+    }
+
+    // Generate job ref
+    const [{ seq }] = await db
+      .select({ seq: sql<number>`cast(coalesce(max(seq), 0) + 1 as int)` })
+      .from(jobsTable)
+      .where(eq(jobsTable.tenant_id, tenant.id));
+
+    const year = new Date().getFullYear();
+    const prefix = booking.booking_type === "inspection" ? "INS" : "JC";
+    const ref = `${prefix}-${year}-${String(seq).padStart(4, "0")}`;
+
+    const [job] = await db
+      .insert(jobsTable)
+      .values({
+        tenant_id:        tenant.id,
+        seq,
+        ref,
+        booking_id:       booking.id,
+        client_id:        booking.client_id,
+        vehicle_id:       booking.vehicle_id,
+        advisor_id:       booking.advisor_id,
+        job_type:         booking.booking_type,
+        customer_concern: booking.notes ?? undefined,
+        mileage_in:       booking.mileage_in ?? undefined,
+        status:           "waiting",
+        priority:         "normal",
+      })
+      .returning();
+
+    // Advance booking to in_progress
+    await db
+      .update(bookingsTable)
+      .set({ status: "in_progress", updated_at: new Date() })
+      .where(eq(bookingsTable.id, booking.id));
+
+    res.status(201).json({ job });
+  } catch (e: any) {
+    console.error("POST /bookings/:id/start-job", e);
     res.status(500).json({ error: e.message });
   }
 });
