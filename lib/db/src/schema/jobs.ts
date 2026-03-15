@@ -119,6 +119,7 @@ export const jobsTable = pgTable("jobs", {
   tenant_id:       uuid("tenant_id").references(() => tenantsTable.id, { onDelete: "cascade" }).notNull(),
   seq:             integer("seq").notNull(),
   ref:             text("ref").notNull(),               // e.g. "JC-2024-0001"
+  type:            text("type"),                        // "inspection" | "service_job"
   quotation_id:    uuid("quotation_id").references(() => quotationsTable.id, { onDelete: "set null" }),
   booking_id:      uuid("booking_id").references(() => bookingsTable.id, { onDelete: "set null" }),
   client_id:       uuid("client_id").references(() => clientsTable.id, { onDelete: "set null" }),
@@ -135,6 +136,7 @@ export const jobsTable = pgTable("jobs", {
   qc_by:           uuid("qc_by").references(() => usersTable.id, { onDelete: "set null" }),
   mileage_in:      text("mileage_in"),
   mileage_out:     text("mileage_out"),
+  scheduled_date:  text("scheduled_date"),
   customer_concern: text("customer_concern"),
   technician_note: text("technician_note"),
   qc_note:         text("qc_note"),

@@ -14,7 +14,7 @@ async function resolveTenant(slug: string) {
 }
 
 const VALID_STATUSES = [
-  "pending", "confirmed", "checked_in", "in_progress", "completed", "cancelled", "no_show",
+  "pending", "confirmed", "checked_in",
 ] as const;
 type BookingStatus = typeof VALID_STATUSES[number];
 
@@ -87,6 +87,7 @@ router.get("/", async (req, res) => {
           ref:          bookingsTable.ref,
           status:       bookingsTable.status,
           source:       bookingsTable.source,
+          booking_type: bookingsTable.booking_type,
           scheduled_at: bookingsTable.scheduled_at,
           duration_min: bookingsTable.duration_min,
           notes:        bookingsTable.notes,
@@ -169,6 +170,7 @@ router.get("/:id", async (req, res) => {
         seq:          bookingsTable.seq,
         status:       bookingsTable.status,
         source:       bookingsTable.source,
+        booking_type: bookingsTable.booking_type,
         scheduled_at: bookingsTable.scheduled_at,
         duration_min: bookingsTable.duration_min,
         notes:        bookingsTable.notes,
@@ -218,6 +220,7 @@ router.post("/", async (req, res) => {
       client_id, vehicle_id, advisor_id,
       scheduled_at, duration_min = 60,
       source = "phone", notes, mileage_in,
+      booking_type,
     } = req.body;
 
     if (!scheduled_at) return res.status(400).json({ error: "scheduled_at is required" });
@@ -243,8 +246,9 @@ router.post("/", async (req, res) => {
         scheduled_at: new Date(scheduled_at),
         duration_min: Number(duration_min),
         source,
-        notes:      notes      || null,
-        mileage_in: mileage_in || null,
+        notes:        notes        || null,
+        mileage_in:   mileage_in   || null,
+        booking_type: booking_type || null,
         status: "pending",
       })
       .returning();
@@ -266,6 +270,7 @@ router.put("/:id", async (req, res) => {
     const {
       client_id, vehicle_id, advisor_id,
       scheduled_at, duration_min, source, notes, mileage_in,
+      booking_type,
     } = req.body;
 
     const updates: Record<string, any> = { updated_at: new Date() };
@@ -277,6 +282,7 @@ router.put("/:id", async (req, res) => {
     if (source       !== undefined) updates.source       = source;
     if (notes        !== undefined) updates.notes        = notes || null;
     if (mileage_in   !== undefined) updates.mileage_in   = mileage_in || null;
+    if (booking_type !== undefined) updates.booking_type = booking_type || null;
 
     const [booking] = await db
       .update(bookingsTable)

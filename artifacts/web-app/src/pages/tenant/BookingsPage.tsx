@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import {
   CalendarCheck, Plus, Search, Calendar, Clock,
   User, Car, ChevronRight, MoreHorizontal, CheckCircle2,
-  XCircle, RefreshCw, List, ChevronLeft,
+  List, ChevronLeft,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
@@ -28,10 +28,6 @@ const STATUS_META: Record<string, { label: string; color: string; dot: string }>
   pending:     { label: "Pending",     color: "bg-yellow-100 text-yellow-800 border-yellow-200", dot: "bg-yellow-400" },
   confirmed:   { label: "Confirmed",   color: "bg-blue-100 text-blue-800 border-blue-200",       dot: "bg-blue-400" },
   checked_in:  { label: "Checked In",  color: "bg-indigo-100 text-indigo-800 border-indigo-200", dot: "bg-indigo-400" },
-  in_progress: { label: "In Progress", color: "bg-violet-100 text-violet-800 border-violet-200", dot: "bg-violet-400" },
-  completed:   { label: "Completed",   color: "bg-green-100 text-green-800 border-green-200",    dot: "bg-green-500" },
-  cancelled:   { label: "Cancelled",   color: "bg-red-100 text-red-800 border-red-200",          dot: "bg-red-400" },
-  no_show:     { label: "No-show",     color: "bg-gray-100 text-gray-600 border-gray-200",       dot: "bg-gray-400" },
 };
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -254,6 +250,74 @@ export default function BookingsPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["bookings"] }); toast.success("Booking deleted"); },
   });
 
+  const handleCheckIn = useCallback(async (row: BookingRow) => {
+    try {
+      const statusRes = await fetch(`${API}/api/bookings/${row.id}/status?tenant=${TENANT}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "checked_in" }),
+      });
+      if (!statusRes.ok) {
+        const err = await statusRes.json().catch(() => ({ error: "Failed to update status" }));
+        throw new Error(err.error ?? "Failed to update status");
+      }
+
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success("Status updated to Checked In");
+
+      const bookingType = row.booking_type;
+      if (bookingType === "inspection" || bookingType === "service_job") {
+        try {
+          const existingRes = await fetch(`${API}/api/jobs?tenant=${TENANT}&booking_id=${row.id}&limit=1`).then(r => r.json());
+          const existingJobs = existingRes?.data ?? [];
+          if (existingJobs.length > 0) {
+            toast.info("A job card already exists for this booking.");
+            return;
+          }
+
+          const jobBody: Record<string, string | null> = {
+            client_id: row.client_id || null,
+            vehicle_id: row.vehicle_id || null,
+            customer_concern: row.notes || null,
+            type: bookingType,
+            booking_id: row.id,
+            mileage_in: row.mileage_in || null,
+            scheduled_date: row.scheduled_at ? row.scheduled_at.slice(0, 10) : null,
+          };
+
+          const jobCreateRes = await fetch(`${API}/api/jobs?tenant=${TENANT}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(jobBody),
+          });
+          if (!jobCreateRes.ok) throw new Error("Failed to create job card");
+          const jobRes = await jobCreateRes.json();
+
+          qc.invalidateQueries({ queryKey: ["jobs"] });
+          qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
+          qc.invalidateQueries({ queryKey: ["inspections-kanban"] });
+
+          const jobId = jobRes?.id ?? jobRes?.job?.id;
+          const jobRef = jobRes?.ref ?? jobRes?.job?.ref ?? "Job";
+          const linkPath = bookingType === "inspection" ? `/inspections/${jobId}` : `/jobs/${jobId}`;
+
+          toast.success(
+            `${bookingType === "inspection" ? "Inspection" : "Service Job"} card ${jobRef} created`,
+            {
+              action: jobId ? {
+                label: "View",
+                onClick: () => navigate(linkPath),
+              } : undefined,
+            }
+          );
+        } catch {
+          toast.error("Failed to auto-create job card");
+        }
+      }
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to update status");
+    }
+  }, [qc, navigate]);
+
   const handleSearch = useCallback((v: string) => setSearch(v), []);
 
   const navigateMonth = (dir: -1 | 1) => {
@@ -270,11 +334,10 @@ export default function BookingsPage() {
       </div>
 
       {/* Stat strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Today · Pending"     value={sumFor("pending")}     color="text-yellow-600" />
-        <StatCard label="Today · Confirmed"   value={sumFor("confirmed")}   color="text-blue-600" />
-        <StatCard label="Today · In Progress" value={sumFor("in_progress")} color="text-violet-600" />
-        <StatCard label="Today · Completed"   value={sumFor("completed")}   color="text-green-600" />
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard label="Today · Pending"    value={sumFor("pending")}    color="text-yellow-600" />
+        <StatCard label="Today · Confirmed"  value={sumFor("confirmed")}  color="text-blue-600" />
+        <StatCard label="Today · Checked In" value={sumFor("checked_in")} color="text-indigo-600" />
       </div>
 
       {/* Toolbar */}
@@ -445,34 +508,20 @@ export default function BookingsPage() {
                                 Edit booking
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
+                              {row.status === "confirmed" && (
+                                <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "pending" })}>
+                                  Set Pending
+                                </DropdownMenuItem>
+                              )}
                               {row.status === "pending" && (
                                 <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "confirmed" })}>
                                   <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-blue-600" />Confirm
                                 </DropdownMenuItem>
                               )}
-                              {(row.status === "confirmed" || row.status === "pending") && (
-                                <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "checked_in" })}>
+                              {row.status !== "checked_in" && (
+                                <DropdownMenuItem onClick={() => handleCheckIn(row)}>
                                   Check in
                                 </DropdownMenuItem>
-                              )}
-                              {row.status === "checked_in" && (
-                                <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "in_progress" })}>
-                                  <RefreshCw className="w-3.5 h-3.5 mr-2 text-violet-600" />Start service
-                                </DropdownMenuItem>
-                              )}
-                              {!["completed", "cancelled", "no_show"].includes(row.status) && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "completed" })}>
-                                    <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-green-600" />Mark completed
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "cancelled" })} className="text-red-600">
-                                    <XCircle className="w-3.5 h-3.5 mr-2" />Cancel
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "no_show" })} className="text-muted-foreground">
-                                    No-show
-                                  </DropdownMenuItem>
-                                </>
                               )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem

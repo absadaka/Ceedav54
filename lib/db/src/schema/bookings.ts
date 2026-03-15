@@ -28,6 +28,7 @@ export const bookingsTable = pgTable("bookings", {
   advisor_id:   uuid("advisor_id").references(() => usersTable.id, { onDelete: "set null" }),
   status:       bookingStatusEnum("status").notNull().default("pending"),
   source:       bookingSourceEnum("source").notNull().default("phone"),
+  booking_type: text("booking_type"),                   // "inspection" | "service_job"
   scheduled_at: timestamp("scheduled_at", { withTimezone: true }).notNull(),
   duration_min: integer("duration_min").notNull().default(60),
   notes:        text("notes"),
