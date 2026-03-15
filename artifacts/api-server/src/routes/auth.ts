@@ -129,6 +129,25 @@ router.post("/auth/login", async (req, res) => {
 });
 
 /* ─────────────────────────────────────────────────────────────────────────
+   POST /api/auth/check-email
+   Body: { email }
+   Returns: { available: boolean }
+───────────────────────────────────────────────────────────────────────── */
+router.post("/auth/check-email", async (req, res) => {
+  const { email } = req.body as { email?: string };
+  if (!email) return res.status(400).json({ error: "Email is required." });
+
+  const existing = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(and(eq(usersTable.email, email.toLowerCase().trim()), isNull(usersTable.deleted_at)))
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  return res.json({ available: !existing });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
    GET /api/auth/me  — read session from X-Session header (localStorage token)
 ───────────────────────────────────────────────────────────────────────── */
 router.get("/auth/me", async (req, res) => {
