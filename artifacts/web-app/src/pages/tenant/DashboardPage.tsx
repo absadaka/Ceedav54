@@ -5,6 +5,13 @@ import {
   CalendarCheck, Wrench, ReceiptText, TrendingUp, AlertCircle,
   Plus, ArrowRight, Clock, User, Car, Activity, RefreshCw,
 } from "lucide-react";
+import { getTenantSlug } from "@/lib/tenant";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
+import BookingDrawer from "@/components/BookingDrawer";
 
 /* ─── API types ──────────────────────────────────────────────────────────── */
 
@@ -251,7 +258,7 @@ function DataTable({ cols, children }: { cols: string[]; children: React.ReactNo
 /* ─── Dashboard page ─────────────────────────────────────────────────────── */
 
 export default function DashboardPage() {
-  const tenant = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+  const tenant = getTenantSlug();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { data, isLoading, error, refetch, isFetching } = useQuery<DashboardData>({
     queryKey: ["dashboard", tenant],
