@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
-const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+import { getTenantSlug } from "@/lib/tenant";
+const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export interface QuotationRow {

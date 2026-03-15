@@ -20,7 +20,8 @@ import { toast } from "sonner";
 import BookingDrawer, { type BookingRow } from "@/components/BookingDrawer";
 import { cn } from "@/lib/utils";
 
-const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+import { getTenantSlug } from "@/lib/tenant";
+const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_META: Record<string, { label: string; color: string; dot: string }> = {

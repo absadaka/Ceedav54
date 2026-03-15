@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import { Upload, Save, Globe, Phone, Mail, MapPin, Building2, Instagram, Facebook, Twitter, Linkedin, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+import { getTenantSlug } from "@/lib/tenant";
+const TENANT = getTenantSlug();
 const API = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const TIMEZONES = [

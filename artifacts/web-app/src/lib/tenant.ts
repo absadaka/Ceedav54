@@ -23,14 +23,19 @@ export interface TenantInfo {
 ────────────────────────────────────────────────────────────────────────── */
 export function getTenantSlug(): string {
   if (typeof window === "undefined") return "demo-workshop";
-  const params = new URLSearchParams(window.location.search);
-  const fromQuery = params.get("tenant");
+  // 1. Explicit URL param (admin embeds, dev overrides)
+  const fromQuery = new URLSearchParams(window.location.search).get("tenant");
   if (fromQuery) return fromQuery;
-  // Path-prefix fallback: /<slug>/dashboard → slug
-  const first = window.location.pathname.split("/").filter(Boolean)[0] ?? "";
-  // Only treat as slug if it's not a known top-level route
-  const topLevel = new Set(["auth", "register", "pricing", "admin-console"]);
-  if (first && !topLevel.has(first)) return first;
+  // 2. Active session in localStorage
+  try {
+    const raw = localStorage.getItem("ceeda_session");
+    if (raw) {
+      const s = JSON.parse(raw) as { tenantSlug?: string };
+      if (s.tenantSlug) return s.tenantSlug;
+    }
+  } catch {
+    // ignore parse errors
+  }
   return "demo-workshop";
 }
 

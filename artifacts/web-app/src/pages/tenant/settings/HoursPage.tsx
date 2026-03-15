@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import { Save, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+import { getTenantSlug } from "@/lib/tenant";
+const TENANT = getTenantSlug();
 const API = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;

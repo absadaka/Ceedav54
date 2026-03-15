@@ -12,7 +12,8 @@ import { cn }       from "@/lib/utils";
 import { statusClass } from "@/lib/status";
 import InvoiceDrawer   from "@/components/InvoiceDrawer";
 
-const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+import { getTenantSlug } from "@/lib/tenant";
+const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_TABS = [

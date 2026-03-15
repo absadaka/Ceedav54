@@ -8,7 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Save, Mail, MessageSquare, Bell, Phone } from "lucide-react";
 
-const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+import { getTenantSlug } from "@/lib/tenant";
+const TENANT = getTenantSlug();
 const API = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function Section({ title, description, icon: Icon, children }: {

@@ -5,12 +5,6 @@ import {
   CalendarCheck, Wrench, ReceiptText, TrendingUp, AlertCircle,
   Plus, ArrowRight, Clock, User, Car, Activity, RefreshCw,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
-import BookingDrawer from "@/components/BookingDrawer";
 
 /* ─── API types ──────────────────────────────────────────────────────────── */
 
