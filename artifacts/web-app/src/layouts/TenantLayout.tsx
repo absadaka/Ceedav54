@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation, useSearch } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Users, CalendarCheck, FileText, Wrench, Receipt,
   Settings, Bell, LogOut, ChevronDown, ChevronLeft, ChevronRight,
   UsersRound, Building2, ShieldCheck, Monitor, Laptop2,
-  Menu, X, Search, Sun, Moon, ClipboardList,
+  Menu, X, Search, Sun, Moon,
 } from "lucide-react";
 
 function useSidebarTheme() {
@@ -36,7 +36,6 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
-  children?: Omit<NavItem, "children">[];
 }
 
 function buildNav(tenantSlug?: string): {
@@ -44,20 +43,17 @@ function buildNav(tenantSlug?: string): {
   workspace: NavItem[];
   admin: NavItem[];
 } {
+  // Main + workspace pages live at flat paths with ?tenant= query param
   const q = tenantSlug ? `?tenant=${tenantSlug}` : "";
+  // Admin + account pages live at /:slug/admin/* and /:slug/account/*
+  const slugPrefix = tenantSlug ? `/${tenantSlug}` : "";
   return {
     main: [
       { label: "Dashboard",  href: `/dashboard${q}`,  icon: LayoutDashboard },
       { label: "Customers",  href: `/customers${q}`,  icon: Users },
       { label: "Bookings",   href: `/bookings${q}`,   icon: CalendarCheck },
       { label: "Quotations", href: `/quotations${q}`, icon: FileText },
-      {
-        label: "Jobs", href: `/jobs${q}`, icon: Wrench,
-        children: [
-          { label: "Services",    href: `/jobs${q ? q + "&" : "?"}job_type=service`,    icon: Wrench },
-          { label: "Inspections", href: `/jobs${q ? q + "&" : "?"}job_type=inspection`, icon: ClipboardList },
-        ],
-      },
+      { label: "Jobs",       href: `/jobs${q}`,       icon: Wrench },
       { label: "Invoices",   href: `/invoices${q}`,   icon: Receipt },
     ],
     workspace: [
@@ -74,13 +70,11 @@ function SidebarLink({
   item,
   collapsed,
   active,
-  childActive,
   onClick,
 }: {
   item: NavItem;
   collapsed: boolean;
   active: boolean;
-  childActive?: boolean;
   onClick?: () => void;
 }) {
   const Icon = item.icon;
@@ -94,8 +88,6 @@ function SidebarLink({
           collapsed ? "px-2 py-2.5 justify-center" : "px-3 py-2.5",
           active
             ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-            : childActive
-            ? "text-sidebar-foreground font-medium"
             : "text-sidebar-foreground/75 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
         )}
       >
@@ -115,34 +107,6 @@ function SidebarLink({
   }
 
   return inner;
-}
-
-function SidebarSubLink({
-  item,
-  active,
-  onClick,
-}: {
-  item: Omit<NavItem, "children">;
-  active: boolean;
-  onClick?: () => void;
-}) {
-  const Icon = item.icon;
-  return (
-    <Link href={item.href}>
-      <span
-        onClick={onClick}
-        className={cn(
-          "flex items-center gap-2.5 rounded-md text-[13px] font-normal transition-colors cursor-pointer select-none pl-8 pr-3 py-1.5",
-          active
-            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-            : "text-sidebar-foreground/65 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
-        )}
-      >
-        <Icon className="w-3.5 h-3.5 shrink-0" />
-        <span className="truncate leading-none">{item.label}</span>
-      </span>
-    </Link>
-  );
 }
 
 /* ─── Sidebar ────────────────────────────────────────────────────────────── */
@@ -165,22 +129,13 @@ function Sidebar({
   onThemeToggle: () => void;
 }) {
   const [location] = useLocation();
-  const search     = useSearch(); // reactive — re-renders when query string changes
-  const nav        = buildNav(tenantSlug);
+  const nav = buildNav(tenantSlug);
 
   function isActive(href: string) {
-    const [hrefPath, hrefQuery] = href.split("?");
-    const pathMatch = hrefPath === "/dashboard"
-      ? location === hrefPath
-      : location === hrefPath || location.startsWith(hrefPath + "/");
-    if (!pathMatch) return false;
-    if (!hrefQuery) return true;
-    // For sub-nav links, also match the job_type query param
-    const hrefParams = new URLSearchParams(hrefQuery);
-    const curParams  = new URLSearchParams(search);
-    const typeParam  = hrefParams.get("job_type");
-    if (typeParam) return curParams.get("job_type") === typeParam;
-    return true;
+    // Strip query string from both sides for comparison
+    const hrefPath = href.split("?")[0];
+    if (hrefPath === "/dashboard") return location === hrefPath;
+    return location === hrefPath || location.startsWith(hrefPath + "/");
   }
 
   return (
@@ -208,34 +163,15 @@ function Sidebar({
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
         {/* Main */}
-        {nav.main.map((item) => {
-          const itemActive = isActive(item.href);
-          const anyChildActive = item.children?.some(c => isActive(c.href)) ?? false;
-          return (
-            <div key={item.href}>
-              <SidebarLink
-                item={item}
-                collapsed={collapsed}
-                active={itemActive}
-                childActive={anyChildActive}
-                onClick={onNavClick}
-              />
-              {/* Sub-items — only when sidebar is expanded and this item has children */}
-              {!collapsed && item.children && (
-                <div className="mt-0.5 mb-0.5 space-y-0.5">
-                  {item.children.map(child => (
-                    <SidebarSubLink
-                      key={child.href}
-                      item={child}
-                      active={isActive(child.href)}
-                      onClick={onNavClick}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {nav.main.map((item) => (
+          <SidebarLink
+            key={item.href}
+            item={item}
+            collapsed={collapsed}
+            active={isActive(item.href)}
+            onClick={onNavClick}
+          />
+        ))}
 
         {/* Workspace divider */}
         <div className={cn("pt-4 pb-1")}>

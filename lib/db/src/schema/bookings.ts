@@ -14,10 +14,6 @@ export const bookingSourceEnum = pgEnum("booking_source", [
   "walk_in", "phone", "online", "whatsapp", "referral",
 ]);
 
-export const bookingTypeEnum = pgEnum("booking_type", [
-  "service", "inspection",
-]);
-
 /* ─────────────────────────────────────────────────────────────────────────
    BOOKINGS
 ───────────────────────────────────────────────────────────────────────── */
@@ -30,7 +26,6 @@ export const bookingsTable = pgTable("bookings", {
   client_id:    uuid("client_id").references(() => clientsTable.id, { onDelete: "set null" }),
   vehicle_id:   uuid("vehicle_id").references(() => vehiclesTable.id, { onDelete: "set null" }),
   advisor_id:   uuid("advisor_id").references(() => usersTable.id, { onDelete: "set null" }),
-  booking_type: bookingTypeEnum("booking_type").notNull().default("service"),
   status:       bookingStatusEnum("status").notNull().default("pending"),
   source:       bookingSourceEnum("source").notNull().default("phone"),
   scheduled_at: timestamp("scheduled_at", { withTimezone: true }).notNull(),

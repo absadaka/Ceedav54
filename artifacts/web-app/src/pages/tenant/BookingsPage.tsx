@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import {
   CalendarCheck, Plus, Search, Calendar, Clock,
   User, Car, ChevronRight, MoreHorizontal, CheckCircle2,
-  RefreshCw, List, ChevronLeft,
+  XCircle, RefreshCw, List, ChevronLeft,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
@@ -25,9 +25,13 @@ const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_META: Record<string, { label: string; color: string; dot: string }> = {
-  pending:    { label: "Pending",    color: "bg-yellow-100 text-yellow-800 border-yellow-200", dot: "bg-yellow-400" },
-  confirmed:  { label: "Confirmed",  color: "bg-blue-100 text-blue-800 border-blue-200",       dot: "bg-blue-400" },
-  checked_in: { label: "Checked In", color: "bg-indigo-100 text-indigo-800 border-indigo-200", dot: "bg-indigo-400" },
+  pending:     { label: "Pending",     color: "bg-yellow-100 text-yellow-800 border-yellow-200", dot: "bg-yellow-400" },
+  confirmed:   { label: "Confirmed",   color: "bg-blue-100 text-blue-800 border-blue-200",       dot: "bg-blue-400" },
+  checked_in:  { label: "Checked In",  color: "bg-indigo-100 text-indigo-800 border-indigo-200", dot: "bg-indigo-400" },
+  in_progress: { label: "In Progress", color: "bg-violet-100 text-violet-800 border-violet-200", dot: "bg-violet-400" },
+  completed:   { label: "Completed",   color: "bg-green-100 text-green-800 border-green-200",    dot: "bg-green-500" },
+  cancelled:   { label: "Cancelled",   color: "bg-red-100 text-red-800 border-red-200",          dot: "bg-red-400" },
+  no_show:     { label: "No-show",     color: "bg-gray-100 text-gray-600 border-gray-200",       dot: "bg-gray-400" },
 };
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -35,12 +39,10 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 const DATE_PRESETS = [
-  { value: "upcoming",    label: "Upcoming" },
-  { value: "today",       label: "Today" },
-  { value: "tomorrow",    label: "Tomorrow" },
-  { value: "this_week",   label: "This week" },
-  { value: "this_month",  label: "This month" },
-  { value: "previous",    label: "Previous" },
+  { value: "today",     label: "Today" },
+  { value: "tomorrow",  label: "Tomorrow" },
+  { value: "this_week", label: "This week" },
+  { value: "all",       label: "All dates" },
 ];
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -49,12 +51,9 @@ function d0(d: Date) { return d.toISOString().slice(0, 10); }
 
 function dateRange(preset: string): { date_from?: string; date_to?: string } {
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (preset === "upcoming") {
-    return { date_from: d0(todayStart) };
-  }
   if (preset === "today") {
-    return { date_from: d0(todayStart), date_to: d0(new Date(todayStart.getTime() + 86400000)) };
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return { date_from: d0(start), date_to: d0(new Date(start.getTime() + 86400000)) };
   }
   if (preset === "tomorrow") {
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -63,14 +62,6 @@ function dateRange(preset: string): { date_from?: string; date_to?: string } {
   if (preset === "this_week") {
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
     return { date_from: d0(start), date_to: d0(new Date(start.getTime() + 7 * 86400000)) };
-  }
-  if (preset === "this_month") {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end   = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    return { date_from: d0(start), date_to: d0(end) };
-  }
-  if (preset === "previous") {
-    return { date_to: d0(todayStart) };
   }
   return {};
 }
@@ -216,7 +207,7 @@ export default function BookingsPage() {
   const [viewMode,     setViewMode]     = useState<"list" | "calendar">("list");
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [datePreset,   setDatePreset]   = useState("upcoming");
+  const [datePreset,   setDatePreset]   = useState("today");
   const [calDate,      setCalDate]      = useState(() => new Date());
   const [drawerOpen,   setDrawerOpen]   = useState(false);
   const [editing,      setEditing]      = useState<BookingRow | null>(null);
@@ -279,10 +270,11 @@ export default function BookingsPage() {
       </div>
 
       {/* Stat strip */}
-      <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Today · Pending"    value={sumFor("pending")}    color="text-yellow-600" />
-        <StatCard label="Today · Confirmed"  value={sumFor("confirmed")}  color="text-blue-600" />
-        <StatCard label="Today · Checked In" value={sumFor("checked_in")} color="text-indigo-600" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard label="Today · Pending"     value={sumFor("pending")}     color="text-yellow-600" />
+        <StatCard label="Today · Confirmed"   value={sumFor("confirmed")}   color="text-blue-600" />
+        <StatCard label="Today · In Progress" value={sumFor("in_progress")} color="text-violet-600" />
+        <StatCard label="Today · Completed"   value={sumFor("completed")}   color="text-green-600" />
       </div>
 
       {/* Toolbar */}
@@ -323,7 +315,7 @@ export default function BookingsPage() {
             </div>
 
             <Select value={datePreset} onValueChange={setDatePreset}>
-              <SelectTrigger className="h-8 w-40 text-sm">
+              <SelectTrigger className="h-8 w-36 text-sm">
                 <Calendar className="w-3.5 h-3.5 mr-1.5" />
                 <SelectValue />
               </SelectTrigger>
@@ -452,16 +444,33 @@ export default function BookingsPage() {
                               <DropdownMenuItem onClick={() => { setEditing(row); setDrawerOpen(true); }}>
                                 Edit booking
                               </DropdownMenuItem>
-                              {(row.status === "pending" || row.status === "confirmed") && (
+                              <DropdownMenuSeparator />
+                              {row.status === "pending" && (
+                                <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "confirmed" })}>
+                                  <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-blue-600" />Confirm
+                                </DropdownMenuItem>
+                              )}
+                              {(row.status === "confirmed" || row.status === "pending") && (
+                                <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "checked_in" })}>
+                                  Check in
+                                </DropdownMenuItem>
+                              )}
+                              {row.status === "checked_in" && (
+                                <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "in_progress" })}>
+                                  <RefreshCw className="w-3.5 h-3.5 mr-2 text-violet-600" />Start service
+                                </DropdownMenuItem>
+                              )}
+                              {!["completed", "cancelled", "no_show"].includes(row.status) && (
                                 <>
                                   <DropdownMenuSeparator />
-                                  {row.status === "pending" && (
-                                    <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "confirmed" })}>
-                                      <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-blue-600" />Confirm
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "checked_in" })}>
-                                    <RefreshCw className="w-3.5 h-3.5 mr-2 text-indigo-600" />Check in
+                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "completed" })}>
+                                    <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-green-600" />Mark completed
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "cancelled" })} className="text-red-600">
+                                    <XCircle className="w-3.5 h-3.5 mr-2" />Cancel
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => transition.mutate({ id: row.id, status: "no_show" })} className="text-muted-foreground">
+                                    No-show
                                   </DropdownMenuItem>
                                 </>
                               )}

@@ -4,13 +4,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, CalendarCheck, Edit, User, Car, Clock, Calendar,
   CheckCircle2, XCircle, RefreshCw, ChevronRight, FileText, MoreHorizontal,
-  Wrench, ClipboardList, ExternalLink,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
-  DropdownMenuTrigger, DropdownMenuLabel,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import BookingDrawer, { type BookingRow } from "@/components/BookingDrawer";
@@ -21,9 +20,13 @@ const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_META: Record<string, { label: string; color: string; next: string[] }> = {
-  pending:    { label: "Pending",    color: "bg-yellow-100 text-yellow-800 border-yellow-200", next: ["confirmed", "checked_in"] },
-  confirmed:  { label: "Confirmed",  color: "bg-blue-100 text-blue-800 border-blue-200",       next: ["checked_in"] },
-  checked_in: { label: "Checked In", color: "bg-indigo-100 text-indigo-800 border-indigo-200", next: [] },
+  pending:    { label: "Pending",     color: "bg-yellow-100 text-yellow-800 border-yellow-200", next: ["confirmed", "checked_in", "cancelled", "no_show"] },
+  confirmed:  { label: "Confirmed",   color: "bg-blue-100 text-blue-800 border-blue-200",       next: ["checked_in", "cancelled", "no_show"] },
+  checked_in: { label: "Checked In",  color: "bg-indigo-100 text-indigo-800 border-indigo-200", next: ["in_progress", "cancelled"] },
+  in_progress:{ label: "In Progress", color: "bg-violet-100 text-violet-800 border-violet-200", next: ["completed"] },
+  completed:  { label: "Completed",   color: "bg-green-100 text-green-800 border-green-200",    next: [] },
+  cancelled:  { label: "Cancelled",   color: "bg-red-100 text-red-800 border-red-200",          next: [] },
+  no_show:    { label: "No-show",     color: "bg-gray-100 text-gray-600 border-gray-200",       next: [] },
 };
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -66,17 +69,7 @@ export default function BookingDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       }).then(r => r.json()),
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ["booking", id] });
-      qc.invalidateQueries({ queryKey: ["bookings"] });
-      qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
-      if (data.job) {
-        toast.success(`Checked in · Job ${data.job.ref} created`);
-        navigate(`/jobs/${data.job.id}?tenant=${TENANT}`);
-      } else {
-        toast.success("Status updated");
-      }
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["booking", id] }); qc.invalidateQueries({ queryKey: ["bookings"] }); toast.success("Status updated"); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -136,17 +129,17 @@ export default function BookingDetailPage() {
           )}
           {nextSteps.includes("checked_in") && (
             <Button size="sm" className="gap-1.5" onClick={() => transition.mutate("checked_in")} disabled={transition.isPending}>
-              <RefreshCw className="w-3.5 h-3.5" />Check in
+              Check in
             </Button>
           )}
-          {bk.job_id && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 border-violet-200 text-violet-700 hover:bg-violet-50"
-              onClick={() => navigate(`/jobs/${bk.job_id}?tenant=${TENANT}`)}
-            >
-              <ExternalLink className="w-3.5 h-3.5" />View job card
+          {nextSteps.includes("in_progress") && (
+            <Button size="sm" className="gap-1.5 bg-violet-600 hover:bg-violet-700" onClick={() => transition.mutate("in_progress")} disabled={transition.isPending}>
+              <RefreshCw className="w-3.5 h-3.5" />Start service
+            </Button>
+          )}
+          {nextSteps.includes("completed") && (
+            <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700" onClick={() => transition.mutate("completed")} disabled={transition.isPending}>
+              <CheckCircle2 className="w-3.5 h-3.5" />Complete
             </Button>
           )}
 
@@ -161,21 +154,16 @@ export default function BookingDetailPage() {
                 <FileText className="w-3.5 h-3.5 mr-2" />Create quotation
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-[11px] text-muted-foreground font-medium py-1">Change status</DropdownMenuLabel>
-              {([
-                { key: "pending",    label: "Pending",    cls: "text-yellow-700" },
-                { key: "confirmed",  label: "Confirmed",  cls: "text-blue-700"   },
-                { key: "checked_in", label: "Checked In", cls: "text-indigo-700" },
-              ] as const).filter(s => s.key !== bk.status).map(s => (
-                <DropdownMenuItem
-                  key={s.key}
-                  className={s.cls}
-                  disabled={transition.isPending}
-                  onClick={() => transition.mutate(s.key)}
-                >
-                  {s.label}
+              {nextSteps.includes("cancelled") && (
+                <DropdownMenuItem className="text-red-600" onClick={() => transition.mutate("cancelled")}>
+                  <XCircle className="w-3.5 h-3.5 mr-2" />Cancel
                 </DropdownMenuItem>
-              ))}
+              )}
+              {nextSteps.includes("no_show") && (
+                <DropdownMenuItem className="text-muted-foreground" onClick={() => transition.mutate("no_show")}>
+                  No-show
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" onClick={() => { if (confirm("Delete this booking?")) deleteBk.mutate(); }}>
                 Delete
@@ -226,30 +214,6 @@ export default function BookingDetailPage() {
           }
         </div>
 
-        {/* Linked job card */}
-        {bk.job_id && (
-          <button
-            className="rounded-lg border border-violet-200 bg-violet-50 p-4 space-y-3 text-left w-full group"
-            onClick={() => navigate(`/jobs/${bk.job_id}?tenant=${TENANT}`)}
-          >
-            <p className="text-xs font-semibold text-violet-600 uppercase tracking-wide">
-              {bk.job_type === "inspection" ? "Inspection card" : "Job card"}
-            </p>
-            <div className="flex items-start gap-2">
-              {bk.job_type === "inspection"
-                ? <ClipboardList className="w-4 h-4 mt-0.5 text-violet-500 shrink-0" />
-                : <Wrench className="w-4 h-4 mt-0.5 text-violet-500 shrink-0" />
-              }
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm font-mono group-hover:text-violet-700 transition-colors flex items-center gap-1">
-                  {bk.job_ref}<ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100" />
-                </p>
-                <p className="text-xs text-violet-500 capitalize mt-0.5">{bk.job_status?.replace(/_/g, " ")}</p>
-              </div>
-            </div>
-          </button>
-        )}
-
         {/* Appointment details */}
         <div className="rounded-lg border border-border bg-background p-4 space-y-2.5">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Appointment</p>
@@ -299,7 +263,7 @@ export default function BookingDetailPage() {
         <div className="flex items-center gap-1 flex-wrap">
           {Object.entries(STATUS_META).map(([s, m], i, arr) => {
             const isCurrent = s === bk.status;
-            const isPast    = Object.keys(STATUS_META).indexOf(bk.status) > i;
+            const isPast    = Object.keys(STATUS_META).indexOf(bk.status) > i && !["cancelled", "no_show"].includes(bk.status);
             return (
               <div key={s} className="flex items-center gap-1">
                 <span className={`text-xs px-2 py-1 rounded-full border font-medium ${
