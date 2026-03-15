@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import {
   LayoutDashboard, Users, CalendarCheck, FileText, Wrench, Receipt,
   Settings, Bell, LogOut, ChevronDown, ChevronLeft, ChevronRight,
@@ -165,7 +165,8 @@ function Sidebar({
   onThemeToggle: () => void;
 }) {
   const [location] = useLocation();
-  const nav = buildNav(tenantSlug);
+  const search     = useSearch(); // reactive — re-renders when query string changes
+  const nav        = buildNav(tenantSlug);
 
   function isActive(href: string) {
     const [hrefPath, hrefQuery] = href.split("?");
@@ -174,12 +175,10 @@ function Sidebar({
       : location === hrefPath || location.startsWith(hrefPath + "/");
     if (!pathMatch) return false;
     if (!hrefQuery) return true;
-    // For links with query params (sub-nav), match specific params against the current URL
+    // For sub-nav links, also match the job_type query param
     const hrefParams = new URLSearchParams(hrefQuery);
-    const curParams  = new URLSearchParams(
-      typeof window !== "undefined" ? window.location.search : "",
-    );
-    const typeParam = hrefParams.get("job_type");
+    const curParams  = new URLSearchParams(search);
+    const typeParam  = hrefParams.get("job_type");
     if (typeParam) return curParams.get("job_type") === typeParam;
     return true;
   }

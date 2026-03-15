@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -118,10 +118,9 @@ export default function JobsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [movingJob, setMovingJob]   = useState<KanbanJob | null>(null);
 
-  // Read job_type filter from URL
-  const urlType = new URLSearchParams(
-    typeof window !== "undefined" ? window.location.search : "",
-  ).get("job_type") ?? "";
+  // Read job_type filter from URL — useSearch() re-renders when query string changes
+  const search  = useSearch();
+  const urlType = new URLSearchParams(search).get("job_type") ?? "";
 
   const typeQs = urlType ? `&job_type=${urlType}` : "";
 
@@ -145,7 +144,7 @@ export default function JobsPage() {
     return Object.fromEntries(Object.entries(kanbanData).map(([k, v]) => [k, v.filter(fn)]));
   }, [kanbanData, q]);
 
-  const tenantQ = `?tenant=${TENANT}`;
+  const baseJobsUrl = `/jobs?tenant=${TENANT}`;
 
   return (
     <div className="space-y-5">
@@ -162,7 +161,7 @@ export default function JobsPage() {
             ] as const).map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                onClick={() => navigate(key ? `/jobs${tenantQ}&job_type=${key}` : `/jobs${tenantQ}`)}
+                onClick={() => navigate(key ? `${baseJobsUrl}&job_type=${key}` : baseJobsUrl)}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors",
                   urlType === key
