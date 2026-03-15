@@ -54,8 +54,8 @@ function buildNav(tenantSlug?: string): {
       {
         label: "Jobs", href: `/jobs${q}`, icon: Wrench,
         children: [
-          { label: "Services",    href: `/jobs${q}&job_type=service`,    icon: Wrench },
-          { label: "Inspections", href: `/jobs${q}&job_type=inspection`, icon: ClipboardList },
+          { label: "Services",    href: `/jobs${q ? q + "&" : "?"}job_type=service`,    icon: Wrench },
+          { label: "Inspections", href: `/jobs${q ? q + "&" : "?"}job_type=inspection`, icon: ClipboardList },
         ],
       },
       { label: "Invoices",   href: `/invoices${q}`,   icon: Receipt },
