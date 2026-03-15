@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select";
 import { toast } from "sonner";
 
 import { getTenantSlug } from "@/lib/tenant";
@@ -72,6 +73,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   const [mileageIn,   setMileageIn]   = useState("");
 
   useEffect(() => {
+    if (!open) return;
     if (booking) {
       setClientId(booking.client_id ?? "");
       setVehicleId(booking.vehicle_id ?? "");
@@ -94,46 +96,88 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
     }
   }, [booking, open]);
 
-  const { data: clients = [] } = useQuery({
-    queryKey: ["clients-list"],
+  /* ── Data fetching ──────────────────────────────────────────────────── */
+
+  const { data: clientsRaw = [] } = useQuery({
+    queryKey: ["clients-list", TENANT],
     queryFn: () =>
       fetch(`${API}/api/clients?tenant=${TENANT}&limit=200`)
-        .then(r => r.json()).then(d => d.rows ?? []),
+        .then(r => r.json())
+        .then(d => d.data ?? d.rows ?? []),   // API returns { data: [...] }
     enabled: open,
   });
 
-  const { data: vehicles = [] } = useQuery({
-    queryKey: ["vehicles-by-client", clientId],
+  const { data: vehiclesRaw = [] } = useQuery({
+    queryKey: ["vehicles-by-client", clientId, TENANT],
     queryFn: () =>
       fetch(`${API}/api/vehicles?tenant=${TENANT}&client_id=${clientId}&limit=50`)
-        .then(r => r.json()).then(d => d.rows ?? []),
+        .then(r => r.json())
+        .then(d => d.rows ?? d.data ?? []),
     enabled: open && !!clientId,
   });
 
   const { data: advisorsRaw = [] } = useQuery({
-    queryKey: ["booking-advisors"],
+    queryKey: ["booking-advisors", TENANT],
     queryFn: () =>
       fetch(`${API}/api/bookings/meta/advisors?tenant=${TENANT}`).then(r => r.json()),
     enabled: open,
   });
-  const advisors: any[] = Array.isArray(advisorsRaw) ? advisorsRaw : [];
+
+  /* ── Normalise to SelectOption[] ────────────────────────────────────── */
+
+  const clientOptions: SelectOption[] = useMemo(
+    () => (clientsRaw as any[]).map(c => ({
+      value: c.id,
+      label: c.name + (c.phone ? ` · ${c.phone}` : ""),
+    })),
+    [clientsRaw],
+  );
+
+  const vehicleOptions: SelectOption[] = useMemo(
+    () => (vehiclesRaw as any[]).map(v => ({
+      value: v.id,
+      label: [v.plate, v.year, v.make, v.model].filter(Boolean).join(" "),
+    })),
+    [vehiclesRaw],
+  );
+
+  const advisorOptions: SelectOption[] = useMemo(
+    () => (Array.isArray(advisorsRaw) ? advisorsRaw as any[] : []).map((a: any) => ({
+      value: a.id,
+      label: `${a.name} (${a.role})`,
+    })),
+    [advisorsRaw],
+  );
+
+  /* ── Handlers ───────────────────────────────────────────────────────── */
+
+  function handleClientChange(id: string) {
+    setClientId(id);
+    setVehicleId("");   // reset vehicle when customer changes
+  }
+
+  /* ── Submit ─────────────────────────────────────────────────────────── */
 
   const save = useMutation({
     mutationFn: async () => {
       const scheduled_at = new Date(`${date}T${time}:00`).toISOString();
       const body = {
-        client_id:   clientId   || null,
-        vehicle_id:  vehicleId  || null,
-        advisor_id:  advisorId  || null,
+        client_id:    clientId   || null,
+        vehicle_id:   vehicleId  || null,
+        advisor_id:   advisorId  || null,
         scheduled_at,
         duration_min: Number(duration),
         source,
-        notes:      notes      || null,
-        mileage_in: mileageIn  || null,
+        notes:        notes      || null,
+        mileage_in:   mileageIn  || null,
       };
-      const url    = isEdit ? `${API}/api/bookings/${booking!.id}?tenant=${TENANT}` : `${API}/api/bookings?tenant=${TENANT}`;
+      const url    = isEdit
+        ? `${API}/api/bookings/${booking!.id}?tenant=${TENANT}`
+        : `${API}/api/bookings?tenant=${TENANT}`;
       const method = isEdit ? "PUT" : "POST";
-      const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const r = await fetch(url, {
+        method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
       if (!r.ok) { const e = await r.json(); throw new Error(e.error ?? "Failed"); }
       return r.json();
     },
@@ -156,6 +200,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
           {/* Date & Time */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -175,7 +220,9 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
               <Select value={duration} onValueChange={setDuration}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {DURATIONS.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
+                  {DURATIONS.map(d => (
+                    <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -184,7 +231,9 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
               <Select value={source} onValueChange={setSource}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {SOURCES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  {SOURCES.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -193,49 +242,49 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
           {/* Customer */}
           <div className="space-y-1.5">
             <Label>Customer</Label>
-            <Select value={clientId || "__none"} onValueChange={v => { setClientId(v === "__none" ? "" : v); setVehicleId(""); }}>
-              <SelectTrigger><SelectValue placeholder="Select customer…" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">No customer</SelectItem>
-                {clients.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` · ${c.phone}` : ""}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={clientId}
+              onValueChange={handleClientChange}
+              options={clientOptions}
+              placeholder={clientOptions.length === 0 ? "No customers yet" : "Search customer…"}
+              searchPlaceholder="Search by name or phone…"
+            />
+            {clientOptions.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Add a customer first from the Customers page.
+              </p>
+            )}
           </div>
 
           {/* Vehicle */}
           <div className="space-y-1.5">
             <Label>Vehicle</Label>
-            <Select
-              value={vehicleId || "__none"}
-              onValueChange={v => setVehicleId(v === "__none" ? "" : v)}
+            <SearchableSelect
+              value={vehicleId}
+              onValueChange={setVehicleId}
+              options={vehicleOptions}
+              placeholder={
+                !clientId
+                  ? "Select a customer first"
+                  : vehicleOptions.length === 0
+                  ? "No vehicles for this customer"
+                  : "Search vehicle…"
+              }
+              searchPlaceholder="Search by plate or model…"
               disabled={!clientId}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={clientId ? "Select vehicle…" : "Select customer first"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">No vehicle</SelectItem>
-                {vehicles.map((v: any) => (
-                  <SelectItem key={v.id} value={v.id}>{v.plate} — {v.year} {v.make} {v.model}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           {/* Advisor */}
           <div className="space-y-1.5">
             <Label>Assigned advisor</Label>
-            <Select value={advisorId || "__none"} onValueChange={v => setAdvisorId(v === "__none" ? "" : v)}>
-              <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">Unassigned</SelectItem>
-                {advisors.map((a: any) => (
-                  <SelectItem key={a.id} value={a.id}>{a.name} ({a.role})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={advisorId}
+              onValueChange={setAdvisorId}
+              options={advisorOptions}
+              placeholder="Unassigned"
+              searchPlaceholder="Search advisor…"
+            />
           </div>
 
           {/* Mileage */}
@@ -263,7 +312,10 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
 
         <DialogFooter className="px-6 py-4 border-t border-border shrink-0">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending || !date || !time}>
+          <Button
+            onClick={() => save.mutate()}
+            disabled={save.isPending || !date || !time}
+          >
             {save.isPending ? "Saving…" : isEdit ? "Save changes" : "Create booking"}
           </Button>
         </DialogFooter>

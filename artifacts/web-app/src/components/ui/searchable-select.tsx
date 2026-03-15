@@ -7,10 +7,15 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
 interface SearchableSelectProps {
   value: string;
   onValueChange: (value: string) => void;
-  options: string[];
+  options: string[] | SelectOption[];
   placeholder?: string;
   searchPlaceholder?: string;
   className?: string;
@@ -28,6 +33,16 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
 
+  const normalized: SelectOption[] = React.useMemo(
+    () =>
+      (options as Array<string | SelectOption>).map(o =>
+        typeof o === "string" ? { value: o, label: o } : o,
+      ),
+    [options],
+  );
+
+  const displayLabel = normalized.find(o => o.value === value)?.label ?? value;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -42,7 +57,7 @@ export function SearchableSelect({
             className,
           )}
         >
-          <span className="truncate">{value || placeholder}</span>
+          <span className="truncate">{displayLabel || placeholder}</span>
           <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -56,19 +71,19 @@ export function SearchableSelect({
           <CommandList className="max-h-52 overflow-y-auto">
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
-              {options.map(opt => (
+              {normalized.map(opt => (
                 <CommandItem
-                  key={opt}
-                  value={opt}
-                  onSelect={current => {
-                    onValueChange(current === value ? "" : current);
+                  key={opt.value}
+                  value={opt.label}
+                  onSelect={() => {
+                    onValueChange(opt.value === value ? "" : opt.value);
                     setOpen(false);
                   }}
                 >
                   <Check
-                    className={cn("mr-2 h-3.5 w-3.5", value === opt ? "opacity-100" : "opacity-0")}
+                    className={cn("mr-2 h-3.5 w-3.5", value === opt.value ? "opacity-100" : "opacity-0")}
                   />
-                  {opt}
+                  {opt.label}
                 </CommandItem>
               ))}
             </CommandGroup>
