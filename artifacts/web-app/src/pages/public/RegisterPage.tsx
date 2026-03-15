@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { Link } from "wouter";
+import { authService } from "@/lib/auth";
 import {
   ArrowRight, ArrowLeft, CheckCircle2, Building2, User, Mail, Lock,
   Eye, EyeOff, Wrench, Globe, Phone, MapPin, Users, Zap, Car,
@@ -953,6 +954,13 @@ export default function RegisterPage() {
 
       const data = await res.json();
       if (!res.ok) { toast.error(data.error ?? "Something went wrong."); return; }
+
+      /* Sign in with the newly created account so session is written */
+      try {
+        await authService.signIn(email, password, data.slug);
+      } catch {
+        /* Sign-in failure is non-fatal — show success screen anyway */
+      }
 
       setResultSlug(data.slug);
       setSuccess(true);

@@ -3,13 +3,15 @@ import type { UserRole } from "@/lib/auth";
 import { canAccess, type ModuleKey } from "@/lib/permissions";
 
 export interface SessionData {
-  userId:     string;
-  tenantId:   string;
-  tenantSlug: string;
-  name:       string;
-  email:      string;
-  role:       UserRole;
-  avatarUrl?: string;
+  userId:        string;
+  tenantId:      string;
+  tenantSlug:    string;
+  name:          string;
+  email:         string;
+  role:          UserRole;
+  avatarUrl?:    string;
+  tenantName?:   string;
+  tenantLogoUrl?: string;
 }
 
 const SESSION_KEY = "ceeda_session";

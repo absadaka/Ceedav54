@@ -153,13 +153,15 @@ const MOCK_SESSIONS: AuthSession[] = [
 const SESSION_KEY = "ceeda_session";
 
 interface StoredSession {
-  userId: string;
-  tenantSlug: string;
-  tenantId: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  avatarUrl?: string;
+  userId:        string;
+  tenantSlug:    string;
+  tenantId:      string;
+  name:          string;
+  email:         string;
+  role:          UserRole;
+  avatarUrl?:    string;
+  tenantName?:   string;
+  tenantLogoUrl?: string;
 }
 
 function readStoredSession(): StoredSession | null {
@@ -224,13 +226,15 @@ class StubAuthService implements IAuthService {
     };
 
     writeSession({
-      userId:     user.id,
-      tenantSlug: user.tenantSlug,
-      tenantId:   user.tenantId,
-      name:       user.name,
-      email:      user.email,
-      role:       user.role,
-      avatarUrl:  user.avatarUrl,
+      userId:        user.id,
+      tenantSlug:    user.tenantSlug,
+      tenantId:      user.tenantId,
+      name:          user.name,
+      email:         user.email,
+      role:          user.role,
+      avatarUrl:     user.avatarUrl,
+      tenantName:    data.tenant?.name,
+      tenantLogoUrl: data.tenant?.logoUrl,
     });
 
     return { user, session: { ...MOCK_SESSION, userId: user.id } };
