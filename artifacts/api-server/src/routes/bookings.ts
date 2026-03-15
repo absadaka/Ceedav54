@@ -3,7 +3,7 @@ import { sql, eq, and, or, desc, ilike, isNull, gte, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
-  bookingsTable, jobsTable,
+  bookingsTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -14,51 +14,9 @@ async function resolveTenant(slug: string) {
 }
 
 const VALID_STATUSES = [
-  "pending", "confirmed", "checked_in",
+  "pending", "confirmed", "checked_in", "in_progress", "completed", "cancelled", "no_show",
 ] as const;
 type BookingStatus = typeof VALID_STATUSES[number];
-
-/* ─── Shared: create job card for a booking (idempotent) ─────────────────── */
-async function createJobForBooking(booking: { id: string; tenant_id: string; booking_type: string | null; client_id: string | null; vehicle_id: string | null; advisor_id: string | null; notes: string | null; mileage_in: string | null }) {
-  // Return existing job if already created
-  const [existing] = await db
-    .select()
-    .from(jobsTable)
-    .where(and(eq(jobsTable.booking_id, booking.id), eq(jobsTable.tenant_id, booking.tenant_id)))
-    .orderBy(jobsTable.created_at)
-    .limit(1);
-  if (existing) return existing;
-
-  // Generate sequential ref
-  const [{ seq }] = await db
-    .select({ seq: sql<number>`cast(coalesce(max(seq), 0) + 1 as int)` })
-    .from(jobsTable)
-    .where(eq(jobsTable.tenant_id, booking.tenant_id));
-
-  const year   = new Date().getFullYear();
-  const prefix = booking.booking_type === "inspection" ? "INS" : "JC";
-  const ref    = `${prefix}-${year}-${String(seq).padStart(4, "0")}`;
-
-  const [job] = await db
-    .insert(jobsTable)
-    .values({
-      tenant_id:        booking.tenant_id,
-      seq,
-      ref,
-      booking_id:       booking.id,
-      client_id:        booking.client_id,
-      vehicle_id:       booking.vehicle_id,
-      advisor_id:       booking.advisor_id,
-      job_type:         booking.booking_type ?? "service",
-      customer_concern: booking.notes ?? undefined,
-      mileage_in:       booking.mileage_in ?? undefined,
-      status:           "waiting",
-      priority:         "normal",
-    })
-    .returning();
-
-  return job;
-}
 
 /* ─── GET /bookings/meta/advisors ─────────────────────────────────────────── */
 router.get("/meta/advisors", async (req, res) => {
@@ -127,7 +85,6 @@ router.get("/", async (req, res) => {
         .select({
           id:           bookingsTable.id,
           ref:          bookingsTable.ref,
-          booking_type: bookingsTable.booking_type,
           status:       bookingsTable.status,
           source:       bookingsTable.source,
           scheduled_at: bookingsTable.scheduled_at,
@@ -210,7 +167,6 @@ router.get("/:id", async (req, res) => {
         id:           bookingsTable.id,
         ref:          bookingsTable.ref,
         seq:          bookingsTable.seq,
-        booking_type: bookingsTable.booking_type,
         status:       bookingsTable.status,
         source:       bookingsTable.source,
         scheduled_at: bookingsTable.scheduled_at,
@@ -234,17 +190,12 @@ router.get("/:id", async (req, res) => {
         advisor_name: advisorAlias.name,
         advisor_email:advisorAlias.email,
         created_by_name: creatorAlias.name,
-        job_id:       jobsTable.id,
-        job_ref:      jobsTable.ref,
-        job_type:     jobsTable.job_type,
-        job_status:   jobsTable.status,
       })
       .from(bookingsTable)
       .leftJoin(clientsTable, eq(clientsTable.id, bookingsTable.client_id))
       .leftJoin(vehiclesTable, eq(vehiclesTable.id, bookingsTable.vehicle_id))
       .leftJoin(advisorAlias, eq(advisorAlias.id, bookingsTable.advisor_id))
       .leftJoin(creatorAlias, eq(creatorAlias.id, bookingsTable.created_by))
-      .leftJoin(jobsTable, and(eq(jobsTable.booking_id, bookingsTable.id), eq(jobsTable.tenant_id, tenant.id)))
       .where(and(eq(bookingsTable.id, req.params.id), eq(bookingsTable.tenant_id, tenant.id), isNull(bookingsTable.deleted_at)))
       .limit(1);
 
@@ -267,7 +218,6 @@ router.post("/", async (req, res) => {
       client_id, vehicle_id, advisor_id,
       scheduled_at, duration_min = 60,
       source = "phone", notes, mileage_in,
-      booking_type = "service",
     } = req.body;
 
     if (!scheduled_at) return res.status(400).json({ error: "scheduled_at is required" });
@@ -287,7 +237,6 @@ router.post("/", async (req, res) => {
         tenant_id: tenant.id,
         seq,
         ref,
-        booking_type: (booking_type === "inspection" ? "inspection" : "service") as "service" | "inspection",
         client_id:    client_id    || null,
         vehicle_id:   vehicle_id   || null,
         advisor_id:   advisor_id   || null,
@@ -317,7 +266,6 @@ router.put("/:id", async (req, res) => {
     const {
       client_id, vehicle_id, advisor_id,
       scheduled_at, duration_min, source, notes, mileage_in,
-      booking_type,
     } = req.body;
 
     const updates: Record<string, any> = { updated_at: new Date() };
@@ -329,7 +277,6 @@ router.put("/:id", async (req, res) => {
     if (source       !== undefined) updates.source       = source;
     if (notes        !== undefined) updates.notes        = notes || null;
     if (mileage_in   !== undefined) updates.mileage_in   = mileage_in || null;
-    if (booking_type !== undefined) updates.booking_type = booking_type === "inspection" ? "inspection" : "service";
 
     const [booking] = await db
       .update(bookingsTable)
@@ -364,39 +311,9 @@ router.post("/:id/status", async (req, res) => {
       .returning();
 
     if (!booking) return res.status(404).json({ error: "Booking not found" });
-
-    // Auto-create job card when booking is checked in
-    if (status === "checked_in") {
-      const job = await createJobForBooking(booking);
-      return res.json({ booking, job });
-    }
-
     res.json({ booking });
   } catch (e: any) {
     console.error("POST /bookings/:id/status", e);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-/* ─── POST /bookings/:id/start-job (kept for backwards compatibility) ─────── */
-router.post("/:id/start-job", async (req, res) => {
-  try {
-    const slug   = (req.query.tenant as string) ?? "demo-workshop";
-    const tenant = await resolveTenant(slug);
-    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
-
-    const [booking] = await db
-      .select()
-      .from(bookingsTable)
-      .where(and(eq(bookingsTable.id, req.params.id), eq(bookingsTable.tenant_id, tenant.id), isNull(bookingsTable.deleted_at)))
-      .limit(1);
-
-    if (!booking) return res.status(404).json({ error: "Booking not found" });
-
-    const job = await createJobForBooking(booking);
-    res.status(200).json({ job });
-  } catch (e: any) {
-    console.error("POST /bookings/:id/start-job", e);
     res.status(500).json({ error: e.message });
   }
 });

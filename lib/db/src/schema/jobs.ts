@@ -1,5 +1,5 @@
 import {
-  pgTable, text, timestamp, uuid, integer, numeric, index, uniqueIndex, pgEnum
+  pgTable, text, timestamp, uuid, integer, numeric, index, pgEnum
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -126,8 +126,6 @@ export const jobsTable = pgTable("jobs", {
   advisor_id:      uuid("advisor_id").references(() => usersTable.id, { onDelete: "set null" }),
   // primary technician (quick assignment — use job_assignments for multi-tech)
   technician_id:   uuid("technician_id").references(() => usersTable.id, { onDelete: "set null" }),
-  job_type:        text("job_type").notNull().default("service"),
-  // "service" | "inspection"
   status:          jobStatusEnum("status").notNull().default("waiting"),
   priority:        jobPriorityEnum("priority").notNull().default("normal"),
   bay:             text("bay"),
@@ -153,7 +151,6 @@ export const jobsTable = pgTable("jobs", {
   index("jobs_advisor_idx").on(t.advisor_id),
   index("jobs_client_idx").on(t.client_id),
   index("jobs_vehicle_idx").on(t.vehicle_id),
-  uniqueIndex("jobs_booking_unique_idx").on(t.tenant_id, t.booking_id),
 ]);
 
 export const insertJobSchema = createInsertSchema(jobsTable).omit({

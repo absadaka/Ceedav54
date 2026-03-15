@@ -7,7 +7,6 @@ import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ClipboardList, Wrench } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -21,7 +20,6 @@ const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 export interface BookingRow {
   id: string;
   ref: string;
-  booking_type: "service" | "inspection";
   status: string;
   source: string;
   scheduled_at: string;
@@ -64,7 +62,6 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   const qc = useQueryClient();
   const isEdit = !!booking?.id;
 
-  const [bookingType, setBookingType] = useState<"service" | "inspection">("service");
   const [clientId,    setClientId]    = useState("");
   const [vehicleId,   setVehicleId]   = useState("");
   const [advisorId,   setAdvisorId]   = useState("");
@@ -78,7 +75,6 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   useEffect(() => {
     if (!open) return;
     if (booking) {
-      setBookingType(booking.booking_type ?? "service");
       setClientId(booking.client_id ?? "");
       setVehicleId(booking.vehicle_id ?? "");
       setAdvisorId(booking.advisor_id ?? "");
@@ -95,7 +91,6 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
       now.setHours(now.getHours() + 1);
       setDate(now.toISOString().slice(0, 10));
       setTime(now.toTimeString().slice(0, 5));
-      setBookingType("service");
       setClientId(""); setVehicleId(""); setAdvisorId("");
       setDuration("60"); setSource("phone"); setNotes(""); setMileageIn("");
     }
@@ -167,7 +162,6 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
     mutationFn: async () => {
       const scheduled_at = new Date(`${date}T${time}:00`).toISOString();
       const body = {
-        booking_type: bookingType,
         client_id:    clientId   || null,
         vehicle_id:   vehicleId  || null,
         advisor_id:   advisorId  || null,
@@ -206,34 +200,6 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-
-          {/* Booking type */}
-          <div className="space-y-1.5">
-            <Label>Appointment type</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {([
-                { value: "service",    label: "Service",    icon: Wrench,        desc: "Maintenance or repair work" },
-                { value: "inspection", label: "Inspection", icon: ClipboardList, desc: "Diagnostic or vehicle check" },
-              ] as const).map(({ value, label, icon: Icon, desc }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setBookingType(value)}
-                  className={`flex flex-col items-start gap-1.5 rounded-lg border-2 p-3 text-left transition-all ${
-                    bookingType === value
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-muted-foreground/30"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className={`w-4 h-4 ${bookingType === value ? "text-primary" : "text-muted-foreground"}`} />
-                    <span className={`text-sm font-semibold ${bookingType === value ? "text-primary" : "text-foreground"}`}>{label}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground leading-snug">{desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Date & Time */}
           <div className="grid grid-cols-2 gap-4">

@@ -1,10 +1,10 @@
 import {
   Wrench, Plus, Search, LayoutGrid, List,
-  ChevronRight, Clock, User, Car, ClipboardList,
+  ChevronRight, Clock, User, Car,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation, useSearch } from "wouter";
+import { useLocation } from "wouter";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -118,21 +118,15 @@ export default function JobsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [movingJob, setMovingJob]   = useState<KanbanJob | null>(null);
 
-  // Read job_type filter from URL — useSearch() re-renders when query string changes
-  const search  = useSearch();
-  const urlType = new URLSearchParams(search).get("job_type") ?? "";
-
-  const typeQs = urlType ? `&job_type=${urlType}` : "";
-
   const { data: kanbanData, isLoading: kanbanLoading } = useQuery<Record<string, KanbanJob[]>>({
-    queryKey: ["jobs-kanban", urlType],
-    queryFn:  () => fetch(`${API}/api/jobs/kanban?tenant=${TENANT}${typeQs}`).then(r => r.json()),
+    queryKey: ["jobs-kanban"],
+    queryFn:  () => fetch(`${API}/api/jobs/kanban?tenant=${TENANT}`).then(r => r.json()),
     refetchInterval: 30_000,
   });
 
   const { data: listData, isLoading: listLoading } = useQuery<{ data: ListJob[]; total: number }>({
-    queryKey: ["jobs", q, urlType],
-    queryFn:  () => fetch(`${API}/api/jobs?tenant=${TENANT}&q=${encodeURIComponent(q)}&limit=100${typeQs}`).then(r => r.json()),
+    queryKey: ["jobs", q],
+    queryFn:  () => fetch(`${API}/api/jobs?tenant=${TENANT}&q=${encodeURIComponent(q)}&limit=100`).then(r => r.json()),
     enabled: view === "list",
   });
 
@@ -144,37 +138,10 @@ export default function JobsPage() {
     return Object.fromEntries(Object.entries(kanbanData).map(([k, v]) => [k, v.filter(fn)]));
   }, [kanbanData, q]);
 
-  const baseJobsUrl = `/jobs?tenant=${TENANT}`;
-
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-title">
-            {urlType === "inspection" ? "Inspections" : urlType === "service" ? "Services" : "Jobs"}
-          </h1>
-          <div className="flex items-center gap-1 mt-2">
-            {([
-              { key: "",           label: "All",         icon: null },
-              { key: "service",    label: "Services",    icon: Wrench },
-              { key: "inspection", label: "Inspections", icon: ClipboardList },
-            ] as const).map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => navigate(key ? `${baseJobsUrl}&job_type=${key}` : baseJobsUrl)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors",
-                  urlType === key
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
-                )}
-              >
-                {Icon && <Icon className="w-3 h-3" />}
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <h1 className="page-title">Jobs</h1>
         <Button size="sm" className="gap-1.5" onClick={() => setDrawerOpen(true)}>
           <Plus className="w-4 h-4" />New job
         </Button>
