@@ -192,12 +192,17 @@ router.get("/:id", async (req, res) => {
         advisor_name: advisorAlias.name,
         advisor_email:advisorAlias.email,
         created_by_name: creatorAlias.name,
+        job_id:       jobsTable.id,
+        job_ref:      jobsTable.ref,
+        job_type:     jobsTable.job_type,
+        job_status:   jobsTable.status,
       })
       .from(bookingsTable)
       .leftJoin(clientsTable, eq(clientsTable.id, bookingsTable.client_id))
       .leftJoin(vehiclesTable, eq(vehiclesTable.id, bookingsTable.vehicle_id))
       .leftJoin(advisorAlias, eq(advisorAlias.id, bookingsTable.advisor_id))
       .leftJoin(creatorAlias, eq(creatorAlias.id, bookingsTable.created_by))
+      .leftJoin(jobsTable, and(eq(jobsTable.booking_id, bookingsTable.id), eq(jobsTable.tenant_id, tenant.id)))
       .where(and(eq(bookingsTable.id, req.params.id), eq(bookingsTable.tenant_id, tenant.id), isNull(bookingsTable.deleted_at)))
       .limit(1);
 
@@ -339,6 +344,19 @@ router.post("/:id/start-job", async (req, res) => {
       .limit(1);
 
     if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    // Idempotency: return the existing job if one already exists for this booking
+    // (checked before status guard so repeated calls always return the job)
+    const [existing] = await db
+      .select()
+      .from(jobsTable)
+      .where(and(eq(jobsTable.booking_id, booking.id), eq(jobsTable.tenant_id, tenant.id)))
+      .orderBy(jobsTable.created_at)
+      .limit(1);
+    if (existing) {
+      return res.status(200).json({ job: existing });
+    }
+
     if (["cancelled", "no_show"].includes(booking.status)) {
       return res.status(400).json({ error: "Cannot start a job for a cancelled or no-show booking" });
     }

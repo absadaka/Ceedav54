@@ -1,5 +1,5 @@
 import {
-  pgTable, text, timestamp, uuid, integer, numeric, index, pgEnum
+  pgTable, text, timestamp, uuid, integer, numeric, index, uniqueIndex, pgEnum
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -153,6 +153,7 @@ export const jobsTable = pgTable("jobs", {
   index("jobs_advisor_idx").on(t.advisor_id),
   index("jobs_client_idx").on(t.client_id),
   index("jobs_vehicle_idx").on(t.vehicle_id),
+  uniqueIndex("jobs_booking_unique_idx").on(t.tenant_id, t.booking_id),
 ]);
 
 export const insertJobSchema = createInsertSchema(jobsTable).omit({
