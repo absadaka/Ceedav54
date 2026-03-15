@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, CalendarCheck, Edit, User, Car, Clock, Calendar,
   CheckCircle2, XCircle, RefreshCw, ChevronRight, FileText, MoreHorizontal,
-  Wrench, ClipboardList,
+  Wrench, ClipboardList, ExternalLink,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -89,7 +89,7 @@ export default function BookingDetailPage() {
       qc.invalidateQueries({ queryKey: ["booking", id] });
       qc.invalidateQueries({ queryKey: ["bookings"] });
       qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
-      navigate(`/jobs/${data.job.id}`);
+      navigate(`/jobs/${data.job.id}?tenant=${TENANT}`);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -148,7 +148,16 @@ export default function BookingDetailPage() {
               Check in
             </Button>
           )}
-          {nextSteps.includes("in_progress") && (
+          {bk.job_id ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 border-violet-200 text-violet-700 hover:bg-violet-50"
+              onClick={() => navigate(`/jobs/${bk.job_id}?tenant=${TENANT}`)}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />View job card
+            </Button>
+          ) : nextSteps.includes("in_progress") && (
             <Button
               size="sm"
               className="gap-1.5 bg-violet-600 hover:bg-violet-700"
@@ -246,6 +255,30 @@ export default function BookingDetailPage() {
             : <p className="text-sm text-muted-foreground italic">No vehicle linked</p>
           }
         </div>
+
+        {/* Linked job card */}
+        {bk.job_id && (
+          <button
+            className="rounded-lg border border-violet-200 bg-violet-50 p-4 space-y-3 text-left w-full group"
+            onClick={() => navigate(`/jobs/${bk.job_id}?tenant=${TENANT}`)}
+          >
+            <p className="text-xs font-semibold text-violet-600 uppercase tracking-wide">
+              {bk.job_type === "inspection" ? "Inspection card" : "Job card"}
+            </p>
+            <div className="flex items-start gap-2">
+              {bk.job_type === "inspection"
+                ? <ClipboardList className="w-4 h-4 mt-0.5 text-violet-500 shrink-0" />
+                : <Wrench className="w-4 h-4 mt-0.5 text-violet-500 shrink-0" />
+              }
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm font-mono group-hover:text-violet-700 transition-colors flex items-center gap-1">
+                  {bk.job_ref}<ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100" />
+                </p>
+                <p className="text-xs text-violet-500 capitalize mt-0.5">{bk.job_status?.replace(/_/g, " ")}</p>
+              </div>
+            </div>
+          </button>
+        )}
 
         {/* Appointment details */}
         <div className="rounded-lg border border-border bg-background p-4 space-y-2.5">
