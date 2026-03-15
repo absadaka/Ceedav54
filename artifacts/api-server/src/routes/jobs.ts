@@ -359,8 +359,9 @@ router.post("/", async (req, res) => {
       .from(jobsTable)
       .where(eq(jobsTable.tenant_id, tenant.id));
 
-    const year = new Date().getFullYear();
-    const ref  = `JC-${year}-${String(seq).padStart(4, "0")}`;
+    const year   = new Date().getFullYear();
+    const prefix = type === "inspection" ? "Insp" : "JC";
+    const ref    = `${prefix}-${year}-${String(seq).padStart(4, "0")}`;
 
     const validPriority = (["low", "normal", "high", "urgent"] as const).includes(priority as "low" | "normal" | "high" | "urgent")
       ? (priority as "low" | "normal" | "high" | "urgent")
