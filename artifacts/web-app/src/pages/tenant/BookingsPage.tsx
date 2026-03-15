@@ -203,7 +203,7 @@ export default function BookingsPage() {
   const [viewMode,     setViewMode]     = useState<"list" | "calendar">("list");
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [datePreset,   setDatePreset]   = useState("today");
+  const [datePreset,   setDatePreset]   = useState("all");
   const [calDate,      setCalDate]      = useState(() => new Date());
   const [drawerOpen,   setDrawerOpen]   = useState(false);
   const [editing,      setEditing]      = useState<BookingRow | null>(null);
@@ -230,9 +230,28 @@ export default function BookingsPage() {
     refetchInterval: 60_000,
   });
 
-  const rows: BookingRow[] = data?.rows    ?? [];
-  const summary: any[]     = data?.summary ?? [];
-  const sumFor = (s: string) => summary.find((x: any) => x.status === s)?.count ?? 0;
+  const rows: BookingRow[] = data?.rows ?? [];
+
+  /* ── Period count queries (today / this week / this month) ─────────── */
+  function periodParams(from: string, to: string) {
+    return new URLSearchParams({ tenant: TENANT, date_from: from, date_to: to, limit: "1" }).toString();
+  }
+
+  const now = new Date();
+  const todayStr      = d0(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+  const tomorrowStr   = d0(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+  const weekStartStr  = d0(new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()));
+  const weekEndStr    = d0(new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() + 7));
+  const monthStartStr = d0(new Date(now.getFullYear(), now.getMonth(), 1));
+  const monthEndStr   = d0(new Date(now.getFullYear(), now.getMonth() + 1, 1));
+
+  const { data: todayData }     = useQuery({ queryKey: ["bk-count-today",   TENANT], queryFn: () => fetch(`${API}/api/bookings?${periodParams(todayStr,     tomorrowStr)}`).then(r => r.json()), refetchInterval: 60_000 });
+  const { data: weekData }      = useQuery({ queryKey: ["bk-count-week",    TENANT], queryFn: () => fetch(`${API}/api/bookings?${periodParams(weekStartStr,  weekEndStr)}`).then(r => r.json()),  refetchInterval: 60_000 });
+  const { data: monthData }     = useQuery({ queryKey: ["bk-count-month",   TENANT], queryFn: () => fetch(`${API}/api/bookings?${periodParams(monthStartStr, monthEndStr)}`).then(r => r.json()), refetchInterval: 60_000 });
+
+  const countToday = todayData?.total  ?? 0;
+  const countWeek  = weekData?.total   ?? 0;
+  const countMonth = monthData?.total  ?? 0;
 
   const transition = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
@@ -335,9 +354,9 @@ export default function BookingsPage() {
 
       {/* Stat strip */}
       <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Today · Pending"    value={sumFor("pending")}    color="text-yellow-600" />
-        <StatCard label="Today · Confirmed"  value={sumFor("confirmed")}  color="text-blue-600" />
-        <StatCard label="Today · Checked In" value={sumFor("checked_in")} color="text-indigo-600" />
+        <StatCard label="Today"      value={countToday} color="text-primary" />
+        <StatCard label="This week"  value={countWeek}  color="text-blue-600" />
+        <StatCard label="This month" value={countMonth} color="text-indigo-600" />
       </div>
 
       {/* Toolbar */}
