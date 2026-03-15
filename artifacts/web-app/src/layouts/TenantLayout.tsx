@@ -4,8 +4,20 @@ import {
   LayoutDashboard, Users, CalendarCheck, FileText, Wrench, Receipt,
   Settings, Bell, LogOut, ChevronDown, ChevronLeft, ChevronRight,
   UsersRound, Building2, ShieldCheck, Monitor, Laptop2,
-  Menu, X, Search,
+  Menu, X, Search, Sun, Moon,
 } from "lucide-react";
+
+function useSidebarTheme() {
+  const [dark, setDark] = useState(() =>
+    typeof window !== "undefined" && localStorage.getItem("workspace-sidebar") === "dark"
+  );
+  const toggle = () => setDark((v) => {
+    const next = !v;
+    localStorage.setItem("workspace-sidebar", next ? "dark" : "light");
+    return next;
+  });
+  return { dark, toggle };
+}
 import { cn } from "@/lib/utils";
 import { Logo } from "@/layouts/PublicLayout";
 import { Button } from "@/components/ui/button";
@@ -76,7 +88,7 @@ function SidebarLink({
           collapsed ? "px-2 py-2.5 justify-center" : "px-3 py-2.5",
           active
             ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-            : "text-sidebar-foreground/75 hover:bg-black/[0.06] hover:text-sidebar-foreground"
+            : "text-sidebar-foreground/75 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
         )}
       >
         <Icon className="w-[18px] h-[18px] shrink-0" />
@@ -105,12 +117,16 @@ function Sidebar({
   tenantSlug,
   showAdmin,
   onNavClick,
+  dark,
+  onThemeToggle,
 }: {
   collapsed: boolean;
   onToggle: () => void;
   tenantSlug?: string;
   showAdmin?: boolean;
   onNavClick?: () => void;
+  dark: boolean;
+  onThemeToggle: () => void;
 }) {
   const [location] = useLocation();
   const nav = buildNav(tenantSlug);
@@ -126,7 +142,8 @@ function Sidebar({
     <aside
       className={cn(
         "flex flex-col h-full bg-sidebar border-r border-sidebar-border transition-[width] duration-200 shrink-0 overflow-hidden",
-        collapsed ? "w-14" : "w-[220px]"
+        collapsed ? "w-14" : "w-[220px]",
+        dark && "sidebar-dark",
       )}
     >
       {/* Logo */}
@@ -137,9 +154,9 @@ function Sidebar({
         )}
       >
         {collapsed ? (
-          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>c&gt;</span>
+          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1, color: dark ? "#ffffff" : "#0a0a0a" }}>c&gt;</span>
         ) : (
-          <Logo size="sm" />
+          <Logo size="sm" light={dark} />
         )}
       </div>
 
@@ -204,7 +221,7 @@ function Sidebar({
                 className={cn(
                   "flex items-center gap-3 rounded-lg text-[15px] font-normal transition-colors cursor-pointer select-none w-full",
                   collapsed ? "px-2 py-2.5 justify-center" : "px-3 py-2.5",
-                  "text-sidebar-foreground/75 hover:bg-black/[0.06] hover:text-sidebar-foreground"
+                  "text-sidebar-foreground/75 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 )}
               >
                 <LogOut className="w-[18px] h-[18px] shrink-0" />
@@ -216,13 +233,23 @@ function Sidebar({
         </Tooltip>
       </div>
 
-      {/* Desktop collapse toggle */}
-      <div className="shrink-0 p-2 border-t border-sidebar-border hidden md:flex justify-center">
+      {/* Desktop bottom strip — theme toggle + collapse */}
+      <div className="shrink-0 p-2 border-t border-sidebar-border hidden md:flex items-center gap-1">
+        {/* Theme toggle */}
+        <button
+          onClick={onThemeToggle}
+          className="flex items-center justify-center w-7 h-7 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/40 transition-colors shrink-0"
+          aria-label={dark ? "Switch to light sidebar" : "Switch to dark sidebar"}
+        >
+          {dark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+        </button>
+
+        {/* Collapse toggle */}
         <button
           onClick={onToggle}
           className={cn(
-            "flex items-center gap-2 h-7 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/40 transition-colors text-xs px-2",
-            collapsed ? "w-9 justify-center" : "w-full"
+            "flex items-center gap-2 h-7 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/40 transition-colors text-xs px-2 flex-1",
+            collapsed ? "justify-center" : ""
           )}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -379,6 +406,7 @@ export default function TenantLayout({
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
   const { isManager } = useAuth();
   const adminVisible = showAdmin !== undefined ? showAdmin : isManager;
+  const { dark: sidebarDark, toggle: toggleSidebar } = useSidebarTheme();
 
   /* Close mobile drawer on resize to desktop */
   useEffect(() => {
@@ -398,6 +426,8 @@ export default function TenantLayout({
           onToggle={() => setCollapsed((v) => !v)}
           tenantSlug={tenantSlug}
           showAdmin={adminVisible}
+          dark={sidebarDark}
+          onThemeToggle={toggleSidebar}
         />
       </div>
 
@@ -430,6 +460,8 @@ export default function TenantLayout({
               tenantSlug={tenantSlug}
               showAdmin={adminVisible}
               onNavClick={() => setMobileOpen(false)}
+              dark={sidebarDark}
+              onThemeToggle={toggleSidebar}
             />
           </div>
         </div>
