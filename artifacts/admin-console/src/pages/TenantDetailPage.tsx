@@ -14,7 +14,8 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Building2, Mail, Phone, Globe, MapPin, Calendar,
   Users, CreditCard, ExternalLink, UserSearch, Pencil, AlertTriangle,
-  CheckCircle2, XCircle, Clock, Ban, MoreHorizontal,
+  CheckCircle2, XCircle, Clock, Ban, Car, UserRound,
+  CalendarCheck, ClipboardList, Wrench, DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -246,6 +247,10 @@ export default function TenantDetailPage() {
 
   const tenant: Tenant | undefined = data?.tenant;
   const users: User[] = data?.users ?? [];
+  const stats = data?.stats ?? {
+    client_count: 0, vehicle_count: 0, booking_count: 0,
+    inspection_count: 0, completed_jobs_count: 0, total_revenue: 0,
+  };
 
   if (isLoading) {
     return (
@@ -372,18 +377,35 @@ export default function TenantDetailPage() {
             <p className="text-sm font-semibold text-foreground">Usage summary</p>
           </div>
           <div className="p-5 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               {[
-                { label: "Team members", value: String(users.length) },
-                { label: "Active users",  value: String(users.filter((u) => u.is_active).length) },
-              ].map(({ label, value }) => (
+                { icon: Car,           label: "Vehicles",        value: stats.vehicle_count,        color: "text-blue-600" },
+                { icon: UserRound,     label: "Clients",         value: stats.client_count,         color: "text-emerald-600" },
+                { icon: CalendarCheck, label: "Bookings",        value: stats.booking_count,        color: "text-violet-600" },
+                { icon: ClipboardList, label: "Inspections",     value: stats.inspection_count,     color: "text-amber-600" },
+                { icon: Wrench,        label: "Jobs completed",  value: stats.completed_jobs_count, color: "text-indigo-600" },
+                { icon: Users,         label: "Team members",    value: users.length,               color: "text-foreground" },
+              ].map(({ icon: Icon, label, value, color }) => (
                 <div key={label} className="bg-muted/30 rounded-lg p-3 text-center">
-                  <p className="text-2xl font-semibold text-foreground">{value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+                  <Icon className={cn("w-4 h-4 mx-auto mb-1", color)} />
+                  <p className={cn("text-xl font-bold tabular-nums", color)}>{value.toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{label}</p>
                 </div>
               ))}
             </div>
-            <div className="space-y-2 pt-2">
+
+            {/* Revenue */}
+            <div className="flex items-center gap-3 p-3.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <DollarSign className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <p className="text-xs text-emerald-700 font-medium">Total revenue collected</p>
+                <p className="text-xl font-bold text-emerald-800 tabular-nums">
+                  {tenant.currency} {stats.total_revenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-1">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Module access</p>
               <div className="flex flex-wrap gap-1.5">
                 {[
