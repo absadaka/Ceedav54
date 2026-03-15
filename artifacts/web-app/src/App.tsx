@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import PublicLayout from "@/layouts/PublicLayout";
 import TenantLayout from "@/layouts/TenantLayout";
+import { getSession } from "@/hooks/useAuth";
 
 // Public pages
 import LandingPage from "@/pages/public/LandingPage";
@@ -109,9 +110,10 @@ function TenantSlugApp() {
   const [location] = useLocation();
   const segments = location.split("/").filter(Boolean);
   const tenantSlug = segments[0] ?? "";
+  const session = getSession();
 
   return (
-    <TenantLayout tenantSlug={tenantSlug} tenantName={undefined} showAdmin>
+    <TenantLayout tenantSlug={tenantSlug} tenantName={session?.tenantName} showAdmin>
       <Switch>
         <Route path="/:tenant/account/security" component={AccountSecurityPage} />
         <Route path="/:tenant/account/sessions" component={AccountSessionsPage} />
@@ -157,8 +159,9 @@ function AppRouter() {
 
   if (zone === "legacy-tenant-app") {
     const tenantSlug = new URLSearchParams(window.location.search).get("tenant") ?? undefined;
+    const session = getSession();
     return (
-      <TenantLayout tenantSlug={tenantSlug}>
+      <TenantLayout tenantSlug={tenantSlug} tenantName={session?.tenantName} tenantLogoUrl={session?.tenantLogoUrl}>
         <Switch>
           <Route path="/dashboard" component={DashboardPage} />
           {/* Customers — canonical; /clients kept for backward compat */}

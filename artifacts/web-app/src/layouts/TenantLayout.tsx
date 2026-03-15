@@ -276,17 +276,24 @@ function initials(name: string): string {
 
 function TopBar({
   tenantName,
+  tenantLogoUrl,
   tenantSlug,
   onMobileMenuToggle,
   onSearchOpen,
 }: {
   tenantName?: string;
+  tenantLogoUrl?: string;
   tenantSlug?: string;
   onMobileMenuToggle: () => void;
   onSearchOpen: () => void;
 }) {
-  const shopName = tenantName ?? "Demo Workshop";
+  const { user } = useAuth();
+  const shopName = tenantName ?? user?.tenantName ?? "My Workshop";
   const shopInitials = initials(shopName);
+  const logoUrl = tenantLogoUrl ?? user?.tenantLogoUrl;
+  const userName = user?.name ?? "User";
+  const userEmail = user?.email ?? "";
+  const userInitials = initials(userName);
   const prefix = tenantSlug ? `/${tenantSlug}` : "";
 
   return (
@@ -320,6 +327,7 @@ function TopBar({
         {/* Shop avatar */}
         <div className="flex items-center gap-2 mr-1">
           <Avatar className="w-7 h-7 rounded-md">
+            {logoUrl && <img src={logoUrl} alt={shopName} className="w-full h-full object-cover rounded-md" />}
             <AvatarFallback className="rounded-md text-[10px] font-bold bg-muted text-muted-foreground tracking-tight">
               {shopInitials}
             </AvatarFallback>
@@ -346,7 +354,7 @@ function TopBar({
             <button className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-md hover:bg-muted transition-colors">
               <Avatar className="w-7 h-7">
                 <AvatarFallback className="text-[11px] font-semibold bg-primary/10 text-primary">
-                  DA
+                  {userInitials}
                 </AvatarFallback>
               </Avatar>
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden sm:block" />
@@ -354,8 +362,8 @@ function TopBar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal py-2">
-              <p className="text-sm font-semibold text-foreground">Demo Admin</p>
-              <p className="text-xs text-muted-foreground mt-0.5">demo@ceeda.io</p>
+              <p className="text-sm font-semibold text-foreground">{userName}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{userEmail}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
@@ -392,6 +400,7 @@ interface TenantLayoutProps {
   children: React.ReactNode;
   tenantSlug?: string;
   tenantName?: string;
+  tenantLogoUrl?: string;
   showAdmin?: boolean;
 }
 
@@ -399,6 +408,7 @@ export default function TenantLayout({
   children,
   tenantSlug,
   tenantName,
+  tenantLogoUrl,
   showAdmin,
 }: TenantLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -471,6 +481,7 @@ export default function TenantLayout({
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <TopBar
           tenantName={tenantName}
+          tenantLogoUrl={tenantLogoUrl}
           tenantSlug={tenantSlug}
           onMobileMenuToggle={() => setMobileOpen((v) => !v)}
           onSearchOpen={() => setCmdOpen(true)}
