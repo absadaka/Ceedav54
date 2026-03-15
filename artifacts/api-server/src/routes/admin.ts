@@ -1,9 +1,10 @@
 import { Router } from "express";
 import {
   db, tenantsTable, usersTable, auditLogsTable, featureFlagsTable,
+  clientsTable, vehiclesTable, bookingsTable, jobsTable, invoicesTable,
 } from "@workspace/db";
 import {
-  eq, ilike, isNull, count, desc, and, or, sql, ne,
+  eq, ilike, isNull, count, desc, and, or, sql, ne, sum,
 } from "drizzle-orm";
 
 const router = Router();
@@ -117,21 +118,70 @@ router.get("/admin/tenants", async (req, res) => {
   }
 
   const tenantIds = tenantsRaw.map((t) => t.id);
-  const userCounts = await db
-    .select({ tenant_id: usersTable.tenant_id, count: count() })
-    .from(usersTable)
-    .where(
-      and(
-        isNull(usersTable.deleted_at),
-        or(...tenantIds.map((id) => eq(usersTable.tenant_id, id)))!,
-      ),
-    )
-    .groupBy(usersTable.tenant_id);
+  const tenantFilter = or(...tenantIds.map((id) => eq(usersTable.tenant_id, id)))!;
 
-  const countMap = new Map(userCounts.map((r) => [r.tenant_id, Number(r.count)]));
+  const [
+    userCounts, clientCounts, vehicleCounts,
+    bookingCounts, inspectionCounts, completedJobCounts, revenueSums,
+  ] = await Promise.all([
+    db.select({ tenant_id: usersTable.tenant_id, n: count() })
+      .from(usersTable)
+      .where(and(isNull(usersTable.deleted_at), tenantFilter))
+      .groupBy(usersTable.tenant_id),
+
+    db.select({ tenant_id: clientsTable.tenant_id, n: count() })
+      .from(clientsTable)
+      .where(and(isNull(clientsTable.deleted_at), or(...tenantIds.map((id) => eq(clientsTable.tenant_id, id)))!))
+      .groupBy(clientsTable.tenant_id),
+
+    db.select({ tenant_id: vehiclesTable.tenant_id, n: count() })
+      .from(vehiclesTable)
+      .where(or(...tenantIds.map((id) => eq(vehiclesTable.tenant_id, id)))!)
+      .groupBy(vehiclesTable.tenant_id),
+
+    db.select({ tenant_id: bookingsTable.tenant_id, n: count() })
+      .from(bookingsTable)
+      .where(and(isNull(bookingsTable.deleted_at), or(...tenantIds.map((id) => eq(bookingsTable.tenant_id, id)))!))
+      .groupBy(bookingsTable.tenant_id),
+
+    db.select({ tenant_id: jobsTable.tenant_id, n: count() })
+      .from(jobsTable)
+      .where(and(eq(jobsTable.type, "inspection"), or(...tenantIds.map((id) => eq(jobsTable.tenant_id, id)))!))
+      .groupBy(jobsTable.tenant_id),
+
+    db.select({ tenant_id: jobsTable.tenant_id, n: count() })
+      .from(jobsTable)
+      .where(and(eq(jobsTable.status, "completed"), or(...tenantIds.map((id) => eq(jobsTable.tenant_id, id)))!))
+      .groupBy(jobsTable.tenant_id),
+
+    db.select({ tenant_id: invoicesTable.tenant_id, total: sql<string>`coalesce(sum(${invoicesTable.paid_amount}::numeric), 0)` })
+      .from(invoicesTable)
+      .where(or(...tenantIds.map((id) => eq(invoicesTable.tenant_id, id)))!)
+      .groupBy(invoicesTable.tenant_id),
+  ]);
+
+  const m = <T extends { tenant_id: string | null; n: number }>(rows: T[]) =>
+    new Map(rows.map((r) => [r.tenant_id, r.n]));
+
+  const uMap  = m(userCounts);
+  const cMap  = m(clientCounts);
+  const vMap  = m(vehicleCounts);
+  const bMap  = m(bookingCounts);
+  const iMap  = m(inspectionCounts);
+  const jMap  = m(completedJobCounts);
+  const rMap  = new Map(revenueSums.map((r) => [r.tenant_id, parseFloat(r.total ?? "0")]));
 
   return res.json({
-    tenants: tenantsRaw.map((t) => ({ ...t, user_count: countMap.get(t.id) ?? 0 })),
+    tenants: tenantsRaw.map((t) => ({
+      ...t,
+      user_count:           uMap.get(t.id) ?? 0,
+      client_count:         cMap.get(t.id) ?? 0,
+      vehicle_count:        vMap.get(t.id) ?? 0,
+      booking_count:        bMap.get(t.id) ?? 0,
+      inspection_count:     iMap.get(t.id) ?? 0,
+      completed_jobs_count: jMap.get(t.id) ?? 0,
+      total_revenue:        rMap.get(t.id) ?? 0,
+    })),
     total: Number(total),
     page,
     limit,
@@ -152,17 +202,46 @@ router.get("/admin/tenants/:id", async (req, res) => {
 
   if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
-  const users = await db
-    .select({
-      id: usersTable.id, name: usersTable.name, email: usersTable.email,
-      role: usersTable.role, is_active: usersTable.is_active,
-      last_login_at: usersTable.last_login_at, created_at: usersTable.created_at,
-    })
-    .from(usersTable)
-    .where(and(eq(usersTable.tenant_id, id), isNull(usersTable.deleted_at)))
-    .orderBy(desc(usersTable.created_at));
+  const [users, stats] = await Promise.all([
+    db.select({
+        id: usersTable.id, name: usersTable.name, email: usersTable.email,
+        role: usersTable.role, is_active: usersTable.is_active,
+        last_login_at: usersTable.last_login_at, created_at: usersTable.created_at,
+      })
+      .from(usersTable)
+      .where(and(eq(usersTable.tenant_id, id), isNull(usersTable.deleted_at)))
+      .orderBy(desc(usersTable.created_at)),
 
-  return res.json({ tenant, users });
+    Promise.all([
+      db.select({ n: count() }).from(clientsTable)
+        .where(and(eq(clientsTable.tenant_id, id), isNull(clientsTable.deleted_at))),
+      db.select({ n: count() }).from(vehiclesTable)
+        .where(eq(vehiclesTable.tenant_id, id)),
+      db.select({ n: count() }).from(bookingsTable)
+        .where(and(eq(bookingsTable.tenant_id, id), isNull(bookingsTable.deleted_at))),
+      db.select({ n: count() }).from(jobsTable)
+        .where(and(eq(jobsTable.tenant_id, id), eq(jobsTable.type, "inspection"))),
+      db.select({ n: count() }).from(jobsTable)
+        .where(and(eq(jobsTable.tenant_id, id), eq(jobsTable.status, "completed"))),
+      db.select({ total: sql<string>`coalesce(sum(${invoicesTable.paid_amount}::numeric), 0)` })
+        .from(invoicesTable).where(eq(invoicesTable.tenant_id, id)),
+    ]),
+  ]);
+
+  const [clientRes, vehicleRes, bookingRes, inspectionRes, completedJobRes, revenueRes] = stats;
+
+  return res.json({
+    tenant,
+    users,
+    stats: {
+      client_count:         Number(clientRes[0]?.n         ?? 0),
+      vehicle_count:        Number(vehicleRes[0]?.n        ?? 0),
+      booking_count:        Number(bookingRes[0]?.n        ?? 0),
+      inspection_count:     Number(inspectionRes[0]?.n     ?? 0),
+      completed_jobs_count: Number(completedJobRes[0]?.n   ?? 0),
+      total_revenue:        parseFloat(revenueRes[0]?.total ?? "0"),
+    },
+  });
 });
 
 /* ─────────────────────────────────────────────────────────────────────────

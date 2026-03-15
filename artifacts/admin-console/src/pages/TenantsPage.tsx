@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "wouter";
-import { Building2, Search, Plus, ExternalLink, MoreHorizontal, RefreshCw, UserSearch } from "lucide-react";
+import { Building2, Search, Plus, ExternalLink, MoreHorizontal, RefreshCw, UserSearch, Car, Users, CalendarCheck, ClipboardList, Wrench, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,7 +20,10 @@ type TenantPlan   = "starter" | "professional" | "enterprise";
 interface Tenant {
   id: string; slug: string; name: string; plan: TenantPlan; status: TenantStatus;
   country: string | null; currency: string; email: string | null; phone: string | null;
-  logo_url: string | null; trial_ends_at: string | null; created_at: string; user_count: number;
+  logo_url: string | null; trial_ends_at: string | null; created_at: string;
+  user_count: number; client_count: number; vehicle_count: number;
+  booking_count: number; inspection_count: number; completed_jobs_count: number;
+  total_revenue: number;
 }
 
 function statusBadge(status: TenantStatus) {
@@ -229,6 +232,24 @@ export default function TenantsPage() {
                         <p className="text-xs text-muted-foreground truncate">
                           {tenant.slug}{tenant.email ? ` · ${tenant.email}` : ""}
                         </p>
+                        {/* Mini stat strip */}
+                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                          {[
+                            { icon: Users,         val: tenant.client_count,         tip: "Clients" },
+                            { icon: Car,           val: tenant.vehicle_count,        tip: "Vehicles" },
+                            { icon: CalendarCheck, val: tenant.booking_count,        tip: "Bookings" },
+                            { icon: ClipboardList, val: tenant.inspection_count,     tip: "Inspections" },
+                            { icon: Wrench,        val: tenant.completed_jobs_count, tip: "Jobs done" },
+                          ].map(({ icon: Icon, val, tip }) => (
+                            <span key={tip} className="flex items-center gap-0.5 text-[11px] text-muted-foreground" title={tip}>
+                              <Icon className="w-3 h-3" />{val}
+                            </span>
+                          ))}
+                          <span className="flex items-center gap-0.5 text-[11px] text-emerald-700 font-medium" title="Revenue">
+                            <DollarSign className="w-3 h-3" />
+                            {tenant.currency} {tenant.total_revenue.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </Link>
