@@ -10,7 +10,7 @@ import { Button }   from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import BookingDrawer, { type BookingRow } from "@/components/BookingDrawer";
@@ -178,16 +178,25 @@ export default function BookingDetailPage() {
                 <FileText className="w-3.5 h-3.5 mr-2" />Create quotation
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {nextSteps.includes("cancelled") && (
-                <DropdownMenuItem className="text-red-600" onClick={() => transition.mutate("cancelled")}>
-                  <XCircle className="w-3.5 h-3.5 mr-2" />Cancel
+              <DropdownMenuLabel className="text-[11px] text-muted-foreground font-medium py-1">Change status</DropdownMenuLabel>
+              {([
+                { key: "pending",     label: "Pending",     cls: "text-yellow-700" },
+                { key: "confirmed",   label: "Confirmed",   cls: "text-blue-700"   },
+                { key: "checked_in",  label: "Checked In",  cls: "text-indigo-700" },
+                { key: "in_progress", label: "In Progress", cls: "text-violet-700" },
+                { key: "completed",   label: "Completed",   cls: "text-green-700"  },
+                { key: "cancelled",   label: "Cancelled",   cls: "text-red-600"    },
+                { key: "no_show",     label: "No-show",     cls: "text-muted-foreground" },
+              ] as const).filter(s => s.key !== bk.status).map(s => (
+                <DropdownMenuItem
+                  key={s.key}
+                  className={s.cls}
+                  disabled={transition.isPending}
+                  onClick={() => transition.mutate(s.key)}
+                >
+                  {s.label}
                 </DropdownMenuItem>
-              )}
-              {nextSteps.includes("no_show") && (
-                <DropdownMenuItem className="text-muted-foreground" onClick={() => transition.mutate("no_show")}>
-                  No-show
-                </DropdownMenuItem>
-              )}
+              ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" onClick={() => { if (confirm("Delete this booking?")) deleteBk.mutate(); }}>
                 Delete
