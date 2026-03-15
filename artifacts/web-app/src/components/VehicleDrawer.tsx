@@ -7,9 +7,7 @@ import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -20,6 +18,10 @@ const EMIRATES = [
   "Abu Dhabi", "Dubai", "Sharjah", "Ajman",
   "Umm Al Quwain", "Ras Al Khaimah", "Fujairah",
 ];
+
+const YEARS = Array.from({ length: new Date().getFullYear() - 1979 }, (_, i) =>
+  String(new Date().getFullYear() + 1 - i),
+);
 
 const CAR_MAKES = [
   "Toyota", "Nissan", "Honda", "Mitsubishi", "Kia", "Hyundai",
@@ -80,6 +82,8 @@ const COLORS = [
   "Brown", "Bronze", "Beige", "Champagne",
   "Gold", "Orange", "Yellow", "Cream", "Pink", "Purple",
 ];
+
+const FUEL_TYPES = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG"];
 
 /* ─── Plate helpers ───────────────────────────────────────────────────────── */
 
@@ -152,15 +156,19 @@ function toForm(v: VehicleRow): FormState {
     plate_emirate: parsed.emirate,
     plate_code:    parsed.code,
     plate_number:  parsed.number,
-    make:          v.make         ?? "",
-    model:         v.model        ?? "",
-    year:          v.year         ?? "",
-    vin:           v.vin          ?? "",
-    color:         v.color        ?? "",
-    mileage:       v.mileage      ?? "",
-    fuel_type:     v.fuel_type    ?? "",
-    notes:         v.notes        ?? "",
+    make:          v.make      ?? "",
+    model:         v.model     ?? "",
+    year:          v.year      ?? "",
+    vin:           v.vin       ?? "",
+    color:         v.color     ?? "",
+    mileage:       v.mileage   ?? "",
+    fuel_type:     v.fuel_type ? capitalize(v.fuel_type) : "",
+    notes:         v.notes     ?? "",
   };
+}
+
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
@@ -180,13 +188,12 @@ export default function VehicleDrawer({ open, onClose, vehicle, clientId, onSucc
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const sel = (k: keyof FormState) => (v: string) => {
+  const pick = (k: keyof FormState) => (v: string) =>
     setForm(f => {
       const next = { ...f, [k]: v };
       if (k === "make") next.model = "";
       return next;
     });
-  };
 
   const knownModels = CAR_MODELS[form.make] ?? [];
 
@@ -199,8 +206,8 @@ export default function VehicleDrawer({ open, onClose, vehicle, clientId, onSucc
         ? `/api/vehicles/${vehicle!.id}?tenant=${TENANT}`
         : `/api/vehicles?tenant=${TENANT}`;
       const body = isEdit
-        ? { ...form, plate }
-        : { ...form, plate, client_id: vehicle?.client_id ?? clientId };
+        ? { ...form, plate, fuel_type: form.fuel_type.toLowerCase() }
+        : { ...form, plate, fuel_type: form.fuel_type.toLowerCase(), client_id: vehicle?.client_id ?? clientId };
       const res = await fetch(url, {
         method:  isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -244,15 +251,14 @@ export default function VehicleDrawer({ open, onClose, vehicle, clientId, onSucc
           {/* ── Plate ─────────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label>Plate number <span className="text-destructive">*</span></Label>
-            <div className="grid grid-cols-[1fr_80px_1fr] gap-2">
-              <Select value={form.plate_emirate} onValueChange={sel("plate_emirate")}>
-                <SelectTrigger><SelectValue placeholder="Emirate" /></SelectTrigger>
-                <SelectContent>
-                  {EMIRATES.map(e => (
-                    <SelectItem key={e} value={e}>{e}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-[1fr_72px_1fr] gap-2">
+              <SearchableSelect
+                value={form.plate_emirate}
+                onValueChange={pick("plate_emirate")}
+                options={EMIRATES}
+                placeholder="Emirate"
+                searchPlaceholder="Search emirate…"
+              />
               <Input
                 value={form.plate_code}
                 onChange={field("plate_code")}
@@ -275,26 +281,24 @@ export default function VehicleDrawer({ open, onClose, vehicle, clientId, onSucc
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Make</Label>
-              <Select value={form.make} onValueChange={sel("make")}>
-                <SelectTrigger><SelectValue placeholder="Select make…" /></SelectTrigger>
-                <SelectContent>
-                  {CAR_MAKES.map(m => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.make}
+                onValueChange={pick("make")}
+                options={CAR_MAKES}
+                placeholder="Select make…"
+                searchPlaceholder="Search make…"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Model</Label>
               {knownModels.length > 0 ? (
-                <Select value={form.model} onValueChange={sel("model")}>
-                  <SelectTrigger><SelectValue placeholder="Select model…" /></SelectTrigger>
-                  <SelectContent>
-                    {knownModels.map(m => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.model}
+                  onValueChange={pick("model")}
+                  options={knownModels}
+                  placeholder="Select model…"
+                  searchPlaceholder="Search model…"
+                />
               ) : (
                 <Input
                   value={form.model}
@@ -309,53 +313,72 @@ export default function VehicleDrawer({ open, onClose, vehicle, clientId, onSucc
           {/* ── Year & Color ──────────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="vyear">Year</Label>
-              <Input id="vyear" value={form.year} onChange={field("year")} placeholder="2022" maxLength={4} />
+              <Label>Year</Label>
+              <SearchableSelect
+                value={form.year}
+                onValueChange={pick("year")}
+                options={YEARS}
+                placeholder="Select year…"
+                searchPlaceholder="Search year…"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Color</Label>
-              <Select value={form.color} onValueChange={sel("color")}>
-                <SelectTrigger><SelectValue placeholder="Select color…" /></SelectTrigger>
-                <SelectContent>
-                  {COLORS.map(c => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.color}
+                onValueChange={pick("color")}
+                options={COLORS}
+                placeholder="Select color…"
+                searchPlaceholder="Search color…"
+              />
             </div>
           </div>
 
           {/* ── VIN ───────────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label htmlFor="vvin">VIN</Label>
-            <Input id="vvin" value={form.vin} onChange={field("vin")} placeholder="1HGBH41JXMN109186" className="font-mono text-sm" />
+            <Input
+              id="vvin"
+              value={form.vin}
+              onChange={field("vin")}
+              placeholder="1HGBH41JXMN109186"
+              className="font-mono text-sm"
+            />
           </div>
 
           {/* ── Fuel & Mileage ────────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Fuel type</Label>
-              <Select value={form.fuel_type} onValueChange={sel("fuel_type")}>
-                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="petrol">Petrol</SelectItem>
-                  <SelectItem value="diesel">Diesel</SelectItem>
-                  <SelectItem value="hybrid">Hybrid</SelectItem>
-                  <SelectItem value="electric">Electric</SelectItem>
-                  <SelectItem value="lpg">LPG</SelectItem>
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.fuel_type}
+                onValueChange={pick("fuel_type")}
+                options={FUEL_TYPES}
+                placeholder="Select…"
+                searchPlaceholder="Search…"
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="vmil">Mileage (km)</Label>
-              <Input id="vmil" value={form.mileage} onChange={field("mileage")} placeholder="85000" />
+              <Input
+                id="vmil"
+                value={form.mileage}
+                onChange={field("mileage")}
+                placeholder="85000"
+              />
             </div>
           </div>
 
           {/* ── Notes ─────────────────────────────────────────────────── */}
           <div className="space-y-1.5">
             <Label htmlFor="vnotes">Notes</Label>
-            <Textarea id="vnotes" value={form.notes} onChange={field("notes")} rows={3} placeholder="Any notes about this vehicle…" />
+            <Textarea
+              id="vnotes"
+              value={form.notes}
+              onChange={field("notes")}
+              rows={3}
+              placeholder="Any notes about this vehicle…"
+            />
           </div>
 
           {err && <p className="text-sm text-destructive">{err}</p>}
