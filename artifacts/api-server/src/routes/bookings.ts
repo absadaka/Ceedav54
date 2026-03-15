@@ -14,9 +14,51 @@ async function resolveTenant(slug: string) {
 }
 
 const VALID_STATUSES = [
-  "pending", "confirmed", "checked_in", "in_progress", "completed", "cancelled", "no_show",
+  "pending", "confirmed", "checked_in",
 ] as const;
 type BookingStatus = typeof VALID_STATUSES[number];
+
+/* ─── Shared: create job card for a booking (idempotent) ─────────────────── */
+async function createJobForBooking(booking: { id: string; tenant_id: string; booking_type: string | null; client_id: string | null; vehicle_id: string | null; advisor_id: string | null; notes: string | null; mileage_in: string | null }) {
+  // Return existing job if already created
+  const [existing] = await db
+    .select()
+    .from(jobsTable)
+    .where(and(eq(jobsTable.booking_id, booking.id), eq(jobsTable.tenant_id, booking.tenant_id)))
+    .orderBy(jobsTable.created_at)
+    .limit(1);
+  if (existing) return existing;
+
+  // Generate sequential ref
+  const [{ seq }] = await db
+    .select({ seq: sql<number>`cast(coalesce(max(seq), 0) + 1 as int)` })
+    .from(jobsTable)
+    .where(eq(jobsTable.tenant_id, booking.tenant_id));
+
+  const year   = new Date().getFullYear();
+  const prefix = booking.booking_type === "inspection" ? "INS" : "JC";
+  const ref    = `${prefix}-${year}-${String(seq).padStart(4, "0")}`;
+
+  const [job] = await db
+    .insert(jobsTable)
+    .values({
+      tenant_id:        booking.tenant_id,
+      seq,
+      ref,
+      booking_id:       booking.id,
+      client_id:        booking.client_id,
+      vehicle_id:       booking.vehicle_id,
+      advisor_id:       booking.advisor_id,
+      job_type:         booking.booking_type ?? "service",
+      customer_concern: booking.notes ?? undefined,
+      mileage_in:       booking.mileage_in ?? undefined,
+      status:           "waiting",
+      priority:         "normal",
+    })
+    .returning();
+
+  return job;
+}
 
 /* ─── GET /bookings/meta/advisors ─────────────────────────────────────────── */
 router.get("/meta/advisors", async (req, res) => {
@@ -322,6 +364,13 @@ router.post("/:id/status", async (req, res) => {
       .returning();
 
     if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    // Auto-create job card when booking is checked in
+    if (status === "checked_in") {
+      const job = await createJobForBooking(booking);
+      return res.json({ booking, job });
+    }
+
     res.json({ booking });
   } catch (e: any) {
     console.error("POST /bookings/:id/status", e);
@@ -329,14 +378,13 @@ router.post("/:id/status", async (req, res) => {
   }
 });
 
-/* ─── POST /bookings/:id/start-job ───────────────────────────────────────── */
+/* ─── POST /bookings/:id/start-job (kept for backwards compatibility) ─────── */
 router.post("/:id/start-job", async (req, res) => {
   try {
     const slug   = (req.query.tenant as string) ?? "demo-workshop";
     const tenant = await resolveTenant(slug);
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
-    // Load the booking
     const [booking] = await db
       .select()
       .from(bookingsTable)
@@ -345,57 +393,8 @@ router.post("/:id/start-job", async (req, res) => {
 
     if (!booking) return res.status(404).json({ error: "Booking not found" });
 
-    // Idempotency: return the existing job if one already exists for this booking
-    // (checked before status guard so repeated calls always return the job)
-    const [existing] = await db
-      .select()
-      .from(jobsTable)
-      .where(and(eq(jobsTable.booking_id, booking.id), eq(jobsTable.tenant_id, tenant.id)))
-      .orderBy(jobsTable.created_at)
-      .limit(1);
-    if (existing) {
-      return res.status(200).json({ job: existing });
-    }
-
-    if (["cancelled", "no_show"].includes(booking.status)) {
-      return res.status(400).json({ error: "Cannot start a job for a cancelled or no-show booking" });
-    }
-
-    // Generate job ref
-    const [{ seq }] = await db
-      .select({ seq: sql<number>`cast(coalesce(max(seq), 0) + 1 as int)` })
-      .from(jobsTable)
-      .where(eq(jobsTable.tenant_id, tenant.id));
-
-    const year = new Date().getFullYear();
-    const prefix = booking.booking_type === "inspection" ? "INS" : "JC";
-    const ref = `${prefix}-${year}-${String(seq).padStart(4, "0")}`;
-
-    const [job] = await db
-      .insert(jobsTable)
-      .values({
-        tenant_id:        tenant.id,
-        seq,
-        ref,
-        booking_id:       booking.id,
-        client_id:        booking.client_id,
-        vehicle_id:       booking.vehicle_id,
-        advisor_id:       booking.advisor_id,
-        job_type:         booking.booking_type,
-        customer_concern: booking.notes ?? undefined,
-        mileage_in:       booking.mileage_in ?? undefined,
-        status:           "waiting",
-        priority:         "normal",
-      })
-      .returning();
-
-    // Advance booking to in_progress
-    await db
-      .update(bookingsTable)
-      .set({ status: "in_progress", updated_at: new Date() })
-      .where(eq(bookingsTable.id, booking.id));
-
-    res.status(201).json({ job });
+    const job = await createJobForBooking(booking);
+    res.status(200).json({ job });
   } catch (e: any) {
     console.error("POST /bookings/:id/start-job", e);
     res.status(500).json({ error: e.message });
