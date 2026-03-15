@@ -1,5 +1,5 @@
 import {
-  Wrench, Plus, Search, LayoutGrid, List,
+  ClipboardCheck, Plus, Search, LayoutGrid, List,
   ChevronRight, Clock, User, Car,
 } from "lucide-react";
 import { useState, useMemo } from "react";
@@ -111,7 +111,7 @@ function KanbanCard({ job, onClick }: { job: KanbanJob; onClick: () => void }) {
   );
 }
 
-export default function JobsPage() {
+export default function InspectionsPage() {
   const [, navigate]    = useLocation();
   const [view, setView] = useState<"board" | "list">("board");
   const [q, setQ]       = useState("");
@@ -119,14 +119,14 @@ export default function JobsPage() {
   const [movingJob, setMovingJob]   = useState<KanbanJob | null>(null);
 
   const { data: kanbanData, isLoading: kanbanLoading } = useQuery<Record<string, KanbanJob[]>>({
-    queryKey: ["jobs-kanban"],
-    queryFn:  () => fetch(`${API}/api/jobs/kanban?tenant=${TENANT}&type=service_job`).then(r => r.json()),
+    queryKey: ["inspections-kanban"],
+    queryFn:  () => fetch(`${API}/api/jobs/kanban?tenant=${TENANT}&type=inspection`).then(r => r.json()),
     refetchInterval: 30_000,
   });
 
   const { data: listData, isLoading: listLoading } = useQuery<{ data: ListJob[]; total: number }>({
-    queryKey: ["jobs", q],
-    queryFn:  () => fetch(`${API}/api/jobs?tenant=${TENANT}&type=service_job&q=${encodeURIComponent(q)}&limit=100`).then(r => r.json()),
+    queryKey: ["inspections", q],
+    queryFn:  () => fetch(`${API}/api/jobs?tenant=${TENANT}&type=inspection&q=${encodeURIComponent(q)}&limit=100`).then(r => r.json()),
     enabled: view === "list",
   });
 
@@ -141,16 +141,16 @@ export default function JobsPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="page-title">Service Jobs</h1>
+        <h1 className="page-title">Inspections</h1>
         <Button size="sm" className="gap-1.5" onClick={() => setDrawerOpen(true)}>
-          <Plus className="w-4 h-4" />New service job
+          <Plus className="w-4 h-4" />New inspection
         </Button>
       </div>
 
       <div className="flex items-center gap-2">
         <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input placeholder="Search service jobs…" value={q} onChange={e => setQ(e.target.value)} className="pl-9 h-8 text-sm" />
+          <Input placeholder="Search inspections…" value={q} onChange={e => setQ(e.target.value)} className="pl-9 h-8 text-sm" />
         </div>
         <div className="ml-auto flex items-center border border-border rounded-md overflow-hidden">
           {(["board", "list"] as const).map((v, i) => (
@@ -184,8 +184,8 @@ export default function JobsPage() {
                     jobs.length === 0 && "border border-dashed border-border flex items-center justify-center",
                   )}>
                     {jobs.length === 0
-                      ? <p className="text-xs text-muted-foreground/40 py-4">No service jobs</p>
-                      : jobs.map(job => <KanbanCard key={job.id} job={job} onClick={() => navigate(`/jobs/${job.id}`)} />)}
+                      ? <p className="text-xs text-muted-foreground/40 py-4">No inspections</p>
+                      : jobs.map(job => <KanbanCard key={job.id} job={job} onClick={() => navigate(`/inspections/${job.id}`)} />)}
                   </div>
                 </div>
               );
@@ -199,7 +199,7 @@ export default function JobsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40">
-                {["Job", "Customer", "Vehicle", "Status", "Technician", "Priority"].map((h, i) => (
+                {["Inspection", "Customer", "Vehicle", "Status", "Technician", "Priority"].map((h, i) => (
                   <th key={h} className={cn(
                     "text-left px-4 py-2.5 text-xs font-medium text-muted-foreground",
                     i === 1 && "hidden md:table-cell", i === 2 && "hidden lg:table-cell",
@@ -224,18 +224,18 @@ export default function JobsPage() {
                     <tr>
                       <td colSpan={6} className="px-4 py-20 text-center">
                         <div className="flex flex-col items-center gap-3">
-                          <Wrench className="w-10 h-10 text-muted-foreground/20" />
-                          <p className="text-[15px] font-medium text-muted-foreground">No service jobs yet</p>
-                          <p className="text-sm text-muted-foreground/70">Service jobs are created from quotations or directly.</p>
+                          <ClipboardCheck className="w-10 h-10 text-muted-foreground/20" />
+                          <p className="text-[15px] font-medium text-muted-foreground">No inspections yet</p>
+                          <p className="text-sm text-muted-foreground/70">Inspections are created from bookings or directly.</p>
                           <Button size="sm" className="mt-1" onClick={() => setDrawerOpen(true)}>
-                            <Plus className="w-3.5 h-3.5 mr-1" />New service job
+                            <Plus className="w-3.5 h-3.5 mr-1" />New inspection
                           </Button>
                         </div>
                       </td>
                     </tr>
                   )
                   : listData.data.map(job => (
-                      <tr key={job.id} onClick={() => navigate(`/jobs/${job.id}`)}
+                      <tr key={job.id} onClick={() => navigate(`/inspections/${job.id}`)}
                         className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors">
                         <td className="px-4 py-3">
                           <div className="font-mono text-xs font-semibold">{job.ref}</div>
@@ -266,7 +266,7 @@ export default function JobsPage() {
         </div>
       )}
 
-      <JobDrawer open={drawerOpen} onOpenChange={setDrawerOpen} jobType="service_job" />
+      <JobDrawer open={drawerOpen} onOpenChange={setDrawerOpen} jobType="inspection" />
       {movingJob && (
         <StatusTransitionModal
           open={!!movingJob}

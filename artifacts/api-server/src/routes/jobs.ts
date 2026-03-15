@@ -34,6 +34,8 @@ router.get("/", async (req, res) => {
     const q      = ((req.query.q as string) ?? "").trim();
     const status = req.query.status as string | undefined;
     const techId = req.query.technician_id as string | undefined;
+    const typeFilter = req.query.type as string | undefined;
+    const bookingIdFilter = req.query.booking_id as string | undefined;
 
     const advisorAlias = alias(usersTable, "adv");
     const techAlias    = alias(usersTable, "tech");
@@ -48,6 +50,16 @@ router.get("/", async (req, res) => {
     }
     if (techId) {
       conditions.push(eq(jobsTable.technician_id, techId));
+    }
+    if (typeFilter) {
+      if (typeFilter === "service_job") {
+        conditions.push(or(eq(jobsTable.type, "service_job"), isNull(jobsTable.type))!);
+      } else {
+        conditions.push(eq(jobsTable.type, typeFilter));
+      }
+    }
+    if (bookingIdFilter) {
+      conditions.push(eq(jobsTable.booking_id, bookingIdFilter));
     }
     if (q) {
       conditions.push(
@@ -68,12 +80,14 @@ router.get("/", async (req, res) => {
           id:             jobsTable.id,
           ref:            jobsTable.ref,
           seq:            jobsTable.seq,
+          type:           jobsTable.type,
           status:         jobsTable.status,
           priority:       jobsTable.priority,
           bay:            jobsTable.bay,
           started_at:     jobsTable.started_at,
           completed_at:   jobsTable.completed_at,
           customer_concern: jobsTable.customer_concern,
+          scheduled_date: jobsTable.scheduled_date,
           mileage_in:     jobsTable.mileage_in,
           created_at:     jobsTable.created_at,
           updated_at:     jobsTable.updated_at,
@@ -130,6 +144,7 @@ router.get("/kanban", async (req, res) => {
     const tenant = await resolveTenant(slug);
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
+    const typeFilter = req.query.type as string | undefined;
     const advisorAlias = alias(usersTable, "adv");
     const techAlias    = alias(usersTable, "tech");
 
@@ -137,6 +152,7 @@ router.get("/kanban", async (req, res) => {
       .select({
         id:           jobsTable.id,
         ref:          jobsTable.ref,
+        type:         jobsTable.type,
         status:       jobsTable.status,
         priority:     jobsTable.priority,
         bay:          jobsTable.bay,
@@ -157,7 +173,14 @@ router.get("/kanban", async (req, res) => {
       .leftJoin(vehiclesTable, eq(jobsTable.vehicle_id, vehiclesTable.id))
       .leftJoin(advisorAlias, eq(jobsTable.advisor_id, advisorAlias.id))
       .leftJoin(techAlias, eq(jobsTable.technician_id, techAlias.id))
-      .where(and(eq(jobsTable.tenant_id, tenant.id)))
+      .where(and(
+        eq(jobsTable.tenant_id, tenant.id),
+        ...(typeFilter
+          ? typeFilter === "service_job"
+            ? [or(eq(jobsTable.type, "service_job"), isNull(jobsTable.type))!]
+            : [eq(jobsTable.type, typeFilter)]
+          : []),
+      ))
       .orderBy(jobsTable.seq);
 
     const lanes: Record<string, typeof jobs> = {
@@ -192,6 +215,7 @@ router.get("/:id", async (req, res) => {
         id:              jobsTable.id,
         ref:             jobsTable.ref,
         seq:             jobsTable.seq,
+        type:            jobsTable.type,
         status:          jobsTable.status,
         priority:        jobsTable.priority,
         bay:             jobsTable.bay,
@@ -200,6 +224,7 @@ router.get("/:id", async (req, res) => {
         qc_at:           jobsTable.qc_at,
         mileage_in:      jobsTable.mileage_in,
         mileage_out:     jobsTable.mileage_out,
+        scheduled_date:  jobsTable.scheduled_date,
         customer_concern: jobsTable.customer_concern,
         technician_note: jobsTable.technician_note,
         qc_note:         jobsTable.qc_note,
@@ -325,7 +350,8 @@ router.post("/", async (req, res) => {
     const {
       client_id, vehicle_id, quotation_id, booking_id,
       advisor_id, technician_id, priority, bay,
-      customer_concern, internal_note, mileage_in,
+      customer_concern, internal_note, mileage_in, type,
+      scheduled_date,
     } = req.body as Record<string, string>;
 
     const [{ seq }] = await db
@@ -336,20 +362,26 @@ router.post("/", async (req, res) => {
     const year = new Date().getFullYear();
     const ref  = `JC-${year}-${String(seq).padStart(4, "0")}`;
 
+    const validPriority = (["low", "normal", "high", "urgent"] as const).includes(priority as "low" | "normal" | "high" | "urgent")
+      ? (priority as "low" | "normal" | "high" | "urgent")
+      : "normal";
+
     const [job] = await db
       .insert(jobsTable)
       .values({
         tenant_id:    tenant.id,
         seq,
         ref,
+        type:         type || null,
         client_id:    client_id   || null,
         vehicle_id:   vehicle_id  || null,
         quotation_id: quotation_id || null,
         booking_id:   booking_id  || null,
         advisor_id:   advisor_id  || null,
         technician_id: technician_id || null,
-        priority:     (priority as any) ?? "normal",
+        priority:     validPriority,
         bay:          bay ?? null,
+        scheduled_date:   scheduled_date ?? null,
         customer_concern: customer_concern ?? null,
         internal_note:    internal_note ?? null,
         mileage_in:       mileage_in ?? null,
@@ -406,7 +438,7 @@ router.put("/:id", async (req, res) => {
       .set({
         advisor_id:       advisor_id       ?? undefined,
         technician_id:    technician_id    ?? undefined,
-        priority:         (priority as any) ?? undefined,
+        priority:         priority         ?? undefined,
         bay:              bay              ?? undefined,
         customer_concern: customer_concern ?? undefined,
         technician_note:  technician_note  ?? undefined,

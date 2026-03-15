@@ -8,6 +8,13 @@
       "when": 1773293196033,
       "tag": "0000_right_red_wolf",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773380000000,
+      "tag": "0001_add_booking_type_and_job_type",
+      "breakpoints": true
     }
   ]
 }

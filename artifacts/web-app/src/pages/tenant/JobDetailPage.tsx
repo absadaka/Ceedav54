@@ -73,9 +73,9 @@ function fmtElapsed(ms: number) {
 
 /* ─── interfaces ─────────────────────────────────────────────────────────── */
 interface JobDetail {
-  id: string; ref: string; seq: number; status: string; priority: string;
+  id: string; ref: string; seq: number; type: string | null; status: string; priority: string;
   bay: string | null; started_at: string | null; completed_at: string | null; qc_at: string | null;
-  mileage_in: string | null; mileage_out: string | null;
+  mileage_in: string | null; mileage_out: string | null; scheduled_date: string | null;
   customer_concern: string | null; technician_note: string | null;
   qc_note: string | null; internal_note: string | null;
   created_at: string; updated_at: string;
@@ -315,7 +315,13 @@ function AddPhotoForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }
 }
 
 /* ─── Main component ──────────────────────────────────────────────────────── */
-export default function JobDetailPage() {
+interface JobDetailPageProps {
+  moduleType?: "inspection" | "service_job";
+  backPath?: string;
+  backLabel?: string;
+}
+
+export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabel = "Service Jobs" }: JobDetailPageProps) {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const qc = useQueryClient();
@@ -356,7 +362,7 @@ export default function JobDetailPage() {
       qc.invalidateQueries({ queryKey: ["jobs"] });
       qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
       toast.success("Job deleted");
-      navigate("/jobs");
+      navigate(backPath);
     },
     onError: () => toast.error("Failed to delete job"),
   });
@@ -441,12 +447,12 @@ export default function JobDetailPage() {
     );
   }
 
-  if (!data?.job) {
+  if (!data?.job || (moduleType && data.job.type !== moduleType)) {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-4">
         <Wrench className="w-12 h-12 text-muted-foreground/20" />
-        <p className="text-muted-foreground">Job not found</p>
-        <Button variant="outline" size="sm" onClick={() => navigate("/jobs")}>Back to jobs</Button>
+        <p className="text-muted-foreground">{moduleType === "inspection" ? "Inspection" : "Service Job"} not found</p>
+        <Button variant="outline" size="sm" onClick={() => navigate(backPath)}>Back to {backLabel.toLowerCase()}</Button>
       </div>
     );
   }
@@ -469,10 +475,10 @@ export default function JobDetailPage() {
     <div className="space-y-5 max-w-5xl">
       {/* Breadcrumb */}
       <button
-        onClick={() => navigate("/jobs")}
+        onClick={() => navigate(backPath)}
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="w-4 h-4" /> Jobs
+        <ArrowLeft className="w-4 h-4" /> {backLabel}
       </button>
 
       {/* Header */}

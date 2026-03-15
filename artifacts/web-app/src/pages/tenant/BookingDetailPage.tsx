@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, CalendarCheck, Edit, User, Car, Clock, Calendar,
-  CheckCircle2, XCircle, RefreshCw, ChevronRight, FileText, MoreHorizontal,
+  CheckCircle2, ChevronRight, FileText, MoreHorizontal,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,13 +20,9 @@ const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_META: Record<string, { label: string; color: string; next: string[] }> = {
-  pending:    { label: "Pending",     color: "bg-yellow-100 text-yellow-800 border-yellow-200", next: ["confirmed", "checked_in", "cancelled", "no_show"] },
-  confirmed:  { label: "Confirmed",   color: "bg-blue-100 text-blue-800 border-blue-200",       next: ["checked_in", "cancelled", "no_show"] },
-  checked_in: { label: "Checked In",  color: "bg-indigo-100 text-indigo-800 border-indigo-200", next: ["in_progress", "cancelled"] },
-  in_progress:{ label: "In Progress", color: "bg-violet-100 text-violet-800 border-violet-200", next: ["completed"] },
-  completed:  { label: "Completed",   color: "bg-green-100 text-green-800 border-green-200",    next: [] },
-  cancelled:  { label: "Cancelled",   color: "bg-red-100 text-red-800 border-red-200",          next: [] },
-  no_show:    { label: "No-show",     color: "bg-gray-100 text-gray-600 border-gray-200",       next: [] },
+  pending:    { label: "Pending",     color: "bg-yellow-100 text-yellow-800 border-yellow-200", next: ["confirmed", "checked_in"] },
+  confirmed:  { label: "Confirmed",   color: "bg-blue-100 text-blue-800 border-blue-200",       next: ["checked_in", "pending"] },
+  checked_in: { label: "Checked In",  color: "bg-indigo-100 text-indigo-800 border-indigo-200", next: [] },
 };
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -63,14 +59,64 @@ export default function BookingDetailPage() {
   const bk = data?.booking ?? null;
 
   const transition = useMutation({
-    mutationFn: (status: string) =>
-      fetch(`${API}/api/bookings/${id}/status?tenant=${TENANT}`, {
+    mutationFn: async (status: string) => {
+      const res = await fetch(`${API}/api/bookings/${id}/status?tenant=${TENANT}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
-      }).then(r => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["booking", id] }); qc.invalidateQueries({ queryKey: ["bookings"] }); toast.success("Status updated"); },
-    onError: (e: any) => toast.error(e.message),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Failed" }));
+        throw new Error(err.error ?? "Failed to update status");
+      }
+      return { status, result: await res.json() };
+    },
+    onSuccess: async ({ status }) => {
+      qc.invalidateQueries({ queryKey: ["booking", id] });
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success("Status updated");
+
+      if (status === "checked_in" && bk) {
+        const bookingType = bk.booking_type;
+        if (bookingType === "inspection" || bookingType === "service_job") {
+          try {
+            const existingRes = await fetch(`${API}/api/jobs?tenant=${TENANT}&booking_id=${id}&limit=1`).then(r => r.json());
+            if ((existingRes?.data ?? []).length > 0) {
+              toast.info("A job card already exists for this booking.");
+              return;
+            }
+            const jobBody: Record<string, string | null> = {
+              client_id: bk.client_id || null,
+              vehicle_id: bk.vehicle_id || null,
+              customer_concern: bk.notes || null,
+              type: bookingType,
+              booking_id: id,
+              mileage_in: bk.mileage_in || null,
+              scheduled_date: bk.scheduled_at ? bk.scheduled_at.slice(0, 10) : null,
+            };
+            const jobCreateRes = await fetch(`${API}/api/jobs?tenant=${TENANT}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(jobBody),
+            });
+            if (!jobCreateRes.ok) throw new Error("Failed to create job card");
+            const jobRes = await jobCreateRes.json();
+            qc.invalidateQueries({ queryKey: ["jobs"] });
+            qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
+            qc.invalidateQueries({ queryKey: ["inspections-kanban"] });
+            const jobId = jobRes?.id ?? jobRes?.job?.id;
+            const jobRef = jobRes?.ref ?? jobRes?.job?.ref ?? "Job";
+            const linkPath = bookingType === "inspection" ? `/inspections/${jobId}` : `/jobs/${jobId}`;
+            toast.success(`${bookingType === "inspection" ? "Inspection" : "Service Job"} card ${jobRef} created`, {
+              action: jobId ? { label: "View", onClick: () => navigate(linkPath) } : undefined,
+            });
+          } catch {
+            toast.error("Failed to auto-create job card");
+          }
+        }
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const deleteBk = useMutation({
@@ -132,16 +178,6 @@ export default function BookingDetailPage() {
               Check in
             </Button>
           )}
-          {nextSteps.includes("in_progress") && (
-            <Button size="sm" className="gap-1.5 bg-violet-600 hover:bg-violet-700" onClick={() => transition.mutate("in_progress")} disabled={transition.isPending}>
-              <RefreshCw className="w-3.5 h-3.5" />Start service
-            </Button>
-          )}
-          {nextSteps.includes("completed") && (
-            <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700" onClick={() => transition.mutate("completed")} disabled={transition.isPending}>
-              <CheckCircle2 className="w-3.5 h-3.5" />Complete
-            </Button>
-          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -153,16 +189,13 @@ export default function BookingDetailPage() {
               <DropdownMenuItem onClick={() => setQuoteOpen(true)}>
                 <FileText className="w-3.5 h-3.5 mr-2" />Create quotation
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {nextSteps.includes("cancelled") && (
-                <DropdownMenuItem className="text-red-600" onClick={() => transition.mutate("cancelled")}>
-                  <XCircle className="w-3.5 h-3.5 mr-2" />Cancel
-                </DropdownMenuItem>
-              )}
-              {nextSteps.includes("no_show") && (
-                <DropdownMenuItem className="text-muted-foreground" onClick={() => transition.mutate("no_show")}>
-                  No-show
-                </DropdownMenuItem>
+              {nextSteps.includes("pending") && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => transition.mutate("pending")}>
+                    Revert to Pending
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" onClick={() => { if (confirm("Delete this booking?")) deleteBk.mutate(); }}>

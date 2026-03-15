@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, CalendarCheck, FileText, Wrench, Receipt,
   Settings, Bell, LogOut, ChevronDown, ChevronLeft, ChevronRight,
   UsersRound, Building2, ShieldCheck, Monitor, Laptop2,
-  Menu, X, Search, Sun, Moon,
+  Menu, X, Search, Sun, Moon, ClipboardCheck,
 } from "lucide-react";
 
 function useSidebarTheme() {
@@ -49,12 +49,13 @@ function buildNav(tenantSlug?: string): {
   const slugPrefix = tenantSlug ? `/${tenantSlug}` : "";
   return {
     main: [
-      { label: "Dashboard",  href: `/dashboard${q}`,  icon: LayoutDashboard },
-      { label: "Customers",  href: `/customers${q}`,  icon: Users },
-      { label: "Bookings",   href: `/bookings${q}`,   icon: CalendarCheck },
-      { label: "Quotations", href: `/quotations${q}`, icon: FileText },
-      { label: "Jobs",       href: `/jobs${q}`,       icon: Wrench },
-      { label: "Invoices",   href: `/invoices${q}`,   icon: Receipt },
+      { label: "Dashboard",    href: `/dashboard${q}`,    icon: LayoutDashboard },
+      { label: "Customers",    href: `/customers${q}`,    icon: Users },
+      { label: "Bookings",     href: `/bookings${q}`,     icon: CalendarCheck },
+      { label: "Inspections",  href: `/inspections${q}`,  icon: ClipboardCheck },
+      { label: "Quotations",   href: `/quotations${q}`,   icon: FileText },
+      { label: "Service Jobs", href: `/jobs${q}`,         icon: Wrench },
+      { label: "Invoices",     href: `/invoices${q}`,     icon: Receipt },
     ],
     workspace: [
       { label: "Team",     href: `/team${q}`,     icon: UsersRound },

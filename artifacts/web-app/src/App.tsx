@@ -32,6 +32,8 @@ import QuotationsPage     from "@/pages/tenant/QuotationsPage";
 import QuotationDetailPage from "@/pages/tenant/QuotationDetailPage";
 import JobsPage       from "@/pages/tenant/JobsPage";
 import JobDetailPage  from "@/pages/tenant/JobDetailPage";
+import InspectionsPage     from "@/pages/tenant/InspectionsPage";
+import InspectionDetailPage from "@/pages/tenant/InspectionDetailPage";
 import InvoicesPage       from "@/pages/tenant/InvoicesPage";
 import InvoiceDetailPage  from "@/pages/tenant/InvoiceDetailPage";
 import TeamPage from "@/pages/tenant/TeamPage";
@@ -61,7 +63,7 @@ const queryClient = new QueryClient({
 const PUBLIC_PATHS = ["/", "/pricing", "/auth", "/register"];
 
 const LEGACY_APP_PREFIXES = [
-  "dashboard", "customers", "clients", "vehicles", "bookings", "quotations", "jobs",
+  "dashboard", "customers", "clients", "vehicles", "bookings", "inspections", "quotations", "jobs",
   "invoices", "team", "settings", "account",
 ];
 
@@ -174,7 +176,9 @@ function AppRouter() {
           <Route path="/bookings"    component={BookingsPage} />
           <Route path="/quotations/:id" component={QuotationDetailPage} />
           <Route path="/quotations"     component={QuotationsPage} />
-          <Route path="/jobs/:id" component={JobDetailPage} />
+          <Route path="/inspections/:id" component={InspectionDetailPage} />
+          <Route path="/inspections"     component={InspectionsPage} />
+          <Route path="/jobs/:id">{() => <JobDetailPage />}</Route>
           <Route path="/jobs"    component={JobsPage} />
           <Route path="/invoices/:id" component={InvoiceDetailPage} />
           <Route path="/invoices"    component={InvoicesPage} />

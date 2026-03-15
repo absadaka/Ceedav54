@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
   LayoutDashboard, Users, CalendarCheck, FileText,
-  Wrench, Receipt, UsersRound, Building2, Shield,
+  Wrench, Receipt, UsersRound, Building2, Shield, ClipboardCheck,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -23,12 +23,13 @@ interface NavEntry {
 
 function buildEntries(prefix = ""): NavEntry[] {
   return [
-    { label: "Dashboard",    href: `${prefix}/dashboard`,   icon: LayoutDashboard, group: "Navigate" },
-    { label: "Customers",    href: `${prefix}/customers`,   icon: Users,           group: "Navigate" },
-    { label: "Bookings",     href: `${prefix}/bookings`,    icon: CalendarCheck,   group: "Navigate" },
-    { label: "Quotations",   href: `${prefix}/quotations`,  icon: FileText,        group: "Navigate" },
-    { label: "Jobs",         href: `${prefix}/jobs`,        icon: Wrench,          group: "Navigate" },
-    { label: "Invoices",     href: `${prefix}/invoices`,    icon: Receipt,         group: "Navigate" },
+    { label: "Dashboard",    href: `${prefix}/dashboard`,    icon: LayoutDashboard, group: "Navigate" },
+    { label: "Customers",    href: `${prefix}/customers`,    icon: Users,           group: "Navigate" },
+    { label: "Bookings",     href: `${prefix}/bookings`,     icon: CalendarCheck,   group: "Navigate" },
+    { label: "Inspections",  href: `${prefix}/inspections`,  icon: ClipboardCheck,  group: "Navigate" },
+    { label: "Quotations",   href: `${prefix}/quotations`,   icon: FileText,        group: "Navigate" },
+    { label: "Service Jobs", href: `${prefix}/jobs`,         icon: Wrench,          group: "Navigate" },
+    { label: "Invoices",     href: `${prefix}/invoices`,     icon: Receipt,         group: "Navigate" },
     { label: "Team",         href: `${prefix}/team`,        icon: UsersRound,      group: "Workspace" },
     { label: "Shop settings",href: `${prefix}/settings`,    icon: Building2,       group: "Workspace" },
     { label: "Security",     href: `${prefix}/account/security`,  icon: Shield,   group: "Account" },

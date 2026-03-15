@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select";
 import { toast } from "sonner";
+import { ClipboardCheck, Wrench } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -30,8 +32,10 @@ export interface BookingRow {
   client_name: string | null;
   vehicle_id: string | null;
   plate_number: string | null;
+  vehicle_make?: string | null;
   advisor_id: string | null;
   advisor_name: string | null;
+  booking_type?: string | null;
 }
 
 interface Props {
@@ -62,6 +66,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   const qc = useQueryClient();
   const isEdit = !!booking?.id;
 
+  const [bookingType, setBookingType] = useState<"inspection" | "service_job" | "">("");
   const [clientId,    setClientId]    = useState("");
   const [vehicleId,   setVehicleId]   = useState("");
   const [advisorId,   setAdvisorId]   = useState("");
@@ -75,6 +80,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   useEffect(() => {
     if (!open) return;
     if (booking) {
+      setBookingType((booking.booking_type === "inspection" || booking.booking_type === "service_job") ? booking.booking_type : "");
       setClientId(booking.client_id ?? "");
       setVehicleId(booking.vehicle_id ?? "");
       setAdvisorId(booking.advisor_id ?? "");
@@ -86,6 +92,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
       setNotes(booking.notes ?? "");
       setMileageIn(booking.mileage_in ?? "");
     } else {
+      setBookingType("");
       const now = new Date();
       now.setMinutes(0, 0, 0);
       now.setHours(now.getHours() + 1);
@@ -170,6 +177,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
         source,
         notes:        notes      || null,
         mileage_in:   mileageIn  || null,
+        booking_type: bookingType || null,
       };
       const url    = isEdit
         ? `${API}/api/bookings/${booking!.id}?tenant=${TENANT}`
@@ -189,17 +197,77 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const showTypeStep = !isEdit && !bookingType;
+
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
       <DialogContent className="sm:max-w-[540px] p-0 gap-0 flex flex-col max-h-[90vh]">
         <DialogHeader className="px-6 py-5 border-b border-border shrink-0">
           <DialogTitle>{isEdit ? "Edit booking" : "New booking"}</DialogTitle>
           <DialogDescription>
-            {isEdit ? `Editing ${booking!.ref}` : "Schedule a service appointment"}
+            {isEdit ? `Editing ${booking!.ref}` : showTypeStep ? "What type of booking is this?" : "Schedule a service appointment"}
           </DialogDescription>
         </DialogHeader>
 
+        {showTypeStep ? (
+          <div className="flex-1 overflow-y-auto px-6 py-8">
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setBookingType("inspection")}
+                className={cn(
+                  "flex flex-col items-center gap-3 rounded-xl border-2 border-border p-6 transition-all hover:border-primary/60 hover:shadow-md cursor-pointer"
+                )}
+              >
+                <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center">
+                  <ClipboardCheck className="w-7 h-7 text-indigo-600" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold">Inspection</p>
+                  <p className="text-xs text-muted-foreground mt-1">Vehicle inspection or diagnostic check</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBookingType("service_job")}
+                className={cn(
+                  "flex flex-col items-center gap-3 rounded-xl border-2 border-border p-6 transition-all hover:border-primary/60 hover:shadow-md cursor-pointer"
+                )}
+              >
+                <div className="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center">
+                  <Wrench className="w-7 h-7 text-orange-600" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold">Service Job</p>
+                  <p className="text-xs text-muted-foreground mt-1">Repair, maintenance, or service work</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+          {!isEdit && bookingType && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Type:</span>
+              <span className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border",
+                bookingType === "inspection"
+                  ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                  : "bg-orange-50 text-orange-700 border-orange-200"
+              )}>
+                {bookingType === "inspection" ? <ClipboardCheck className="w-3 h-3" /> : <Wrench className="w-3 h-3" />}
+                {bookingType === "inspection" ? "Inspection" : "Service Job"}
+              </span>
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-foreground underline ml-1"
+                onClick={() => setBookingType("")}
+              >
+                Change
+              </button>
+            </div>
+          )}
 
           {/* Date & Time */}
           <div className="grid grid-cols-2 gap-4">
@@ -309,7 +377,9 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
             />
           </div>
         </div>
+        )}
 
+        {!showTypeStep && (
         <DialogFooter className="px-6 py-4 border-t border-border shrink-0">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
@@ -319,6 +389,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
             {save.isPending ? "Saving…" : isEdit ? "Save changes" : "Create booking"}
           </Button>
         </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

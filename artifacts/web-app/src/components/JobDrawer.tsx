@@ -39,9 +39,10 @@ interface Props {
   job?: JobRow | null;
   defaultClientId?: string;
   defaultVehicleId?: string;
+  jobType?: "inspection" | "service_job";
 }
 
-export default function JobDrawer({ open, onOpenChange, job, defaultClientId, defaultVehicleId }: Props) {
+export default function JobDrawer({ open, onOpenChange, job, defaultClientId, defaultVehicleId, jobType }: Props) {
   const qc = useQueryClient();
   const isEdit = !!job;
 
@@ -111,10 +112,12 @@ export default function JobDrawer({ open, onOpenChange, job, defaultClientId, de
     mutationFn: async (payload: typeof form) => {
       const url    = isEdit ? `${API}/api/jobs/${job!.id}?tenant=${TENANT}` : `${API}/api/jobs?tenant=${TENANT}`;
       const method = isEdit ? "PUT" : "POST";
+      const body: Record<string, string | null> = { ...payload };
+      if (jobType && !isEdit) body.type = jobType;
       const r = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       });
       if (!r.ok) throw new Error("Failed to save job");
       return r.json();
@@ -122,7 +125,9 @@ export default function JobDrawer({ open, onOpenChange, job, defaultClientId, de
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["jobs"] });
       qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
-      toast.success(isEdit ? "Job updated" : "Job created");
+      qc.invalidateQueries({ queryKey: ["inspections"] });
+      qc.invalidateQueries({ queryKey: ["inspections-kanban"] });
+      toast.success(isEdit ? "Job updated" : jobType === "inspection" ? "Inspection created" : "Job created");
       onOpenChange(false);
     },
     onError: () => toast.error("Failed to save job"),
@@ -137,9 +142,9 @@ export default function JobDrawer({ open, onOpenChange, job, defaultClientId, de
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[540px] p-0 gap-0 flex flex-col max-h-[90vh]">
         <DialogHeader className="px-6 py-5 border-b border-border shrink-0">
-          <DialogTitle>{isEdit ? `Edit ${job!.ref}` : "New job card"}</DialogTitle>
+          <DialogTitle>{isEdit ? `Edit ${job!.ref}` : jobType === "inspection" ? "New inspection" : "New job card"}</DialogTitle>
           <DialogDescription>
-            {isEdit ? "Update job details and assignments." : "Create a new job card for the workshop."}
+            {isEdit ? "Update job details and assignments." : jobType === "inspection" ? "Create a new inspection card." : "Create a new job card for the workshop."}
           </DialogDescription>
         </DialogHeader>
 
