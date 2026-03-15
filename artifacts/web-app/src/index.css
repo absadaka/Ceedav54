@@ -92,7 +92,7 @@
   --popover-border:     221 13% 91%;
 
   /* Primary action — indigo */
-  --primary:            239 84% 67%;     /* #6366F1 — accent-500 */
+  --primary:            239 100% 54%;    /* #161aff */
   --primary-foreground: 0 0% 100%;       /* white */
 
   /* Secondary — soft gray */
@@ -105,7 +105,7 @@
 
   /* Accent — light indigo tint for hover/selected states */
   --accent:             235 89% 97%;     /* #EEF2FF — accent-50 */
-  --accent-foreground:  239 84% 67%;     /* #6366F1 — accent-500 */
+  --accent-foreground:  239 100% 54%;    /* #161aff */
 
   /* Destructive — red */
   --destructive:        0 72% 51%;       /* #DC2626 — red-600 */
@@ -120,7 +120,7 @@
   /* Border & input */
   --border:             221 13% 91%;     /* #EAECF0 — gray-150 */
   --input:              220 9% 83%;      /* #D1D5DB — gray-200 */
-  --ring:               239 84% 67%;     /* #6366F1 — accent-500 */
+  --ring:               239 100% 54%;    /* #161aff */
 
   /* Charts */
   --chart-1:            239 84% 67%;     /* indigo */
