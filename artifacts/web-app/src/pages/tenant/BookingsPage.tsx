@@ -39,10 +39,12 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 const DATE_PRESETS = [
-  { value: "today",     label: "Today" },
-  { value: "tomorrow",  label: "Tomorrow" },
-  { value: "this_week", label: "This week" },
-  { value: "all",       label: "All dates" },
+  { value: "upcoming",    label: "Upcoming" },
+  { value: "today",       label: "Today" },
+  { value: "tomorrow",    label: "Tomorrow" },
+  { value: "this_week",   label: "This week" },
+  { value: "this_month",  label: "This month" },
+  { value: "previous",    label: "Previous" },
 ];
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -51,9 +53,12 @@ function d0(d: Date) { return d.toISOString().slice(0, 10); }
 
 function dateRange(preset: string): { date_from?: string; date_to?: string } {
   const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (preset === "upcoming") {
+    return { date_from: d0(todayStart) };
+  }
   if (preset === "today") {
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return { date_from: d0(start), date_to: d0(new Date(start.getTime() + 86400000)) };
+    return { date_from: d0(todayStart), date_to: d0(new Date(todayStart.getTime() + 86400000)) };
   }
   if (preset === "tomorrow") {
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -62,6 +67,14 @@ function dateRange(preset: string): { date_from?: string; date_to?: string } {
   if (preset === "this_week") {
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
     return { date_from: d0(start), date_to: d0(new Date(start.getTime() + 7 * 86400000)) };
+  }
+  if (preset === "this_month") {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end   = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return { date_from: d0(start), date_to: d0(end) };
+  }
+  if (preset === "previous") {
+    return { date_to: d0(todayStart) };
   }
   return {};
 }
@@ -207,7 +220,7 @@ export default function BookingsPage() {
   const [viewMode,     setViewMode]     = useState<"list" | "calendar">("list");
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [datePreset,   setDatePreset]   = useState("today");
+  const [datePreset,   setDatePreset]   = useState("upcoming");
   const [calDate,      setCalDate]      = useState(() => new Date());
   const [drawerOpen,   setDrawerOpen]   = useState(false);
   const [editing,      setEditing]      = useState<BookingRow | null>(null);
@@ -315,7 +328,7 @@ export default function BookingsPage() {
             </div>
 
             <Select value={datePreset} onValueChange={setDatePreset}>
-              <SelectTrigger className="h-8 w-36 text-sm">
+              <SelectTrigger className="h-8 w-40 text-sm">
                 <Calendar className="w-3.5 h-3.5 mr-1.5" />
                 <SelectValue />
               </SelectTrigger>
