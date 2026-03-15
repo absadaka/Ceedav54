@@ -21,7 +21,8 @@ import {
 import CustomerDrawer, { type ClientRow } from "@/components/CustomerDrawer";
 import { cn } from "@/lib/utils";
 
-const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+import { getTenantSlug } from "@/lib/tenant";
+const TENANT = getTenantSlug();
 
 interface ClientListRow extends ClientRow {
   vehicle_count: number;

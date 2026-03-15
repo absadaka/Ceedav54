@@ -23,7 +23,8 @@ import { ROLE_LABELS } from "@/lib/auth";
 import { ROLE_COLORS, TENANT_ROLES_FOR_INVITE } from "@/lib/permissions";
 import { useAuth } from "@/hooks/useAuth";
 
-const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+import { getTenantSlug } from "@/lib/tenant";
+const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */

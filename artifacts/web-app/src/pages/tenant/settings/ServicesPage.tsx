@@ -17,7 +17,8 @@ import { toast } from "sonner";
 import { Plus, MoreHorizontal, Search, Tag, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+import { getTenantSlug } from "@/lib/tenant";
+const TENANT = getTenantSlug();
 const API = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 interface CatalogItem {

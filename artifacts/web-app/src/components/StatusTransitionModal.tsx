@@ -9,7 +9,8 @@ import { Label }    from "@/components/ui/label";
 import { cn }       from "@/lib/utils";
 import { toast }    from "sonner";
 
-const TENANT = new URLSearchParams(window.location.search).get("tenant") ?? "demo-workshop";
+import { getTenantSlug } from "@/lib/tenant";
+const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export const JOB_STATUSES = [
