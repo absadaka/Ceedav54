@@ -76,8 +76,6 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
   const [search,       setSearch]       = useState("");
   const [showDrop,     setShowDrop]     = useState(false);
 
-  const DISCOUNT_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100];
-
   const { data: catData } = useQuery({
     queryKey: ["catalog", TENANT],
     queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
@@ -152,16 +150,18 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
         <Input className="h-7 text-xs w-16 tabular-nums" type="number" step="0.01" min="0" value={qty} onChange={e => setQty(e.target.value)} />
       </td>
       <td className="px-3 py-2">
-        <Select value={discountPct} onValueChange={setDiscountPct}>
-          <SelectTrigger className="h-7 text-xs w-24">
-            <SelectValue>{discountPct}%</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {DISCOUNT_OPTIONS.map(p => (
-              <SelectItem key={p} value={String(p)}>{p}%</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="relative flex items-center">
+          <Input
+            className="h-7 text-xs w-20 tabular-nums pr-5"
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            value={discountPct}
+            onChange={e => setDiscountPct(e.target.value)}
+          />
+          <span className="absolute right-2 text-xs text-muted-foreground pointer-events-none">%</span>
+        </div>
       </td>
       <td className="px-3 py-2 text-right text-xs tabular-nums font-medium">{fmtAed(lineTotal)}</td>
       <td className="px-3 py-2">
