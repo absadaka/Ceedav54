@@ -67,14 +67,16 @@ function fmtAed(val: string | number | null) {
 /* ─── inline line item add form ─────────────────────────────────────────── */
 function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () => void }) {
   const qc = useQueryClient();
-  const [description, setDescription] = useState("");
-  const [type,        setType]        = useState("labour");
-  const [partNumber,  setPartNumber]  = useState("");
-  const [qty,         setQty]         = useState("1");
-  const [unitPrice,   setUnitPrice]   = useState("0.00");
-  const [discount,    setDiscount]    = useState("0.00");
-  const [search,      setSearch]      = useState("");
-  const [showDrop,    setShowDrop]    = useState(false);
+  const [description,  setDescription]  = useState("");
+  const [type,         setType]         = useState("labour");
+  const [partNumber,   setPartNumber]   = useState("");
+  const [qty,          setQty]          = useState("1");
+  const [unitPrice,    setUnitPrice]    = useState("0.00");
+  const [discountPct,  setDiscountPct]  = useState("0");
+  const [search,       setSearch]       = useState("");
+  const [showDrop,     setShowDrop]     = useState(false);
+
+  const DISCOUNT_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100];
 
   const { data: catData } = useQuery({
     queryKey: ["catalog", TENANT],
@@ -98,18 +100,20 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
     setShowDrop(false);
   }
 
-  const lineTotal = Math.max(0, parseFloat(qty || "0") * parseFloat(unitPrice || "0") - parseFloat(discount || "0"));
+  const subtotal   = parseFloat(qty || "0") * parseFloat(unitPrice || "0");
+  const discountAed = subtotal * (parseFloat(discountPct || "0") / 100);
+  const lineTotal  = Math.max(0, subtotal - discountAed);
 
   const add = useMutation({
     mutationFn: () => fetch(`${API}/api/quotations/${quotationId}/lines?tenant=${TENANT}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description, type, part_number: partNumber || null, qty, unit_price: unitPrice, discount }),
+      body: JSON.stringify({ description, type, part_number: partNumber || null, qty, unit_price: unitPrice, discount: discountAed.toFixed(2) }),
     }).then(r => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["quotation", quotationId] });
       toast.success("Line item added");
-      setDescription(""); setPartNumber(""); setQty("1"); setUnitPrice("0.00"); setDiscount("0.00"); setType("labour"); setSearch("");
+      setDescription(""); setPartNumber(""); setQty("1"); setUnitPrice("0.00"); setDiscountPct("0"); setType("labour"); setSearch("");
       onDone();
     },
     onError: (e: any) => toast.error(e.message),
@@ -148,7 +152,16 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
         <Input className="h-7 text-xs w-16 tabular-nums" type="number" step="0.01" min="0" value={qty} onChange={e => setQty(e.target.value)} />
       </td>
       <td className="px-3 py-2">
-        <Input className="h-7 text-xs w-20 tabular-nums" type="number" step="0.01" min="0" value={discount} onChange={e => setDiscount(e.target.value)} />
+        <Select value={discountPct} onValueChange={setDiscountPct}>
+          <SelectTrigger className="h-7 text-xs w-24">
+            <SelectValue>{discountPct}%</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {DISCOUNT_OPTIONS.map(p => (
+              <SelectItem key={p} value={String(p)}>{p}%</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </td>
       <td className="px-3 py-2 text-right text-xs tabular-nums font-medium">{fmtAed(lineTotal)}</td>
       <td className="px-3 py-2">
@@ -537,7 +550,7 @@ export default function QuotationDetailPage() {
                 <tr className="border-b border-border text-left">
                   <th className="px-3 py-2 text-xs font-medium text-muted-foreground">Description</th>
                   <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-16">Qty</th>
-                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Discount</th>
+                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Discount %</th>
                   <th className="px-3 py-2 text-xs font-medium text-muted-foreground text-right w-32">Total</th>
                   {editable && <th className="w-8" />}
                 </tr>
@@ -548,7 +561,11 @@ export default function QuotationDetailPage() {
                     <td className="px-3 py-2.5 font-medium">{l.description}</td>
                     <td className="px-3 py-2.5 tabular-nums">{parseFloat(l.qty)}</td>
                     <td className="px-3 py-2.5 tabular-nums text-green-700">
-                      {parseFloat(l.discount) > 0 ? `− ${fmtAed(l.discount)}` : "—"}
+                      {(() => {
+                        const base = parseFloat(l.qty) * parseFloat(l.unit_price);
+                        const pct  = base > 0 ? Math.round((parseFloat(l.discount) / base) * 100) : 0;
+                        return pct > 0 ? `${pct}%` : "—";
+                      })()}
                     </td>
                     <td className="px-3 py-2.5 text-right tabular-nums font-medium">{fmtAed(l.line_total)}</td>
                     {editable && (
