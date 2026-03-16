@@ -404,9 +404,10 @@ export default function QuotationDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* ── Left column ─────────────────────────────────────── */}
-        <div className="space-y-4">
+      <div className="space-y-5">
+
+        {/* ── Row 1: Customer & vehicle + Quote details ──────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Customer & vehicle */}
           <div className="rounded-lg border border-border bg-background p-4 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Customer & vehicle</p>
@@ -480,125 +481,69 @@ export default function QuotationDetailPage() {
               )}
             </dl>
           </div>
-
-          {/* Totals */}
-          <div className="rounded-lg border border-border bg-background p-4 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Summary</p>
-            <dl className="space-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Subtotal</dt>
-                <dd className="tabular-nums">{fmtAed(qt.subtotal)}</dd>
-              </div>
-              {parseFloat(qt.discount) > 0 && (
-                <div className="flex justify-between text-green-700">
-                  <dt>Discount</dt>
-                  <dd className="tabular-nums">− {fmtAed(qt.discount)}</dd>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">VAT ({qt.tax_rate}%)</dt>
-                <dd className="tabular-nums">{fmtAed(qt.tax_amount)}</dd>
-              </div>
-              <div className="flex justify-between border-t border-border pt-1.5 font-bold text-base">
-                <dt>Total</dt>
-                <dd className="tabular-nums">{fmtAed(qt.total)}</dd>
-              </div>
-              {totalPaid > 0 && (
-                <>
-                  <div className="flex justify-between text-green-700">
-                    <dt>Advance paid</dt>
-                    <dd className="tabular-nums">− {fmtAed(totalPaid)}</dd>
-                  </div>
-                  <div className={`flex justify-between border-t border-border pt-1.5 font-semibold ${balance <= 0 ? "text-green-700" : ""}`}>
-                    <dt>Balance due</dt>
-                    <dd className="tabular-nums">{fmtAed(balance)}</dd>
-                  </div>
-                </>
-              )}
-            </dl>
-          </div>
-
-          {/* Notes */}
-          {qt.notes && (
-            <div className="rounded-lg border border-border bg-background p-4 space-y-1.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notes</p>
-              <p className="text-sm whitespace-pre-wrap">{qt.notes}</p>
-            </div>
-          )}
-
-          {qt.internal_note && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 space-y-1.5">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />Internal note
-              </p>
-              <p className="text-sm whitespace-pre-wrap text-amber-900">{qt.internal_note}</p>
-            </div>
-          )}
         </div>
 
-        {/* ── Right column — line items + advance payments ────── */}
-        <div className="lg:col-span-2 space-y-5">
-          {/* Line items */}
-          <div className="rounded-lg border border-border bg-background overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
-              <p className="text-sm font-semibold">Line items ({lines.length})</p>
-              {editable && !addLineOpen && (
-                <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setAddLineOpen(true)}>
-                  <Plus className="w-3 h-3" />Add item
-                </Button>
-              )}
+        {/* ── Row 2: Summary — full width ────────────────────── */}
+        <div className="rounded-lg border border-border bg-background p-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Summary</p>
+          <div className="flex flex-wrap gap-x-12 gap-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="font-medium tabular-nums">{fmtAed(qt.subtotal)}</span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[640px]">
-                <thead>
-                  <tr className="border-b border-border text-left">
-                    <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Type</th>
-                    <th className="px-3 py-2 text-xs font-medium text-muted-foreground">Description</th>
-                    <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Part #</th>
-                    <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-16">Qty</th>
-                    <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-28">Unit price</th>
-                    <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Discount</th>
-                    <th className="px-3 py-2 text-xs font-medium text-muted-foreground text-right w-32">Total</th>
-                    {editable && <th className="w-8" />}
-                  </tr>
-                </thead>
-                <tbody>
-                  {lines.map((l: any) => (
-                    <tr key={l.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-                      <td className="px-3 py-2.5">
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{l.type}</span>
-                      </td>
-                      <td className="px-3 py-2.5 font-medium">{l.description}</td>
-                      <td className="px-3 py-2.5 text-xs font-mono text-muted-foreground">{l.part_number ?? "—"}</td>
-                      <td className="px-3 py-2.5 tabular-nums">{parseFloat(l.qty)}</td>
-                      <td className="px-3 py-2.5 tabular-nums">{fmtAed(l.unit_price)}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-green-700">
-                        {parseFloat(l.discount) > 0 ? `− ${fmtAed(l.discount)}` : "—"}
-                      </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums font-medium">{fmtAed(l.line_total)}</td>
-                      {editable && (
-                        <td className="px-3 py-2.5">
-                          <Button
-                            variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                            onClick={() => deleteLine.mutate(l.id)}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                  {lines.length === 0 && !addLineOpen && (
-                    <tr>
-                      <td colSpan={editable ? 8 : 7} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                        {editable ? 'No line items yet. Click "Add item" to get started.' : 'No line items yet.'}
-                      </td>
-                    </tr>
-                  )}
-                  {addLineOpen && <AddLineForm quotationId={id} onDone={() => setAddLineOpen(false)} />}
-                </tbody>
-              </table>
+            {parseFloat(qt.discount) > 0 && (
+              <div className="flex items-center gap-2 text-green-700">
+                <span>Discount</span>
+                <span className="font-medium tabular-nums">− {fmtAed(qt.discount)}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">VAT ({qt.tax_rate}%)</span>
+              <span className="font-medium tabular-nums">{fmtAed(qt.tax_amount)}</span>
             </div>
+            <div className="flex items-center gap-2 border-l border-border pl-12">
+              <span className="font-bold text-base">Total</span>
+              <span className="font-bold text-base tabular-nums">{fmtAed(qt.total)}</span>
+            </div>
+            {totalPaid > 0 && (
+              <>
+                <div className="flex items-center gap-2 text-green-700">
+                  <span>Advance paid</span>
+                  <span className="font-medium tabular-nums">− {fmtAed(totalPaid)}</span>
+                </div>
+                <div className={`flex items-center gap-2 font-semibold ${balance <= 0 ? "text-green-700" : ""}`}>
+                  <span>Balance due</span>
+                  <span className="tabular-nums">{fmtAed(balance)}</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ── Row 3: Notes + Advance payments ────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Notes */}
+          <div className="space-y-3">
+            {qt.notes && (
+              <div className="rounded-lg border border-border bg-background p-4 space-y-1.5">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notes</p>
+                <p className="text-sm whitespace-pre-wrap">{qt.notes}</p>
+              </div>
+            )}
+            {qt.internal_note && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 space-y-1.5">
+                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />Internal note
+                </p>
+                <p className="text-sm whitespace-pre-wrap text-amber-900">{qt.internal_note}</p>
+              </div>
+            )}
+            {!qt.notes && !qt.internal_note && (
+              <div className="rounded-lg border border-border bg-background p-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Notes</p>
+                <p className="text-sm text-muted-foreground italic">No notes added.</p>
+              </div>
+            )}
           </div>
 
           {/* Advance payments */}
@@ -639,8 +584,71 @@ export default function QuotationDetailPage() {
               {addPayOpen && <AddAdvanceForm quotationId={id} onDone={() => setAddPayOpen(false)} />}
             </div>
           </div>
-
         </div>
+
+        {/* ── Row 4: Line items — full width ─────────────────── */}
+        <div className="rounded-lg border border-border bg-background overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
+            <p className="text-sm font-semibold">Line items ({lines.length})</p>
+            {editable && !addLineOpen && (
+              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setAddLineOpen(true)}>
+                <Plus className="w-3 h-3" />Add item
+              </Button>
+            )}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Type</th>
+                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground">Description</th>
+                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Part #</th>
+                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-16">Qty</th>
+                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-28">Unit price</th>
+                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Discount</th>
+                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground text-right w-32">Total</th>
+                  {editable && <th className="w-8" />}
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((l: any) => (
+                  <tr key={l.id} className="border-b border-border last:border-0 hover:bg-muted/20">
+                    <td className="px-3 py-2.5">
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{l.type}</span>
+                    </td>
+                    <td className="px-3 py-2.5 font-medium">{l.description}</td>
+                    <td className="px-3 py-2.5 text-xs font-mono text-muted-foreground">{l.part_number ?? "—"}</td>
+                    <td className="px-3 py-2.5 tabular-nums">{parseFloat(l.qty)}</td>
+                    <td className="px-3 py-2.5 tabular-nums">{fmtAed(l.unit_price)}</td>
+                    <td className="px-3 py-2.5 tabular-nums text-green-700">
+                      {parseFloat(l.discount) > 0 ? `− ${fmtAed(l.discount)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums font-medium">{fmtAed(l.line_total)}</td>
+                    {editable && (
+                      <td className="px-3 py-2.5">
+                        <Button
+                          variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                          onClick={() => deleteLine.mutate(l.id)}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+                {lines.length === 0 && !addLineOpen && (
+                  <tr>
+                    <td colSpan={editable ? 8 : 7} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                      {editable ? 'No line items yet. Click "Add item" to get started.' : 'No line items yet.'}
+                    </td>
+                  </tr>
+                )}
+                {addLineOpen && <AddLineForm quotationId={id} onDone={() => setAddLineOpen(false)} />}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
 
       {/* Modals */}
