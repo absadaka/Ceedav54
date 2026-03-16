@@ -2,7 +2,7 @@ import {
   ArrowLeft, Wrench, User, Car, Clock, AlertTriangle, Plus,
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
-  Link as LinkIcon, X, Receipt,
+  Link as LinkIcon, X, Receipt, FileText,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -349,6 +349,20 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       navigate(`/invoices/${data.invoice?.id}`);
     },
     onError: () => toast.error("Failed to create invoice"),
+  });
+
+  const createQuotationMutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/quotations/from-job/${id}?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["quotations"] });
+      toast.success(`Quotation ${data.quotation?.ref} created`);
+      navigate(`/quotations/${data.quotation?.id}`);
+    },
+    onError: () => toast.error("Failed to create quotation"),
   });
 
   const { data, isLoading } = useQuery<DetailData>({
@@ -778,11 +792,11 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       size="sm"
                       variant="outline"
                       className="gap-1.5"
-                      disabled={createInvoiceMutation.isPending}
-                      onClick={() => createInvoiceMutation.mutate()}
+                      disabled={createQuotationMutation.isPending}
+                      onClick={() => createQuotationMutation.mutate()}
                     >
-                      <Receipt className="w-3.5 h-3.5" />
-                      {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
+                      <FileText className="w-3.5 h-3.5" />
+                      {createQuotationMutation.isPending ? "Creating…" : "Create quotation"}
                     </Button>
                   </div>
                 </div>

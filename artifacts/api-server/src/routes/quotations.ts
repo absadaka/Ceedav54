@@ -3,7 +3,7 @@ import { sql, eq, and, or, desc, ilike, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
-  quotationsTable, quoteLineItemsTable, jobsTable,
+  quotationsTable, quoteLineItemsTable, jobsTable, jobPartsTable,
   bookingsTable,
 } from "@workspace/db";
 import { quoteAdvancePaymentsTable } from "@workspace/db";
@@ -295,6 +295,73 @@ router.post("/", async (req, res) => {
   } catch (e: any) {
     console.error("POST /quotations", e);
     res.status(500).json({ error: e.message });
+  }
+});
+
+/* ──────────────────────────────────────────────────────────────────────────
+   POST /quotations/from-job/:jobId  —  create quotation pre-filled from job
+─────────────────────────────────────────────────────────────────────────── */
+router.post("/from-job/:jobId", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const [job] = await db
+      .select()
+      .from(jobsTable)
+      .where(and(eq(jobsTable.id, req.params.jobId), eq(jobsTable.tenant_id, tenant.id)))
+      .limit(1);
+    if (!job) return res.status(404).json({ error: "Job not found" });
+
+    const [{ seq }] = await db
+      .select({ seq: sql<number>`cast(coalesce(max(seq), 0) + 1 as int)` })
+      .from(quotationsTable)
+      .where(eq(quotationsTable.tenant_id, tenant.id));
+
+    const year = new Date().getFullYear();
+    const ref  = `QT-${year}-${String(seq).padStart(4, "0")}`;
+
+    const [quotation] = await db
+      .insert(quotationsTable)
+      .values({
+        tenant_id:  tenant.id,
+        seq,
+        ref,
+        client_id:  job.client_id  ?? undefined,
+        vehicle_id: job.vehicle_id ?? undefined,
+        advisor_id: job.advisor_id ?? undefined,
+        tax_rate:   "5.00",
+        status:     "draft",
+        notes:      job.customer_concern ?? null,
+      })
+      .returning();
+
+    const jobParts = await db
+      .select()
+      .from(jobPartsTable)
+      .where(and(eq(jobPartsTable.job_id, job.id), eq(jobPartsTable.tenant_id, tenant.id)));
+
+    let lineOrder = 0;
+    for (const p of jobParts) {
+      await db.insert(quoteLineItemsTable).values({
+        quotation_id: quotation.id,
+        sort_order:   lineOrder++,
+        description:  p.description,
+        part_number:  p.part_number ?? null,
+        qty:          p.qty,
+        unit_price:   p.unit_price,
+        line_total:   p.line_total,
+      });
+    }
+
+    await recalcTotals(quotation.id);
+    const [fresh] = await db.select().from(quotationsTable).where(eq(quotationsTable.id, quotation.id)).limit(1);
+
+    return res.status(201).json({ quotation: fresh });
+  } catch (err) {
+    console.error("POST /quotations/from-job/:jobId", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
