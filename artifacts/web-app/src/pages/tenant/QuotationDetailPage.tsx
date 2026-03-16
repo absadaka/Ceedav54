@@ -67,14 +67,13 @@ function fmtAed(val: string | number | null) {
 /* ─── inline line item add form ─────────────────────────────────────────── */
 function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () => void }) {
   const qc = useQueryClient();
-  const [description,  setDescription]  = useState("");
-  const [type,         setType]         = useState("labour");
-  const [partNumber,   setPartNumber]   = useState("");
-  const [qty,          setQty]          = useState("1");
-  const [unitPrice,    setUnitPrice]    = useState("0.00");
-  const [discountPct,  setDiscountPct]  = useState("0");
-  const [search,       setSearch]       = useState("");
-  const [showDrop,     setShowDrop]     = useState(false);
+  const [description, setDescription] = useState("");
+  const [type,        setType]        = useState("labour");
+  const [partNumber,  setPartNumber]  = useState("");
+  const [qty,         setQty]         = useState("1");
+  const [unitPrice,   setUnitPrice]   = useState("0.00");
+  const [search,      setSearch]      = useState("");
+  const [showDrop,    setShowDrop]    = useState(false);
 
   const { data: catData } = useQuery({
     queryKey: ["catalog", TENANT],
@@ -98,20 +97,18 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
     setShowDrop(false);
   }
 
-  const subtotal   = parseFloat(qty || "0") * parseFloat(unitPrice || "0");
-  const discountAed = subtotal * (parseFloat(discountPct || "0") / 100);
-  const lineTotal  = Math.max(0, subtotal - discountAed);
+  const lineTotal = Math.max(0, parseFloat(qty || "0") * parseFloat(unitPrice || "0"));
 
   const add = useMutation({
     mutationFn: () => fetch(`${API}/api/quotations/${quotationId}/lines?tenant=${TENANT}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description, type, part_number: partNumber || null, qty, unit_price: unitPrice, discount: discountAed.toFixed(2) }),
+      body: JSON.stringify({ description, type, part_number: partNumber || null, qty, unit_price: unitPrice, discount: "0.00" }),
     }).then(r => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["quotation", quotationId] });
       toast.success("Line item added");
-      setDescription(""); setPartNumber(""); setQty("1"); setUnitPrice("0.00"); setDiscountPct("0"); setType("labour"); setSearch("");
+      setDescription(""); setPartNumber(""); setQty("1"); setUnitPrice("0.00"); setType("labour"); setSearch("");
       onDone();
     },
     onError: (e: any) => toast.error(e.message),
@@ -149,20 +146,6 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
       <td className="px-3 py-2">
         <Input className="h-7 text-xs w-16 tabular-nums" type="number" step="0.01" min="0" value={qty} onChange={e => setQty(e.target.value)} />
       </td>
-      <td className="px-3 py-2">
-        <div className="relative flex items-center">
-          <Input
-            className="h-7 text-xs w-20 tabular-nums pr-5"
-            type="number"
-            min="0"
-            max="100"
-            step="1"
-            value={discountPct}
-            onChange={e => setDiscountPct(e.target.value)}
-          />
-          <span className="absolute right-2 text-xs text-muted-foreground pointer-events-none">%</span>
-        </div>
-      </td>
       <td className="px-3 py-2 text-right text-xs tabular-nums font-medium">{fmtAed(lineTotal)}</td>
       <td className="px-3 py-2">
         <div className="flex gap-1">
@@ -173,6 +156,60 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
         </div>
       </td>
     </tr>
+  );
+}
+
+/* ─── separate discount line form ────────────────────────────────────────── */
+function AddDiscountLine({ quotationId, subtotal, onDone }: { quotationId: string; subtotal: number; onDone: () => void }) {
+  const qc = useQueryClient();
+  const [label,  setLabel]  = useState("Discount");
+  const [pct,    setPct]    = useState("10");
+
+  const discountAed = subtotal * (parseFloat(pct || "0") / 100);
+
+  const add = useMutation({
+    mutationFn: () => fetch(`${API}/api/quotations/${quotationId}/lines?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description: label, type: "labour", qty: "1", unit_price: (-discountAed).toFixed(2), discount: "0.00" }),
+    }).then(r => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["quotation", quotationId] });
+      toast.success("Discount line added");
+      setLabel("Discount"); setPct("10");
+      onDone();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="px-4 py-3 border-t border-dashed border-orange-300 bg-orange-50/50 flex items-center gap-3 flex-wrap">
+      <span className="text-xs font-medium text-orange-700 shrink-0">Discount line</span>
+      <Input
+        className="h-7 text-xs w-40"
+        placeholder="Label"
+        value={label}
+        onChange={e => setLabel(e.target.value)}
+      />
+      <div className="relative flex items-center">
+        <Input
+          className="h-7 text-xs w-20 tabular-nums pr-5"
+          type="number" min="0" max="100" step="1"
+          value={pct}
+          onChange={e => setPct(e.target.value)}
+        />
+        <span className="absolute right-2 text-xs text-muted-foreground pointer-events-none">%</span>
+      </div>
+      <span className="text-xs text-muted-foreground tabular-nums">
+        = − {fmtAed(discountAed)}
+      </span>
+      <div className="flex gap-1 ml-auto">
+        <Button size="sm" className="h-7 px-3 text-xs bg-orange-600 hover:bg-orange-700" onClick={() => add.mutate()} disabled={!label || discountAed <= 0 || add.isPending}>
+          {add.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Apply"}
+        </Button>
+        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onDone}><X className="w-3 h-3" /></Button>
+      </div>
+    </div>
   );
 }
 
@@ -317,9 +354,10 @@ export default function QuotationDetailPage() {
   const id  = params?.id ?? "";
   const qc  = useQueryClient();
 
-  const [editOpen,    setEditOpen]    = useState(false);
-  const [addLineOpen, setAddLineOpen] = useState(false);
-  const [addPayOpen,  setAddPayOpen]  = useState(false);
+  const [editOpen,       setEditOpen]       = useState(false);
+  const [addLineOpen,    setAddLineOpen]    = useState(false);
+  const [addDiscountOpen,setAddDiscountOpen]= useState(false);
+  const [addPayOpen,     setAddPayOpen]     = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [deleteOpen,  setDeleteOpen]  = useState(false);
 
@@ -538,10 +576,19 @@ export default function QuotationDetailPage() {
         <div className="rounded-lg border border-border bg-background">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
             <p className="text-sm font-semibold">Line items ({lines.length})</p>
-            {editable && !addLineOpen && (
-              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setAddLineOpen(true)}>
-                <Plus className="w-3 h-3" />Add item
-              </Button>
+            {editable && (
+              <div className="flex gap-2">
+                {!addLineOpen && (
+                  <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setAddLineOpen(true); setAddDiscountOpen(false); }}>
+                    <Plus className="w-3 h-3" />Add item
+                  </Button>
+                )}
+                {!addDiscountOpen && (
+                  <Button size="sm" variant="outline" className="h-7 gap-1 text-xs text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => { setAddDiscountOpen(true); setAddLineOpen(false); }}>
+                    <Plus className="w-3 h-3" />Add discount
+                  </Button>
+                )}
+              </div>
             )}
           </div>
           <div className={addLineOpen ? "overflow-visible" : "overflow-x-auto"}>
@@ -550,7 +597,6 @@ export default function QuotationDetailPage() {
                 <tr className="border-b border-border text-left">
                   <th className="px-3 py-2 text-xs font-medium text-muted-foreground">Description</th>
                   <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-16">Qty</th>
-                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Discount %</th>
                   <th className="px-3 py-2 text-xs font-medium text-muted-foreground text-right w-32">Total</th>
                   {editable && <th className="w-8" />}
                 </tr>
@@ -560,13 +606,6 @@ export default function QuotationDetailPage() {
                   <tr key={l.id} className="border-b border-border last:border-0 hover:bg-muted/20">
                     <td className="px-3 py-2.5 font-medium">{l.description}</td>
                     <td className="px-3 py-2.5 tabular-nums">{parseFloat(l.qty)}</td>
-                    <td className="px-3 py-2.5 tabular-nums text-green-700">
-                      {(() => {
-                        const base = parseFloat(l.qty) * parseFloat(l.unit_price);
-                        const pct  = base > 0 ? Math.round((parseFloat(l.discount) / base) * 100) : 0;
-                        return pct > 0 ? `${pct}%` : "—";
-                      })()}
-                    </td>
                     <td className="px-3 py-2.5 text-right tabular-nums font-medium">{fmtAed(l.line_total)}</td>
                     {editable && (
                       <td className="px-3 py-2.5">
@@ -582,7 +621,7 @@ export default function QuotationDetailPage() {
                 ))}
                 {lines.length === 0 && !addLineOpen && (
                   <tr>
-                    <td colSpan={editable ? 5 : 4} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    <td colSpan={editable ? 4 : 3} className="px-4 py-10 text-center text-sm text-muted-foreground">
                       {editable ? 'No line items yet. Click "Add item" to get started.' : 'No line items yet.'}
                     </td>
                   </tr>
@@ -591,6 +630,13 @@ export default function QuotationDetailPage() {
               </tbody>
             </table>
           </div>
+          {addDiscountOpen && (
+            <AddDiscountLine
+              quotationId={id}
+              subtotal={parseFloat(qt.subtotal || "0")}
+              onDone={() => setAddDiscountOpen(false)}
+            />
+          )}
         </div>
 
         {/* ── Row 3: Notes + Advance payments ────────────────── */}
