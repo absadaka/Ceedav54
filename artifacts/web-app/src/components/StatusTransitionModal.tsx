@@ -13,6 +13,13 @@ import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+function getCurrentUserId(): string | undefined {
+  try {
+    const s = localStorage.getItem("ceeda_session");
+    return s ? JSON.parse(s).userId : undefined;
+  } catch { return undefined; }
+}
+
 export const INSPECTION_STATUSES = [
   { key: "in_progress",  label: "Checked In",     color: "bg-orange-100 text-orange-800 border-orange-300" },
   { key: "completed",    label: "Completed",      color: "bg-green-100  text-green-800  border-green-300"  },
@@ -57,7 +64,7 @@ export default function StatusTransitionModal({
       const r = await fetch(`${API}/api/jobs/${jobId}/status?tenant=${TENANT}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: target, note: note.trim() || undefined }),
+        body: JSON.stringify({ status: target, note: note.trim() || undefined, changed_by: getCurrentUserId() }),
       });
       if (!r.ok) throw new Error("Status transition failed");
       return r.json();
