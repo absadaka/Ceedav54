@@ -527,6 +527,9 @@ export default function QuotationDetailPage() {
                   <div>
                     <p className="font-medium text-sm font-mono group-hover:text-primary transition-colors">{qt.plate_number}</p>
                     <p className="text-xs text-muted-foreground">{qt.vehicle_year} {qt.vehicle_make} {qt.vehicle_model}</p>
+                    {qt.vehicle_mileage && (
+                      <p className="text-xs text-muted-foreground">{parseInt(qt.vehicle_mileage).toLocaleString()} km</p>
+                    )}
                   </div>
                 </button>
               )

@@ -212,6 +212,7 @@ router.get("/:id", async (req, res) => {
         vehicle_year:     vehiclesTable.year,
         vehicle_color:    vehiclesTable.color,
         vehicle_vin:      vehiclesTable.vin,
+        vehicle_mileage:  vehiclesTable.mileage,
         advisor_id:       quotationsTable.advisor_id,
         advisor_name:     advisorAlias.name,
         advisor_email:    advisorAlias.email,
