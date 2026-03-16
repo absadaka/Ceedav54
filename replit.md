@@ -239,7 +239,7 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
   "pending_quotations": [],
   "unpaid_invoices": [],
   "technician_workload": [{ "id": "uuid", "name": "...", "active_count": "0", "completed_today": "1" }],
-  "recent_activity": [{ "id": "uuid", "from_status": null, "to_status": "waiting", "created_at": "...", "job_ref": "JC-2024-0001", "changed_by_name": "..." }]
+  "recent_activity": [{ "id": "uuid", "from_status": null, "to_status": "waiting", "created_at": "...", "job_ref": "Insp-2026-0001", "changed_by_name": "..." }]
 }
 ```
 

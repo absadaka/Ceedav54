@@ -118,7 +118,7 @@ export const jobsTable = pgTable("jobs", {
   id:              uuid("id").defaultRandom().primaryKey(),
   tenant_id:       uuid("tenant_id").references(() => tenantsTable.id, { onDelete: "cascade" }).notNull(),
   seq:             integer("seq").notNull(),
-  ref:             text("ref").notNull(),               // e.g. "JC-2024-0001"
+  ref:             text("ref").notNull(),               // e.g. "Insp-2026-0001" (inspection) or "JC-2026-0001" (service job)
   type:            text("type"),                        // "inspection" | "service_job"
   quotation_id:    uuid("quotation_id").references(() => quotationsTable.id, { onDelete: "set null" }),
   booking_id:      uuid("booking_id").references(() => bookingsTable.id, { onDelete: "set null" }),
