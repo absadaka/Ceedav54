@@ -118,12 +118,6 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
   return (
     <tr className="border-t border-dashed border-primary/30 bg-primary/5">
       <td className="px-3 py-2">
-        <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="h-7 text-xs w-28"><SelectValue /></SelectTrigger>
-          <SelectContent>{LINE_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
-        </Select>
-      </td>
-      <td className="px-3 py-2">
         <div className="relative">
           <Input
             className="h-7 text-xs"
@@ -143,10 +137,7 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
                   onMouseDown={() => pickItem(item)}
                 >
                   <span className="font-medium truncate flex-1">{item.name}</span>
-                  <span className="flex items-center gap-2 shrink-0 text-muted-foreground">
-                    <span className="capitalize">{item.type}</span>
-                    <span className="tabular-nums font-semibold text-foreground">AED {parseFloat(item.unit_price).toFixed(2)}</span>
-                  </span>
+                  <span className="tabular-nums font-semibold text-foreground shrink-0">AED {parseFloat(item.unit_price).toFixed(2)}</span>
                 </button>
               ))}
             </div>
@@ -154,13 +145,7 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
         </div>
       </td>
       <td className="px-3 py-2">
-        <Input className="h-7 text-xs w-24 font-mono" placeholder="Part #" value={partNumber} onChange={e => setPartNumber(e.target.value)} />
-      </td>
-      <td className="px-3 py-2">
         <Input className="h-7 text-xs w-16 tabular-nums" type="number" step="0.01" min="0" value={qty} onChange={e => setQty(e.target.value)} />
-      </td>
-      <td className="px-3 py-2">
-        <Input className="h-7 text-xs w-24 tabular-nums" type="number" step="0.01" min="0" value={unitPrice} onChange={e => setUnitPrice(e.target.value)} />
       </td>
       <td className="px-3 py-2">
         <Input className="h-7 text-xs w-20 tabular-nums" type="number" step="0.01" min="0" value={discount} onChange={e => setDiscount(e.target.value)} />
@@ -547,14 +532,11 @@ export default function QuotationDetailPage() {
             )}
           </div>
           <div className={addLineOpen ? "overflow-visible" : "overflow-x-auto"}>
-            <table className="w-full text-sm min-w-[640px]">
+            <table className="w-full text-sm min-w-[400px]">
               <thead>
                 <tr className="border-b border-border text-left">
-                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Type</th>
                   <th className="px-3 py-2 text-xs font-medium text-muted-foreground">Description</th>
-                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Part #</th>
                   <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-16">Qty</th>
-                  <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-28">Unit price</th>
                   <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-24">Discount</th>
                   <th className="px-3 py-2 text-xs font-medium text-muted-foreground text-right w-32">Total</th>
                   {editable && <th className="w-8" />}
@@ -563,13 +545,8 @@ export default function QuotationDetailPage() {
               <tbody>
                 {lines.map((l: any) => (
                   <tr key={l.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-                    <td className="px-3 py-2.5">
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">{l.type}</span>
-                    </td>
                     <td className="px-3 py-2.5 font-medium">{l.description}</td>
-                    <td className="px-3 py-2.5 text-xs font-mono text-muted-foreground">{l.part_number ?? "—"}</td>
                     <td className="px-3 py-2.5 tabular-nums">{parseFloat(l.qty)}</td>
-                    <td className="px-3 py-2.5 tabular-nums">{fmtAed(l.unit_price)}</td>
                     <td className="px-3 py-2.5 tabular-nums text-green-700">
                       {parseFloat(l.discount) > 0 ? `− ${fmtAed(l.discount)}` : "—"}
                     </td>
@@ -588,7 +565,7 @@ export default function QuotationDetailPage() {
                 ))}
                 {lines.length === 0 && !addLineOpen && (
                   <tr>
-                    <td colSpan={editable ? 8 : 7} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    <td colSpan={editable ? 5 : 4} className="px-4 py-10 text-center text-sm text-muted-foreground">
                       {editable ? 'No line items yet. Click "Add item" to get started.' : 'No line items yet.'}
                     </td>
                   </tr>
