@@ -20,7 +20,7 @@ export const INSPECTION_STATUSES = [
 ] as const;
 
 export const JOB_STATUSES = [
-  { key: "waiting",       label: "New",            color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  { key: "waiting",       label: "Checked In",     color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
   { key: "in_progress",  label: "In progress",    color: "bg-orange-100 text-orange-800 border-orange-300" },
   { key: "waiting_parts",label: "Waiting parts",  color: "bg-purple-100 text-purple-800 border-purple-300" },
   { key: "qc",           label: "QC Check",       color: "bg-blue-100   text-blue-800   border-blue-300"   },
