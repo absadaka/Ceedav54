@@ -68,7 +68,8 @@ All monetary values use `numeric(12,2)`. Sequential human-readable refs (e.g. `B
 |---|---|
 | Booking | `BK-YYYY-NNNN` |
 | Quotation | `QT-YYYY-NNNN` |
-| Job card | `JC-YYYY-NNNN` |
+| Inspection | `Insp-YYYY-NNNN` |
+| Service job | `JC-YYYY-NNNN` |
 | Invoice | `INV-YYYY-NNNN` |
 
 ## Getting Started
