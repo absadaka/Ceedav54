@@ -346,15 +346,13 @@ export default function QuotationDetailPage() {
   return (
     <div className="space-y-5">
       {/* Back + header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="grid grid-cols-3 items-center gap-4">
+        {/* Left: back + ref */}
         <div className="flex items-start gap-3">
           <Button variant="ghost" size="icon" className="h-8 w-8 mt-0.5 shrink-0" onClick={() => navigate("/quotations")}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            {getSession()?.tenantName && (
-              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">{getSession()?.tenantName}</p>
-            )}
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight">{qt.ref}</h1>
               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${sm.color}`}>
@@ -367,7 +365,15 @@ export default function QuotationDetailPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Center: shop name */}
+        <div className="flex flex-col items-center justify-center text-center">
+          {getSession()?.tenantName && (
+            <p className="text-base font-bold tracking-wide text-foreground">{getSession()?.tenantName}</p>
+          )}
+        </div>
+
+        {/* Right: action buttons */}
+        <div className="flex items-center justify-end gap-2">
           {qt.status === "draft" && (
             <Button size="sm" className="gap-1.5" onClick={() => action.mutate({ act: "send" })} disabled={action.isPending}>
               <Send className="w-3.5 h-3.5" />Send to customer
