@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import QuotationDrawer, { type QuotationRow } from "@/components/QuotationDrawer";
 
 import { getTenantSlug } from "@/lib/tenant";
+import { getSession }    from "@/hooks/useAuth";
 const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -351,6 +352,9 @@ export default function QuotationDetailPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
+            {getSession()?.tenantName && (
+              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">{getSession()?.tenantName}</p>
+            )}
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight">{qt.ref}</h1>
               <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${sm.color}`}>
