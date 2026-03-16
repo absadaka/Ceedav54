@@ -162,8 +162,10 @@ router.get("/clients/:id", async (req, res) => {
       /* jobs */
       db.select({
           id: jobsTable.id, ref: jobsTable.ref, status: jobsTable.status, priority: jobsTable.priority,
+          type: jobsTable.type,
           bay: jobsTable.bay, created_at: jobsTable.created_at, completed_at: jobsTable.completed_at,
           customer_concern: jobsTable.customer_concern,
+          vehicle_id: jobsTable.vehicle_id,
           vehicle_plate: vehiclesTable.plate, vehicle_make: vehiclesTable.make, vehicle_model: vehiclesTable.model,
           advisor_name: advisorAlias.name, technician_name: technicianAlias.name,
         })
