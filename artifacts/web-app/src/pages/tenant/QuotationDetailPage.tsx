@@ -73,6 +73,30 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
   const [qty,         setQty]         = useState("1");
   const [unitPrice,   setUnitPrice]   = useState("0.00");
   const [discount,    setDiscount]    = useState("0.00");
+  const [search,      setSearch]      = useState("");
+  const [showDrop,    setShowDrop]    = useState(false);
+
+  const { data: catData } = useQuery({
+    queryKey: ["catalog", TENANT],
+    queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
+    staleTime: 60_000,
+  });
+  const allCatalog: any[] = (catData?.items ?? []).filter((i: any) => i.is_active !== false);
+
+  const filtered = allCatalog.filter(i =>
+    !search ||
+    i.name.toLowerCase().includes(search.toLowerCase()) ||
+    (i.sku ?? "").toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 8);
+
+  function pickItem(item: any) {
+    setDescription(item.name);
+    setType(item.type);
+    setPartNumber(item.sku ?? "");
+    setUnitPrice(parseFloat(item.unit_price).toFixed(2));
+    setSearch(item.name);
+    setShowDrop(false);
+  }
 
   const lineTotal = Math.max(0, parseFloat(qty || "0") * parseFloat(unitPrice || "0") - parseFloat(discount || "0"));
 
@@ -85,7 +109,7 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["quotation", quotationId] });
       toast.success("Line item added");
-      setDescription(""); setPartNumber(""); setQty("1"); setUnitPrice("0.00"); setDiscount("0.00"); setType("labour");
+      setDescription(""); setPartNumber(""); setQty("1"); setUnitPrice("0.00"); setDiscount("0.00"); setType("labour"); setSearch("");
       onDone();
     },
     onError: (e: any) => toast.error(e.message),
@@ -100,7 +124,34 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
         </Select>
       </td>
       <td className="px-3 py-2">
-        <Input className="h-7 text-xs" placeholder="Description *" value={description} onChange={e => setDescription(e.target.value)} />
+        <div className="relative">
+          <Input
+            className="h-7 text-xs"
+            placeholder="Search catalog or type description…"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setDescription(e.target.value); setShowDrop(true); }}
+            onFocus={() => setShowDrop(true)}
+            onBlur={() => setTimeout(() => setShowDrop(false), 150)}
+          />
+          {showDrop && filtered.length > 0 && (
+            <div className="absolute z-50 top-full left-0 mt-1 w-80 rounded-md border bg-popover shadow-lg overflow-hidden">
+              {filtered.map((item: any) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-accent text-left gap-3"
+                  onMouseDown={() => pickItem(item)}
+                >
+                  <span className="font-medium truncate flex-1">{item.name}</span>
+                  <span className="flex items-center gap-2 shrink-0 text-muted-foreground">
+                    <span className="capitalize">{item.type}</span>
+                    <span className="tabular-nums font-semibold text-foreground">AED {parseFloat(item.unit_price).toFixed(2)}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </td>
       <td className="px-3 py-2">
         <Input className="h-7 text-xs w-24 font-mono" placeholder="Part #" value={partNumber} onChange={e => setPartNumber(e.target.value)} />
@@ -486,7 +537,7 @@ export default function QuotationDetailPage() {
         </div>
 
         {/* ── Row 2: Line items — full width ─────────────────── */}
-        <div className="rounded-lg border border-border bg-background overflow-hidden">
+        <div className="rounded-lg border border-border bg-background">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
             <p className="text-sm font-semibold">Line items ({lines.length})</p>
             {editable && !addLineOpen && (
@@ -495,7 +546,7 @@ export default function QuotationDetailPage() {
               </Button>
             )}
           </div>
-          <div className="overflow-x-auto">
+          <div className={addLineOpen ? "overflow-visible" : "overflow-x-auto"}>
             <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="border-b border-border text-left">
