@@ -370,8 +370,12 @@ export default function QuotationDetailPage() {
   const qt   = data?.quotation     ?? null;
   const lines = data?.lineItems    ?? [];
   const advs  = data?.advancePayments ?? [];
-  const totalPaid = data?.totalPaid ?? 0;
-  const balance   = data?.balance   ?? 0;
+  const totalPaid    = data?.totalPaid ?? 0;
+  const balance      = data?.balance   ?? 0;
+  const lineDiscount = lines.reduce((sum: number, l: any) => {
+    const lt = parseFloat(l.line_total ?? "0");
+    return lt < 0 ? sum + Math.abs(lt) : sum;
+  }, 0);
 
   const action = useMutation({
     mutationFn: ({ act, body = {} }: { act: string; body?: any }) =>
@@ -545,10 +549,10 @@ export default function QuotationDetailPage() {
                 <dt className="text-muted-foreground">Subtotal</dt>
                 <dd className="tabular-nums">{fmtAed(qt.subtotal)}</dd>
               </div>
-              {parseFloat(qt.discount) > 0 && (
-                <div className="flex justify-between text-green-700">
+              {lineDiscount > 0 && (
+                <div className="flex justify-between text-orange-600">
                   <dt>Discount</dt>
-                  <dd className="tabular-nums">− {fmtAed(qt.discount)}</dd>
+                  <dd className="tabular-nums">− {fmtAed(lineDiscount.toFixed(2))}</dd>
                 </div>
               )}
               <div className="flex justify-between">
