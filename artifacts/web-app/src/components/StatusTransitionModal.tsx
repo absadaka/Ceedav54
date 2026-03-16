@@ -13,10 +13,18 @@ import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+export const INSPECTION_STATUSES = [
+  { key: "in_progress",  label: "Checked In",     color: "bg-orange-100 text-orange-800 border-orange-300" },
+  { key: "qc",           label: "QC Check",       color: "bg-blue-100   text-blue-800   border-blue-300"   },
+  { key: "completed",    label: "Completed",      color: "bg-green-100  text-green-800  border-green-300"  },
+  { key: "delivered",    label: "Delivered",      color: "bg-teal-100   text-teal-800   border-teal-300"   },
+] as const;
+
 export const JOB_STATUSES = [
   { key: "waiting",       label: "New",            color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
   { key: "in_progress",  label: "In progress",    color: "bg-orange-100 text-orange-800 border-orange-300" },
   { key: "waiting_parts",label: "Waiting parts",  color: "bg-purple-100 text-purple-800 border-purple-300" },
+  { key: "qc",           label: "QC Check",       color: "bg-blue-100   text-blue-800   border-blue-300"   },
   { key: "completed",    label: "Completed",      color: "bg-green-100  text-green-800  border-green-300"  },
   { key: "delivered",    label: "Delivered",      color: "bg-teal-100   text-teal-800   border-teal-300"   },
 ] as const;
@@ -29,15 +37,21 @@ interface Props {
   jobId: string;
   jobRef: string;
   currentStatus: string;
+  moduleType?: "inspection" | "service_job";
   onSuccess?: (newStatus: string) => void;
 }
 
 export default function StatusTransitionModal({
-  open, onOpenChange, jobId, jobRef, currentStatus, onSuccess,
+  open, onOpenChange, jobId, jobRef, currentStatus, moduleType, onSuccess,
 }: Props) {
   const qc       = useQueryClient();
   const [target, setTarget] = useState<string>("");
   const [note,   setNote]   = useState("");
+
+  const statuses = moduleType === "inspection" ? INSPECTION_STATUSES : JOB_STATUSES;
+
+  const findLabel = (key: string) =>
+    statuses.find(s => s.key === key)?.label ?? JOB_STATUSES.find(s => s.key === key)?.label ?? key;
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -52,8 +66,9 @@ export default function StatusTransitionModal({
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["jobs"] });
       qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
+      qc.invalidateQueries({ queryKey: ["inspections-kanban"] });
       qc.invalidateQueries({ queryKey: ["job", jobId] });
-      toast.success(`Job ${jobRef} moved to ${JOB_STATUSES.find(s => s.key === target)?.label}`);
+      toast.success(`Job ${jobRef} moved to ${findLabel(target)}`);
       onSuccess?.(target);
       onOpenChange(false);
       setTarget("");
@@ -71,7 +86,7 @@ export default function StatusTransitionModal({
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-2 py-2">
-          {JOB_STATUSES.map(s => {
+          {statuses.map(s => {
             const isCurrent = s.key === currentStatus;
             const isSelected = s.key === target;
             return (

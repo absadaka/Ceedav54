@@ -31,7 +31,7 @@ import { cn }       from "@/lib/utils";
 import { statusClass, statusLabel } from "@/lib/status";
 import { toast }    from "sonner";
 import JobDrawer, { type JobRow } from "@/components/JobDrawer";
-import StatusTransitionModal, { JOB_STATUSES } from "@/components/StatusTransitionModal";
+import StatusTransitionModal, { JOB_STATUSES, INSPECTION_STATUSES } from "@/components/StatusTransitionModal";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -44,11 +44,13 @@ const PRIORITY_BADGE: Record<string, string> = {
   low:    "bg-gray-100 text-gray-600 border-gray-300",
 };
 
-/* ── label overrides so "waiting" shows as "New" in UI ──────────────────── */
-const STATUS_DISPLAY: Record<string, string> = Object.fromEntries(
-  JOB_STATUSES.map(s => [s.key, s.label])
-);
-function jobStatusLabel(s: string) { return STATUS_DISPLAY[s] ?? statusLabel(s); }
+/* ── label maps per module type ──────────────────────────────────────────── */
+const SVC_LABELS: Record<string, string> = Object.fromEntries(JOB_STATUSES.map(s => [s.key, s.label]));
+const INSP_LABELS: Record<string, string> = Object.fromEntries(INSPECTION_STATUSES.map(s => [s.key, s.label]));
+function jobStatusLabel(s: string, isInspection = false) {
+  const map = isInspection ? INSP_LABELS : SVC_LABELS;
+  return map[s] ?? statusLabel(s);
+}
 
 function fmtDate(d: string | null) {
   if (!d) return "—";
@@ -458,7 +460,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   }
 
   const { job, statusHistory, assignments, timeLogs, totalMinutes, parts, photos, quotation } = data;
-  const currentLane = JOB_STATUSES.find(s => s.key === job.status);
+  const isInspection = moduleType === "inspection";
+  const statusSet    = isInspection ? INSPECTION_STATUSES : JOB_STATUSES;
+  const currentLane  = statusSet.find(s => s.key === job.status) ?? JOB_STATUSES.find(s => s.key === job.status);
   const partsTotal  = parts.reduce((sum, p) => sum + parseFloat(p.line_total), 0);
   const runningLog  = timeLogs.find(l => !l.ended_at);
 
@@ -491,7 +495,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-semibold font-mono">{job.ref}</h1>
               <Badge variant="outline" className={cn("text-xs font-medium border", currentLane?.color)}>
-                {jobStatusLabel(job.status)}
+                {jobStatusLabel(job.status, isInspection)}
               </Badge>
               <Badge variant="outline" className={cn("text-xs font-medium border", PRIORITY_BADGE[job.priority])}>
                 {job.priority}
@@ -1034,13 +1038,13 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                             {h.from_status && (
                               <>
                                 <Badge variant="outline" className={cn("text-[10px] border", statusClass(h.from_status))}>
-                                  {jobStatusLabel(h.from_status)}
+                                  {jobStatusLabel(h.from_status, isInspection)}
                                 </Badge>
                                 <ChevronRight className="w-3 h-3 text-muted-foreground" />
                               </>
                             )}
                             <Badge variant="outline" className={cn("text-[10px] border", statusClass(h.to_status))}>
-                              {jobStatusLabel(h.to_status)}
+                              {jobStatusLabel(h.to_status, isInspection)}
                             </Badge>
                           </div>
                           {h.note && <p className="text-xs text-muted-foreground mt-1">{h.note}</p>}
@@ -1067,6 +1071,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         jobId={job.id}
         jobRef={job.ref}
         currentStatus={job.status}
+        moduleType={moduleType}
         onSuccess={() => qc.invalidateQueries({ queryKey: ["job", id] })}
       />
 
