@@ -386,14 +386,15 @@ router.post("/", async (req, res) => {
         customer_concern: customer_concern ?? null,
         internal_note:    internal_note ?? null,
         mileage_in:       mileage_in ?? null,
-        status:       "waiting",
+        status:       type === "inspection" ? "in_progress" : "waiting",
       })
       .returning();
 
+    const initialStatus = type === "inspection" ? "in_progress" : "waiting";
     await db.insert(jobStatusHistoryTable).values({
       job_id:    job.id,
       tenant_id: tenant.id,
-      to_status: "waiting",
+      to_status: initialStatus,
       note:      "Job created",
     });
 

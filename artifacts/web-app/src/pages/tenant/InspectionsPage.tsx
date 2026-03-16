@@ -10,9 +10,14 @@ import { Input }    from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge }    from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { statusClass, statusLabel } from "@/lib/status";
+import { statusClass } from "@/lib/status";
 import JobDrawer     from "@/components/JobDrawer";
-import StatusTransitionModal, { JOB_STATUSES } from "@/components/StatusTransitionModal";
+import StatusTransitionModal, { INSPECTION_STATUSES } from "@/components/StatusTransitionModal";
+
+function inspectionStatusLabel(status: string) {
+  if (status === "in_progress") return "Checked In";
+  return status.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -21,7 +26,7 @@ const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 function KanbanSkeleton() {
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
-      {JOB_STATUSES.map(s => (
+      {INSPECTION_STATUSES.map(s => (
         <div key={s.key} className="shrink-0 w-64">
           <div className="flex items-center justify-between mb-3">
             <Skeleton className="h-3.5 w-24" /><Skeleton className="h-4 w-5 rounded-full" />
@@ -168,7 +173,7 @@ export default function InspectionsPage() {
       {view === "board" && (
         kanbanLoading ? <KanbanSkeleton /> : (
           <div className="flex gap-4 overflow-x-auto pb-6">
-            {JOB_STATUSES.map(lane => {
+            {INSPECTION_STATUSES.map(lane => {
               const jobs: KanbanJob[] = filtered?.[lane.key] ?? [];
               return (
                 <div key={lane.key} className="shrink-0 w-64">
@@ -247,7 +252,7 @@ export default function InspectionsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <Badge variant="outline" className={cn("text-xs font-medium border", statusClass(job.status))}>
-                            {statusLabel(job.status)}
+                            {inspectionStatusLabel(job.status)}
                           </Badge>
                         </td>
                         <td className="px-4 py-3 hidden sm:table-cell text-sm">
@@ -274,6 +279,7 @@ export default function InspectionsPage() {
           jobId={movingJob.id}
           jobRef={movingJob.ref}
           currentStatus={movingJob.status}
+          moduleType="inspection"
         />
       )}
     </div>
