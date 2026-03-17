@@ -274,6 +274,58 @@ function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => vo
   );
 }
 
+/* ─── AddManualPartForm ───────────────────────────────────────────────────── */
+function AddManualPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
+  const [description, setDescription] = useState("");
+  const [qty,         setQty]         = useState("1");
+
+  const mutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/jobs/${jobId}/parts?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description, qty, unit_price: "0", part_number: "" }),
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      onAdded();
+      setDescription(""); setQty("1");
+      toast.success("Part added");
+    },
+    onError: () => toast.error("Failed to add part"),
+  });
+
+  return (
+    <div className="border border-dashed border-border rounded-lg p-4 mt-3 space-y-3 bg-muted/20">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add part manually</p>
+      <div className="grid grid-cols-4 gap-3 items-end">
+        <div className="col-span-3 space-y-1">
+          <Label className="text-xs">Part description *</Label>
+          <Input
+            className="h-8 text-sm"
+            placeholder="e.g. Engine Air Filter"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && description.trim()) mutation.mutate(); }}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Qty</Label>
+          <Input
+            type="number" min="0.01" step="0.01"
+            value={qty}
+            onChange={e => setQty(e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="col-span-4 flex justify-end">
+          <Button size="sm" disabled={!description.trim() || mutation.isPending} onClick={() => mutation.mutate()}>
+            {mutation.isPending ? "Adding…" : "Add part"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── LiveTimer ───────────────────────────────────────────────────────────── */
 function LiveTimer({ startedAt }: { startedAt: string }) {
   const [elapsed, setElapsed] = useState(Date.now() - new Date(startedAt).getTime());
@@ -420,7 +472,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [statusOpen,     setStatusOpen]     = useState(false);
   const [deleteOpen,     setDeleteOpen]     = useState(false);
   const [assignOpen,     setAssignOpen]     = useState(false);
-  const [showAddPart,    setShowAddPart]    = useState(false);
+  const [showAddPart,       setShowAddPart]       = useState(false);
+  const [showAddManualPart, setShowAddManualPart] = useState(false);
   const [showAddPhoto,   setShowAddPhoto]   = useState(false);
   const [noteText,       setNoteText]       = useState("");
   const [timerNote,      setTimerNote]      = useState("");
@@ -930,12 +983,25 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {isInspection ? "Diagnosis items" : "Parts & labour"}
                   </p>
-                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowAddPart(p => !p)}>
-                    <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : isInspection ? "Add service" : "Add"}
-                  </Button>
+                  {isInspection ? (
+                    <div className="flex gap-1.5">
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                        onClick={() => { setShowAddPart(p => !p); setShowAddManualPart(false); }}>
+                        <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : "Add service"}
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                        onClick={() => { setShowAddManualPart(p => !p); setShowAddPart(false); }}>
+                        <Plus className="w-3 h-3" />{showAddManualPart ? "Cancel" : "Add parts"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowAddPart(p => !p)}>
+                      <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : "Add"}
+                    </Button>
+                  )}
                 </div>
 
-                {parts.length === 0 && !showAddPart ? (
+                {parts.length === 0 && !showAddPart && !showAddManualPart ? (
                   <div className="p-8 text-center text-sm text-muted-foreground/50">
                     {isInspection ? "No diagnosis items added yet" : "No parts added yet"}
                   </div>
@@ -990,6 +1056,14 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         setShowAddPart(false);
                       }} />
                     )}
+                  </div>
+                )}
+                {showAddManualPart && (
+                  <div className="px-4 pb-4">
+                    <AddManualPartForm jobId={job.id} onAdded={() => {
+                      qc.invalidateQueries({ queryKey: ["job", id] });
+                      setShowAddManualPart(false);
+                    }} />
                   </div>
                 )}
               </div>
