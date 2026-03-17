@@ -694,6 +694,18 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
             </Button>
           )}
+          {isInspection && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              disabled={createQuotationMutation.isPending}
+              onClick={() => createQuotationMutation.mutate()}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              {createQuotationMutation.isPending ? "Creating…" : "Create quotation"}
+            </Button>
+          )}
           <Button size="sm" onClick={() => setStatusOpen(true)}>
             Move status
           </Button>
