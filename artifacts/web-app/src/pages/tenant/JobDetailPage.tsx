@@ -186,6 +186,94 @@ function AddPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => void })
   );
 }
 
+/* ─── AddDiagnosisForm ────────────────────────────────────────────────────── */
+function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
+  const [search,   setSearch]   = useState("");
+  const [selected, setSelected] = useState<{ name: string; sku?: string } | null>(null);
+  const [qty,      setQty]      = useState("1");
+  const [showDrop, setShowDrop] = useState(false);
+
+  const { data: catData } = useQuery({
+    queryKey: ["catalog", TENANT],
+    queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
+    staleTime: 60_000,
+  });
+  const allCatalog: any[] = (catData?.items ?? []).filter((i: any) => i.is_active !== false);
+  const filtered = allCatalog.filter(i =>
+    !search ||
+    i.name.toLowerCase().includes(search.toLowerCase()) ||
+    (i.sku ?? "").toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 8);
+
+  function pickItem(item: any) {
+    setSelected({ name: item.name, sku: item.sku ?? "" });
+    setSearch(item.name);
+    setShowDrop(false);
+  }
+
+  const mutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/jobs/${jobId}/parts?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        description: selected?.name ?? search,
+        part_number: selected?.sku ?? "",
+        qty,
+        unit_price: "0",
+      }),
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      onAdded();
+      setSearch(""); setSelected(null); setQty("1");
+      toast.success("Service added");
+    },
+    onError: () => toast.error("Failed to add service"),
+  });
+
+  return (
+    <div className="border border-dashed border-border rounded-lg p-4 mt-3 space-y-3 bg-muted/20">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add service</p>
+      <div className="grid grid-cols-4 gap-3 items-end">
+        <div className="col-span-3 space-y-1 relative">
+          <Label className="text-xs">Service *</Label>
+          <Input
+            className="h-8 text-sm"
+            placeholder="Search catalog…"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setSelected(null); setShowDrop(true); }}
+            onFocus={() => setShowDrop(true)}
+            onBlur={() => setTimeout(() => setShowDrop(false), 150)}
+          />
+          {showDrop && filtered.length > 0 && (
+            <div className="absolute z-50 top-full left-0 mt-1 w-full rounded-md border bg-popover shadow-lg overflow-hidden">
+              {filtered.map((item: any) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="w-full flex items-center px-3 py-2 text-xs hover:bg-accent text-left gap-2"
+                  onMouseDown={() => pickItem(item)}
+                >
+                  <span className="font-medium truncate">{item.name}</span>
+                  {item.sku && <span className="text-muted-foreground font-mono shrink-0">{item.sku}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Qty</Label>
+          <Input type="number" min="0.01" step="0.01" value={qty} onChange={e => setQty(e.target.value)} className="h-8 text-sm" />
+        </div>
+        <div className="col-span-4 flex justify-end gap-2">
+          <Button size="sm" disabled={(!selected && !search.trim()) || mutation.isPending} onClick={() => mutation.mutate()}>
+            {mutation.isPending ? "Adding…" : "Add service"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── LiveTimer ───────────────────────────────────────────────────────────── */
 function LiveTimer({ startedAt }: { startedAt: string }) {
   const [elapsed, setElapsed] = useState(Date.now() - new Date(startedAt).getTime());
@@ -585,7 +673,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard icon={Timer} label="Labor time" value={fmtMinutes(totalMinutes)} accent={!!runningLog} />
-        <StatCard icon={Package} label="Parts used" value={`${parts.length} items`} />
+        <StatCard icon={Package} label={isInspection ? "Diagnosis" : "Parts used"} value={`${parts.length} items`} />
         <StatCard icon={Camera} label="Photos" value={`${photos.length}`} />
         <StatCard icon={History} label="Status changes" value={`${statusHistory.length}`} />
       </div>
@@ -727,7 +815,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           <Tabs defaultValue="work">
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
               <TabsTrigger value="work">Work</TabsTrigger>
-              <TabsTrigger value="parts">Parts ({parts.length})</TabsTrigger>
+              <TabsTrigger value="parts">{isInspection ? "Diagnosis" : "Parts"} ({parts.length})</TabsTrigger>
               <TabsTrigger value="time">Time ({fmtMinutes(totalMinutes)})</TabsTrigger>
               <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
               <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
@@ -835,27 +923,31 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               )}
             </TabsContent>
 
-            {/* ── Parts tab ────────────────────────────────────────────── */}
+            {/* ── Parts / Diagnosis tab ────────────────────────────────── */}
             <TabsContent value="parts" className="mt-0">
               <div className="border border-border rounded-lg bg-background overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Parts & labour</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    {isInspection ? "Diagnosis items" : "Parts & labour"}
+                  </p>
                   <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowAddPart(p => !p)}>
-                    <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : "Add"}
+                    <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : isInspection ? "Add service" : "Add"}
                   </Button>
                 </div>
 
                 {parts.length === 0 && !showAddPart ? (
-                  <div className="p-8 text-center text-sm text-muted-foreground/50">No parts added yet</div>
+                  <div className="p-8 text-center text-sm text-muted-foreground/50">
+                    {isInspection ? "No diagnosis items added yet" : "No parts added yet"}
+                  </div>
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border">
                         <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Description</th>
-                        <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Part #</th>
+                        {!isInspection && <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Part #</th>}
                         <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Qty</th>
-                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Unit</th>
-                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Total</th>
+                        {!isInspection && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Unit</th>}
+                        {!isInspection && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Total</th>}
                         <th className="px-2 py-2" />
                       </tr>
                     </thead>
@@ -863,10 +955,10 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       {parts.map(p => (
                         <tr key={p.id} className="border-b border-border last:border-0">
                           <td className="px-4 py-2.5 text-sm">{p.description}</td>
-                          <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number ?? "—"}</td>
+                          {!isInspection && <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number ?? "—"}</td>}
                           <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.qty).toFixed(2)}</td>
-                          <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.unit_price).toFixed(2)}</td>
-                          <td className="px-4 py-2.5 text-right text-sm font-medium">{parseFloat(p.line_total).toFixed(2)}</td>
+                          {!isInspection && <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.unit_price).toFixed(2)}</td>}
+                          {!isInspection && <td className="px-4 py-2.5 text-right text-sm font-medium">{parseFloat(p.line_total).toFixed(2)}</td>}
                           <td className="px-2 py-2">
                             <button onClick={() => removePartMutation.mutate(p.id)}
                               className="text-muted-foreground/40 hover:text-destructive transition-colors p-1">
@@ -875,7 +967,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           </td>
                         </tr>
                       ))}
-                      {parts.length > 0 && (
+                      {!isInspection && parts.length > 0 && (
                         <tr className="bg-muted/30">
                           <td colSpan={4} className="px-4 py-2 text-xs font-semibold text-right">Total</td>
                           <td className="px-4 py-2 text-right text-sm font-bold">{partsTotal.toFixed(2)} AED</td>
@@ -887,10 +979,17 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 )}
                 {showAddPart && (
                   <div className="px-4 pb-4">
-                    <AddPartForm jobId={job.id} onAdded={() => {
-                      qc.invalidateQueries({ queryKey: ["job", id] });
-                      setShowAddPart(false);
-                    }} />
+                    {isInspection ? (
+                      <AddDiagnosisForm jobId={job.id} onAdded={() => {
+                        qc.invalidateQueries({ queryKey: ["job", id] });
+                        setShowAddPart(false);
+                      }} />
+                    ) : (
+                      <AddPartForm jobId={job.id} onAdded={() => {
+                        qc.invalidateQueries({ queryKey: ["job", id] });
+                        setShowAddPart(false);
+                      }} />
+                    )}
                   </div>
                 )}
               </div>
