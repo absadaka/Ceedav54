@@ -695,7 +695,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
             </Button>
           )}
-          {isInspection && (
+          {isInspection && (job.status === "completed" || job.status === "delivered") && (
             <>
               <Button
                 size="sm"
