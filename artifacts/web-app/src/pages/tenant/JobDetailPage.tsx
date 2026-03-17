@@ -2,7 +2,7 @@ import {
   ArrowLeft, Wrench, User, Car, Clock, AlertTriangle, Plus,
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
-  Link as LinkIcon, X, Receipt, FileText, Loader2, Stethoscope,
+  Link as LinkIcon, X, Receipt, FileText,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -103,7 +103,7 @@ interface TimeLog {
   ended_at: string | null; minutes: number | null; notes: string | null;
 }
 interface Part {
-  id: string; sort_order: number; part_number: string | null; type: string | null;
+  id: string; sort_order: number; part_number: string | null;
   description: string; qty: string; unit_price: string; line_total: string; created_at: string;
 }
 interface Photo {
@@ -133,85 +133,6 @@ function StatCard({ icon: Icon, label, value, accent }: { icon: React.ElementTyp
         <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</div>
         <div className={cn("text-base font-semibold mt-0.5", accent && "text-orange-700")}>{value}</div>
       </div>
-    </div>
-  );
-}
-
-/* ─── AddDiagnosisItemForm ────────────────────────────────────────────────── */
-function AddDiagnosisItemForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
-  const qc = useQueryClient();
-  const [search,   setSearch]   = useState("");
-  const [selected, setSelected] = useState<{ name: string; type: string } | null>(null);
-  const [showDrop, setShowDrop] = useState(false);
-
-  const { data: catData } = useQuery({
-    queryKey: ["catalog", TENANT],
-    queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
-    staleTime: 60_000,
-  });
-  const allCatalog: any[] = (catData?.items ?? []).filter((i: any) => i.is_active !== false);
-  const filtered = allCatalog.filter(i =>
-    !search ||
-    i.name.toLowerCase().includes(search.toLowerCase()) ||
-    (i.sku ?? "").toLowerCase().includes(search.toLowerCase())
-  ).slice(0, 8);
-
-  const mutation = useMutation({
-    mutationFn: (name: string) => fetch(`${API}/api/jobs/${jobId}/parts?tenant=${TENANT}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description: name, type: "diagnosis", qty: "1", unit_price: "0", part_number: null }),
-    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["job", jobId] });
-      setSearch(""); setSelected(null);
-      toast.success("Diagnosis item added");
-      onAdded();
-    },
-    onError: () => toast.error("Failed to add item"),
-  });
-
-  function pick(item: any) {
-    setSelected(item);
-    setSearch(item.name);
-    setShowDrop(false);
-  }
-
-  return (
-    <div className="flex gap-2 items-center mt-2">
-      <div className="relative flex-1">
-        <Input
-          className="h-8 text-sm pr-8"
-          placeholder="Search catalog…"
-          value={search}
-          onChange={e => { setSearch(e.target.value); setSelected(null); setShowDrop(true); }}
-          onFocus={() => setShowDrop(true)}
-          onBlur={() => setTimeout(() => setShowDrop(false), 150)}
-        />
-        {showDrop && filtered.length > 0 && (
-          <div className="absolute z-50 top-full left-0 mt-1 w-full rounded-md border bg-popover shadow-lg overflow-hidden">
-            {filtered.map((item: any) => (
-              <button
-                key={item.id}
-                type="button"
-                className="w-full flex items-center px-3 py-2 text-xs hover:bg-accent text-left gap-2"
-                onMouseDown={() => pick(item)}
-              >
-                <span className="text-[10px] uppercase text-muted-foreground w-12 shrink-0">{item.type}</span>
-                <span className="font-medium truncate">{item.name}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      <Button
-        size="sm"
-        className="h-8 px-3 shrink-0"
-        disabled={!search.trim() || mutation.isPending}
-        onClick={() => mutation.mutate(selected?.name ?? search.trim())}
-      >
-        {mutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Add"}
-      </Button>
     </div>
   );
 }
@@ -411,9 +332,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [statusOpen,     setStatusOpen]     = useState(false);
   const [deleteOpen,     setDeleteOpen]     = useState(false);
   const [assignOpen,     setAssignOpen]     = useState(false);
-  const [showAddPart,      setShowAddPart]      = useState(false);
-  const [showAddDiagnosis, setShowAddDiagnosis] = useState(false);
-  const [showAddPhoto,     setShowAddPhoto]     = useState(false);
+  const [showAddPart,    setShowAddPart]    = useState(false);
+  const [showAddPhoto,   setShowAddPhoto]   = useState(false);
   const [noteText,       setNoteText]       = useState("");
   const [timerNote,      setTimerNote]      = useState("");
 
@@ -566,10 +486,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     );
   }
 
-  const { job, statusHistory, assignments, timeLogs, totalMinutes, parts: allParts, photos, quotation } = data;
-  const isInspection   = moduleType === "inspection";
-  const diagnosisItems = allParts.filter(p => p.type === "diagnosis");
-  const parts          = allParts.filter(p => p.type !== "diagnosis");
+  const { job, statusHistory, assignments, timeLogs, totalMinutes, parts, photos, quotation } = data;
+  const isInspection = moduleType === "inspection";
   const statusSet    = isInspection ? INSPECTION_STATUSES : JOB_STATUSES;
   const currentLane  = statusSet.find(s => s.key === job.status) ?? JOB_STATUSES.find(s => s.key === job.status);
   const partsTotal  = parts.reduce((sum, p) => sum + parseFloat(p.line_total), 0);
@@ -826,51 +744,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   {job.customer_concern ?? <span className="text-muted-foreground/50 italic">No customer concern recorded</span>}
                 </p>
               </div>
-
-              {/* Diagnosis */}
-              {isInspection && (
-                <div className="border border-amber-200 rounded-lg bg-amber-50/40 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
-                      <Stethoscope className="w-3.5 h-3.5" />Diagnosis
-                    </p>
-                    {!showAddDiagnosis && (
-                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-amber-300 text-amber-800 hover:bg-amber-100"
-                        onClick={() => setShowAddDiagnosis(true)}>
-                        <Plus className="w-3 h-3" />Add item
-                      </Button>
-                    )}
-                  </div>
-                  {diagnosisItems.length > 0 ? (
-                    <ul className="space-y-1.5">
-                      {diagnosisItems.map(item => (
-                        <li key={item.id} className="flex items-center justify-between gap-2 text-sm bg-white/60 rounded-md px-3 py-2 border border-amber-100">
-                          <span className="font-medium">{item.description}</span>
-                          <button
-                            onClick={() => removePartMutation.mutate(item.id)}
-                            className="text-muted-foreground/40 hover:text-destructive transition-colors p-0.5 shrink-0"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    !showAddDiagnosis && (
-                      <p className="text-xs text-amber-700/60 italic">No diagnosis items recorded yet.</p>
-                    )
-                  )}
-                  {showAddDiagnosis && (
-                    <div>
-                      <AddDiagnosisItemForm
-                        jobId={job.id}
-                        onAdded={() => setShowAddDiagnosis(false)}
-                      />
-                      <button className="text-xs text-muted-foreground mt-2 hover:text-foreground" onClick={() => setShowAddDiagnosis(false)}>Cancel</button>
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Technician notes */}
               <div className="border border-border rounded-lg bg-background p-4 space-y-3">
