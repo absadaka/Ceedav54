@@ -5,6 +5,7 @@ import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
   jobsTable, jobPartsTable,
   invoicesTable, invoiceLineItemsTable, paymentsTable,
+  quotationsTable, quoteLineItemsTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -224,24 +225,46 @@ router.post("/from-job/:jobId", async (req, res) => {
       due_at:       (req.body as any).due_at ? new Date((req.body as any).due_at) : null,
     }).returning();
 
-    const jobParts = await db
-      .select()
-      .from(jobPartsTable)
-      .where(and(eq(jobPartsTable.job_id, job.id), eq(jobPartsTable.tenant_id, tenant.id)));
-
+    // Prefer quotation line items if a quotation is linked; otherwise fall back to job parts
     let lineOrder = 0;
-    for (const p of jobParts) {
-      const lineTotal = parseFloat(p.line_total);
-      await db.insert(invoiceLineItemsTable).values({
-        invoice_id:  inv.id,
-        sort_order:  lineOrder++,
-        description: p.description,
-        type:        "part",
-        part_number: p.part_number ?? null,
-        qty:         p.qty,
-        unit_price:  p.unit_price,
-        line_total:  lineTotal.toFixed(2),
-      });
+    if (job.quotation_id) {
+      const quoteLines = await db
+        .select()
+        .from(quoteLineItemsTable)
+        .where(eq(quoteLineItemsTable.quotation_id, job.quotation_id))
+        .orderBy(quoteLineItemsTable.sort_order);
+
+      for (const l of quoteLines) {
+        await db.insert(invoiceLineItemsTable).values({
+          invoice_id:  inv.id,
+          sort_order:  lineOrder++,
+          description: l.description,
+          type:        l.type ?? "labour",
+          part_number: l.part_number ?? null,
+          qty:         l.qty,
+          unit_price:  l.unit_price,
+          discount:    l.discount ?? "0.00",
+          line_total:  l.line_total,
+        });
+      }
+    } else {
+      const jobParts = await db
+        .select()
+        .from(jobPartsTable)
+        .where(and(eq(jobPartsTable.job_id, job.id), eq(jobPartsTable.tenant_id, tenant.id)));
+
+      for (const p of jobParts) {
+        await db.insert(invoiceLineItemsTable).values({
+          invoice_id:  inv.id,
+          sort_order:  lineOrder++,
+          description: p.description,
+          type:        "part",
+          part_number: p.part_number ?? null,
+          qty:         p.qty,
+          unit_price:  p.unit_price,
+          line_total:  parseFloat(p.line_total).toFixed(2),
+        });
+      }
     }
 
     await recalcInvoice(inv.id);
