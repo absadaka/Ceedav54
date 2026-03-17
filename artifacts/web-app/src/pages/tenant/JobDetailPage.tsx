@@ -682,6 +682,18 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {!isInspection && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              disabled={createInvoiceMutation.isPending}
+              onClick={() => createInvoiceMutation.mutate()}
+            >
+              <Receipt className="w-3.5 h-3.5" />
+              {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
+            </Button>
+          )}
           <Button size="sm" onClick={() => setStatusOpen(true)}>
             Move status
           </Button>
@@ -896,22 +908,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   {techNotesMutation.isPending ? "Saving…" : "Save notes"}
                 </Button>
               </div>
-
-              {/* Create invoice — always available for service jobs */}
-              {!isInspection && (
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
-                    disabled={createInvoiceMutation.isPending}
-                    onClick={() => createInvoiceMutation.mutate()}
-                  >
-                    <Receipt className="w-3.5 h-3.5" />
-                    {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
-                  </Button>
-                </div>
-              )}
 
               {/* QC review */}
               {!isInspection && (job.status === "qc" || job.status === "completed" || job.status === "delivered" || job.qc_note) && (
