@@ -627,7 +627,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     );
   }
 
-  const { job, statusHistory, assignments, timeLogs, totalMinutes, parts, photos, quotation } = data;
+  const { job, statusHistory, assignments, timeLogs, totalMinutes, parts, photos, quotation,
+          inspectionParts = [], inspectionTechNote, inspectionRef } = data as any;
   const isInspection = moduleType === "inspection";
   const statusSet    = isInspection ? INSPECTION_STATUSES : JOB_STATUSES;
   const currentLane  = statusSet.find(s => s.key === job.status) ?? JOB_STATUSES.find(s => s.key === job.status);
@@ -695,16 +696,32 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             </Button>
           )}
           {isInspection && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5"
-              disabled={createQuotationMutation.isPending}
-              onClick={() => createQuotationMutation.mutate()}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              {createQuotationMutation.isPending ? "Creating…" : "Create quotation"}
-            </Button>
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                disabled={createQuotationMutation.isPending}
+                onClick={() => createQuotationMutation.mutate()}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                {createQuotationMutation.isPending ? "Creating…" : "Create quotation"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  const slug = new URLSearchParams(window.location.search).get("tenant") || "demo-workshop";
+                  fetch(`/api/jobs/${job.id}/convert-to-job?tenant=${slug}`, { method: "POST" })
+                    .then(r => r.json())
+                    .then(d => { if (d.job?.id) navigate(`/jobs/${d.job.id}`); });
+                }}
+              >
+                <Wrench className="w-3.5 h-3.5" />
+                Convert to service job
+              </Button>
+            </>
           )}
           <Button size="sm" onClick={() => setStatusOpen(true)}>
             Move status
@@ -881,7 +898,15 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           <Tabs defaultValue="work">
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
               <TabsTrigger value="work">Work</TabsTrigger>
-              <TabsTrigger value="parts">{isInspection ? "Diagnosis" : "Parts"} ({parts.length})</TabsTrigger>
+              {isInspection && (
+                <TabsTrigger value="parts">Diagnosis ({parts.length})</TabsTrigger>
+              )}
+              {!isInspection && job.source_inspection_id && (
+                <TabsTrigger value="inspection">Inspection ({inspectionParts.length})</TabsTrigger>
+              )}
+              {!isInspection && !job.source_inspection_id && (
+                <TabsTrigger value="parts">Parts ({parts.length})</TabsTrigger>
+              )}
               <TabsTrigger value="time">Time ({fmtMinutes(totalMinutes)})</TabsTrigger>
               <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
               <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
@@ -1071,6 +1096,52 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 )}
               </div>
             </TabsContent>
+
+            {/* ── Inspection tab (service jobs linked to an inspection) ── */}
+            {!isInspection && job.source_inspection_id && (
+              <TabsContent value="inspection" className="mt-0 space-y-4">
+                <div className="border border-border rounded-lg bg-background overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border bg-muted/30">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Inspection findings
+                      {inspectionRef && <span className="ml-2 text-muted-foreground/60 normal-case font-normal">from {inspectionRef}</span>}
+                    </p>
+                  </div>
+
+                  {inspectionParts.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-muted-foreground/50">No items recorded in inspection</div>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Description</th>
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Part #</th>
+                          <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Qty</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inspectionParts.map((p: any) => (
+                          <tr key={p.id} className="border-b border-border last:border-0">
+                            <td className="px-4 py-2.5 text-sm">{p.description}</td>
+                            <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number || "—"}</td>
+                            <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.qty).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {inspectionTechNote && (
+                  <div className="border border-border rounded-lg bg-background p-4 space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                      <Wrench className="w-3.5 h-3.5" />Technician notes from inspection
+                    </p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{inspectionTechNote}</p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
 
             {/* ── Time tab ─────────────────────────────────────────────── */}
             <TabsContent value="time" className="mt-0 space-y-3">

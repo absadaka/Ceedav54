@@ -250,8 +250,9 @@ router.get("/:id", async (req, res) => {
         technician_name: techAlias.name,
         qc_by:           jobsTable.qc_by,
         qc_by_name:      qcAlias.name,
-        quotation_id:    jobsTable.quotation_id,
-        booking_id:      jobsTable.booking_id,
+        quotation_id:         jobsTable.quotation_id,
+        booking_id:           jobsTable.booking_id,
+        source_inspection_id: jobsTable.source_inspection_id,
       })
       .from(jobsTable)
       .leftJoin(clientsTable, eq(jobsTable.client_id, clientsTable.id))
@@ -267,7 +268,7 @@ router.get("/:id", async (req, res) => {
     const changedByAlias = alias(usersTable, "changer");
     const asgTechAlias   = alias(usersTable, "asgtech");
 
-    const [statusHistory, assignments, timeLogs, parts, photos, quotation] = await Promise.all([
+    const [statusHistory, assignments, timeLogs, parts, photos, quotation, inspectionParts, inspectionJob] = await Promise.all([
       db
         .select({
           id:          jobStatusHistoryTable.id,
@@ -319,6 +320,17 @@ router.get("/:id", async (req, res) => {
       job.quotation_id
         ? db.select().from(quotationsTable).where(eq(quotationsTable.id, job.quotation_id!)).limit(1)
         : Promise.resolve([]),
+
+      // Source inspection parts (read-only reference for service jobs)
+      job.source_inspection_id
+        ? db.select().from(jobPartsTable).where(eq(jobPartsTable.job_id, job.source_inspection_id)).orderBy(jobPartsTable.sort_order)
+        : Promise.resolve([]),
+
+      // Source inspection job (for tech notes)
+      job.source_inspection_id
+        ? db.select({ technician_note: jobsTable.technician_note, ref: jobsTable.ref })
+            .from(jobsTable).where(eq(jobsTable.id, job.source_inspection_id)).limit(1)
+        : Promise.resolve([]),
     ]);
 
     const totalMinutes = timeLogs.reduce((acc, l) => acc + (l.minutes ?? 0), 0);
@@ -332,6 +344,9 @@ router.get("/:id", async (req, res) => {
       parts,
       photos,
       quotation: quotation[0] ?? null,
+      inspectionParts,
+      inspectionTechNote: (inspectionJob as any[])[0]?.technician_note ?? null,
+      inspectionRef:      (inspectionJob as any[])[0]?.ref ?? null,
     });
   } catch (err) {
     console.error("GET /jobs/:id", err);
@@ -516,22 +531,28 @@ router.post("/:id/convert-to-job", async (req, res) => {
     const [newJob] = await db
       .insert(jobsTable)
       .values({
-        tenant_id:        tenant.id,
+        tenant_id:            tenant.id,
         seq,
         ref,
-        type:             "service_job",
-        client_id:        inspection.client_id,
-        vehicle_id:       inspection.vehicle_id,
-        advisor_id:       inspection.advisor_id,
-        technician_id:    inspection.technician_id,
-        priority:         inspection.priority,
-        bay:              inspection.bay,
-        customer_concern: inspection.customer_concern,
-        internal_note:    inspection.internal_note,
-        mileage_in:       inspection.mileage_in,
-        status:           "waiting",
+        type:                 "service_job",
+        client_id:            inspection.client_id,
+        vehicle_id:           inspection.vehicle_id,
+        advisor_id:           inspection.advisor_id,
+        technician_id:        inspection.technician_id,
+        priority:             inspection.priority,
+        bay:                  inspection.bay,
+        customer_concern:     inspection.customer_concern,
+        internal_note:        inspection.internal_note,
+        mileage_in:           inspection.mileage_in,
+        status:               "waiting",
+        source_inspection_id: inspection.id,
       })
       .returning();
+
+    // Mark the inspection as converted
+    await db.update(jobsTable)
+      .set({ converted_job_id: newJob.id, updated_at: new Date() } as any)
+      .where(eq(jobsTable.id, inspection.id));
 
     await db.insert(jobStatusHistoryTable).values({
       job_id:    newJob.id,
@@ -539,30 +560,6 @@ router.post("/:id/convert-to-job", async (req, res) => {
       to_status: "waiting",
       note:      `Converted from inspection ${inspection.ref}`,
     });
-
-    // Copy parts from the inspection
-    const existingParts = await db
-      .select()
-      .from(jobPartsTable)
-      .where(eq(jobPartsTable.job_id, inspection.id));
-
-    if (existingParts.length > 0) {
-      await db.insert(jobPartsTable).values(
-        existingParts.map(p => ({
-          tenant_id:   tenant.id,
-          job_id:      newJob.id,
-          sort_order:  p.sort_order,
-          type:        p.type,
-          description: p.description,
-          part_number: p.part_number,
-          qty:         p.qty,
-          unit_price:  p.unit_price,
-          discount:    p.discount,
-          line_total:  p.line_total,
-          notes:       p.notes,
-        }))
-      );
-    }
 
     return res.status(201).json({ job: newJob });
   } catch (err) {
