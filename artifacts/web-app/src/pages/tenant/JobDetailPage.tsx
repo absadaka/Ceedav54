@@ -897,6 +897,22 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 </Button>
               </div>
 
+              {/* Create invoice — always available for service jobs */}
+              {!isInspection && (
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={createInvoiceMutation.isPending}
+                    onClick={() => createInvoiceMutation.mutate()}
+                  >
+                    <Receipt className="w-3.5 h-3.5" />
+                    {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
+                  </Button>
+                </div>
+              )}
+
               {/* QC review */}
               {!isInspection && (job.status === "qc" || job.status === "completed" || job.status === "delivered" || job.qc_note) && (
                 <div className="border border-blue-200 rounded-lg bg-blue-50/50 p-4 space-y-2">
@@ -942,16 +958,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         Mark as delivered
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1.5"
-                      disabled={createQuotationMutation.isPending}
-                      onClick={() => createQuotationMutation.mutate()}
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                      {createQuotationMutation.isPending ? "Creating…" : "Create quotation"}
-                    </Button>
                   </div>
                 </div>
               )}
