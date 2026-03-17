@@ -365,6 +365,19 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to create quotation"),
   });
 
+  const convertToJobMutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/jobs/${id}/convert-to-job?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["jobs"] });
+      toast.success(`Service job ${data.job?.ref} created`);
+      navigate(`/jobs/${data.job?.id}`);
+    },
+    onError: () => toast.error("Failed to convert to service job"),
+  });
+
   const { data, isLoading } = useQuery<DetailData>({
     queryKey: ["job", id],
     queryFn:  () => fetch(`${API}/api/jobs/${id}?tenant=${TENANT}`).then(r => r.json()),
@@ -528,6 +541,17 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {isInspection && (
+            <Button
+              size="sm"
+              className="gap-1.5 bg-violet-600 hover:bg-violet-700"
+              onClick={() => convertToJobMutation.mutate()}
+              disabled={convertToJobMutation.isPending}
+            >
+              <Wrench className="w-3.5 h-3.5" />
+              {convertToJobMutation.isPending ? "Converting…" : "Convert to service job"}
+            </Button>
+          )}
           <Button size="sm" onClick={() => setStatusOpen(true)}>
             Move status
           </Button>
