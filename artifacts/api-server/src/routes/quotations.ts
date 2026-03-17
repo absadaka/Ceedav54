@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
   quotationsTable, quoteLineItemsTable, jobsTable, jobPartsTable,
-  bookingsTable,
+  bookingsTable, catalogItemsTable,
 } from "@workspace/db";
 import { quoteAdvancePaymentsTable } from "@workspace/db";
 
@@ -343,16 +343,38 @@ router.post("/from-job/:jobId", async (req, res) => {
       .from(jobPartsTable)
       .where(and(eq(jobPartsTable.job_id, job.id), eq(jobPartsTable.tenant_id, tenant.id)));
 
+    // Fetch catalog for price lookup (services get their catalog price; parts stay 0)
+    const catalogItems = await db
+      .select()
+      .from(catalogItemsTable)
+      .where(and(eq(catalogItemsTable.tenant_id, tenant.id), eq(catalogItemsTable.is_active, true)));
+
+    const catalogByName = new Map(catalogItems.map(c => [c.name.toLowerCase().trim(), c]));
+    const catalogBySku  = new Map(
+      catalogItems.filter(c => c.sku).map(c => [c.sku!.toLowerCase().trim(), c])
+    );
+
     let lineOrder = 0;
     for (const p of jobParts) {
+      // Try to match by SKU first, then by name
+      const sku     = (p.part_number ?? "").toLowerCase().trim();
+      const name    = (p.description  ?? "").toLowerCase().trim();
+      const matched = (sku && catalogBySku.get(sku)) || catalogByName.get(name);
+
+      const unitPrice = matched ? matched.unit_price : "0.00";
+      const qty       = Number(p.qty ?? 1);
+      const lineTotal = matched
+        ? (qty * Number(matched.unit_price)).toFixed(2)
+        : "0.00";
+
       await db.insert(quoteLineItemsTable).values({
         quotation_id: quotation.id,
         sort_order:   lineOrder++,
         description:  p.description,
         part_number:  p.part_number ?? null,
         qty:          p.qty,
-        unit_price:   p.unit_price,
-        line_total:   p.line_total,
+        unit_price:   unitPrice,
+        line_total:   lineTotal,
       });
     }
 
