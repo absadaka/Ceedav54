@@ -768,7 +768,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               </div>
 
               {/* QC review */}
-              {(job.status === "qc" || job.status === "completed" || job.status === "delivered" || job.qc_note) && (
+              {!isInspection && (job.status === "qc" || job.status === "completed" || job.status === "delivered" || job.qc_note) && (
                 <div className="border border-blue-200 rounded-lg bg-blue-50/50 p-4 space-y-2">
                   <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5" />QC review / completion check
