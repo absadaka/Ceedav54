@@ -489,6 +489,88 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+/* ─── POST /jobs/:id/convert-to-job ──────────────────────────────────────── */
+
+router.post("/:id/convert-to-job", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+
+    const [inspection] = await db
+      .select()
+      .from(jobsTable)
+      .where(and(eq(jobsTable.id, req.params.id), eq(jobsTable.tenant_id, tenant.id)))
+      .limit(1);
+
+    if (!inspection) return res.status(404).json({ error: "Inspection not found" });
+    if (inspection.type !== "inspection") return res.status(400).json({ error: "Job is not an inspection" });
+
+    const [{ seq }] = await db
+      .select({ seq: sql<number>`coalesce(max(seq), 0) + 1` })
+      .from(jobsTable)
+      .where(eq(jobsTable.tenant_id, tenant.id));
+
+    const year = new Date().getFullYear();
+    const ref  = `JC-${year}-${String(seq).padStart(4, "0")}`;
+
+    const [newJob] = await db
+      .insert(jobsTable)
+      .values({
+        tenant_id:        tenant.id,
+        seq,
+        ref,
+        type:             "service_job",
+        client_id:        inspection.client_id,
+        vehicle_id:       inspection.vehicle_id,
+        advisor_id:       inspection.advisor_id,
+        technician_id:    inspection.technician_id,
+        priority:         inspection.priority,
+        bay:              inspection.bay,
+        customer_concern: inspection.customer_concern,
+        internal_note:    inspection.internal_note,
+        mileage_in:       inspection.mileage_in,
+        status:           "waiting",
+      })
+      .returning();
+
+    await db.insert(jobStatusHistoryTable).values({
+      job_id:    newJob.id,
+      tenant_id: tenant.id,
+      to_status: "waiting",
+      note:      `Converted from inspection ${inspection.ref}`,
+    });
+
+    // Copy parts from the inspection
+    const existingParts = await db
+      .select()
+      .from(jobPartsTable)
+      .where(eq(jobPartsTable.job_id, inspection.id));
+
+    if (existingParts.length > 0) {
+      await db.insert(jobPartsTable).values(
+        existingParts.map(p => ({
+          tenant_id:   tenant.id,
+          job_id:      newJob.id,
+          sort_order:  p.sort_order,
+          type:        p.type,
+          description: p.description,
+          part_number: p.part_number,
+          qty:         p.qty,
+          unit_price:  p.unit_price,
+          discount:    p.discount,
+          line_total:  p.line_total,
+          notes:       p.notes,
+        }))
+      );
+    }
+
+    return res.status(201).json({ job: newJob });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
 /* ─── POST /jobs/:id/status ──────────────────────────────────────────────── */
 
 router.post("/:id/status", async (req, res) => {
