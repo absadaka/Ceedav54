@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { sql, eq, and, or, desc, ilike, isNull, inArray } from "drizzle-orm";
+import { sql, eq, and, or, asc, desc, ilike, isNull, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
   quotationsTable, bookingsTable,
   jobsTable, jobStatusHistoryTable, jobAssignmentsTable,
-  jobTimeLogsTable, jobPartsTable, jobPhotosTable,
+  jobTimeLogsTable, jobPartsTable, jobPhotosTable, jobNotesTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -269,7 +269,7 @@ router.get("/:id", async (req, res) => {
     const changedByAlias = alias(usersTable, "changer");
     const asgTechAlias   = alias(usersTable, "asgtech");
 
-    const [statusHistory, assignments, timeLogs, parts, photos, quotation, inspectionParts, inspectionJob] = await Promise.all([
+    const [statusHistory, assignments, timeLogs, parts, photos, quotation, inspectionParts, inspectionJob, notes] = await Promise.all([
       db
         .select({
           id:          jobStatusHistoryTable.id,
@@ -332,6 +332,20 @@ router.get("/:id", async (req, res) => {
         ? db.select({ technician_note: jobsTable.technician_note, ref: jobsTable.ref })
             .from(jobsTable).where(eq(jobsTable.id, job.source_inspection_id)).limit(1)
         : Promise.resolve([]),
+
+      // Technician notes log
+      db
+        .select({
+          id:             jobNotesTable.id,
+          note:           jobNotesTable.note,
+          created_by:     jobNotesTable.created_by,
+          created_by_name: usersTable.name,
+          created_at:     jobNotesTable.created_at,
+        })
+        .from(jobNotesTable)
+        .leftJoin(usersTable, eq(jobNotesTable.created_by, usersTable.id))
+        .where(and(eq(jobNotesTable.job_id, job.id), eq(jobNotesTable.tenant_id, tenant.id)))
+        .orderBy(asc(jobNotesTable.created_at)),
     ]);
 
     const totalMinutes = timeLogs.reduce((acc, l) => acc + (l.minutes ?? 0), 0);
@@ -348,9 +362,42 @@ router.get("/:id", async (req, res) => {
       inspectionParts,
       inspectionTechNote: (inspectionJob as any[])[0]?.technician_note ?? null,
       inspectionRef:      (inspectionJob as any[])[0]?.ref ?? null,
+      techNotes: (notes as any[]) ?? [],
     });
   } catch (err) {
     console.error("GET /jobs/:id", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ─── POST /jobs/:id/notes ───────────────────────────────────────────────── */
+
+router.post("/:id/notes", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const { note, created_by } = req.body as { note: string; created_by?: string };
+    if (!note?.trim()) return res.status(400).json({ error: "Note text is required" });
+
+    const [inserted] = await db.insert(jobNotesTable).values({
+      job_id:     req.params.id,
+      tenant_id:  tenant.id,
+      note:       note.trim(),
+      created_by: created_by || null,
+    }).returning();
+
+    const author = created_by
+      ? await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, created_by)).limit(1)
+      : [];
+
+    return res.status(201).json({
+      ...inserted,
+      created_by_name: author[0]?.name ?? null,
+    });
+  } catch (err) {
+    console.error("POST /jobs/:id/notes", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
