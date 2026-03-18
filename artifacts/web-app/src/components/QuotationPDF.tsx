@@ -274,6 +274,7 @@ export default function QuotationPDFDocument({
         {/* ── Footer ── */}
         <View style={s.footer} fixed>
           <Text style={s.footerText}>{shopName} — {qt.ref}</Text>
+          <Text style={s.footerText}>powered by ceeda&gt;</Text>
           <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
 
