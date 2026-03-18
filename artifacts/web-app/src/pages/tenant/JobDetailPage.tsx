@@ -503,18 +503,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to create quotation"),
   });
 
-  const convertToJobMutation = useMutation({
-    mutationFn: () => fetch(`${API}/api/jobs/${id}/convert-to-job?tenant=${TENANT}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ["jobs"] });
-      toast.success(`Service job ${data.job?.ref} created`);
-      navigate(`/jobs/${data.job?.id}`);
-    },
-    onError: () => toast.error("Failed to convert to service job"),
-  });
 
   const { data, isLoading } = useQuery<DetailData>({
     queryKey: ["job", id],
@@ -700,32 +688,16 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             </Button>
           )}
           {isInspection && (job.status === "completed" || job.status === "delivered") && (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                disabled={createQuotationMutation.isPending}
-                onClick={() => createQuotationMutation.mutate()}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                {createQuotationMutation.isPending ? "Creating…" : "Create quotation"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                onClick={() => {
-                  const slug = new URLSearchParams(window.location.search).get("tenant") || "demo-workshop";
-                  fetch(`/api/jobs/${job.id}/convert-to-job?tenant=${slug}`, { method: "POST" })
-                    .then(r => r.json())
-                    .then(d => { if (d.job?.id) navigate(`/jobs/${d.job.id}`); });
-                }}
-              >
-                <Wrench className="w-3.5 h-3.5" />
-                Convert to service job
-              </Button>
-            </>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              disabled={createQuotationMutation.isPending}
+              onClick={() => createQuotationMutation.mutate()}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              {createQuotationMutation.isPending ? "Creating…" : "Create quotation"}
+            </Button>
           )}
           {job.status !== "cancelled" && (
             <Button size="sm" onClick={() => setStatusOpen(true)}>
@@ -1381,7 +1353,14 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         jobRef={job.ref}
         currentStatus={job.status}
         moduleType={moduleType}
-        onSuccess={() => qc.invalidateQueries({ queryKey: ["job", id] })}
+        onSuccess={(newStatus, data) => {
+          if (newStatus === "move_to_service_job") {
+            const d = data as { job?: { id?: string; ref?: string } };
+            if (d?.job?.id) navigate(`/jobs/${d.job.id}`);
+          } else {
+            qc.invalidateQueries({ queryKey: ["job", id] });
+          }
+        }}
       />
 
       <AssignTechDialog jobId={job.id} open={assignOpen} onClose={() => setAssignOpen(false)} />
