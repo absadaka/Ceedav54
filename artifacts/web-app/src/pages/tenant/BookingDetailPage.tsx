@@ -361,93 +361,98 @@ export default function BookingDetailPage() {
         </div>
       </div>
 
-      {/* Activity log */}
-      {activity.length > 0 && (
-        <div className="rounded-lg border border-border bg-background p-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Activity</p>
-          <div className="relative space-y-0">
-            {activity.map((ev: any, i: number) => {
-              const isLast = i === activity.length - 1;
-              const icon = ev.type === "created"
-                ? <PlusCircle className="w-4 h-4 text-primary" />
-                : ev.to_status === "cancelled"
-                ? <Ban className="w-4 h-4 text-destructive" />
-                : ev.to_status === "completed"
-                ? <CheckCheck className="w-4 h-4 text-green-600" />
-                : ev.to_status === "no_show"
-                ? <Eye className="w-4 h-4 text-orange-500" />
-                : <RefreshCw className="w-4 h-4 text-muted-foreground" />;
+      {/* Activity log — always visible */}
+      <div className="rounded-lg border border-border bg-background p-4">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Activity history</p>
 
+        {activity.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
+        ) : (
+          <div className="relative space-y-0">
+            {(() => {
               const STATUS_LABELS: Record<string, string> = {
                 pending: "Pending", confirmed: "Confirmed", checked_in: "Checked In",
                 in_progress: "In Progress", completed: "Completed",
                 cancelled: "Cancelled", no_show: "No Show",
               };
+              const STATUS_COLOR: Record<string, string> = {
+                cancelled: "bg-destructive/10 text-destructive border-destructive/20",
+                completed:  "bg-green-50 text-green-700 border-green-200",
+                confirmed:  "bg-blue-50 text-blue-700 border-blue-200",
+                checked_in: "bg-yellow-50 text-yellow-700 border-yellow-200",
+              };
 
-              const ts = new Date(ev.created_at);
-              const dateStr = ts.toLocaleDateString("en-AE", { day: "numeric", month: "short", year: "numeric" });
-              const timeStr = ts.toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" });
+              return activity.map((ev: any, i: number) => {
+                const isLast = i === activity.length - 1;
+                const icon = ev.type === "created"
+                  ? <PlusCircle className="w-4 h-4 text-primary" />
+                  : ev.to_status === "cancelled"
+                  ? <Ban className="w-4 h-4 text-destructive" />
+                  : ev.to_status === "completed"
+                  ? <CheckCheck className="w-4 h-4 text-green-600" />
+                  : ev.to_status === "no_show"
+                  ? <Eye className="w-4 h-4 text-orange-500" />
+                  : <RefreshCw className="w-4 h-4 text-muted-foreground" />;
 
-              return (
-                <div key={ev.id} className="flex gap-3">
-                  {/* timeline column */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center shrink-0">
-                      {icon}
-                    </div>
-                    {!isLast && <div className="w-px flex-1 bg-border mt-1 mb-1" />}
-                  </div>
+                const ts      = new Date(ev.created_at);
+                const dateStr = ts.toLocaleDateString("en-AE", { day: "numeric", month: "short", year: "numeric" });
+                const timeStr = ts.toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" });
+                const actor   = ev.created_by_name ?? "System";
 
-                  {/* content */}
-                  <div className="pb-5 min-w-0 flex-1">
-                    {ev.type === "created" ? (
-                      <p className="text-sm font-medium leading-tight">Booking created</p>
-                    ) : ev.from_status && ev.to_status ? (
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                          {STATUS_LABELS[ev.from_status] ?? ev.from_status}
-                        </span>
-                        <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
-                          ev.to_status === "cancelled"  ? "bg-destructive/10 text-destructive border-destructive/20" :
-                          ev.to_status === "completed"  ? "bg-green-50 text-green-700 border-green-200" :
-                          ev.to_status === "confirmed"  ? "bg-blue-50 text-blue-700 border-blue-200" :
-                          "bg-muted text-foreground border-border"
-                        }`}>
-                          {STATUS_LABELS[ev.to_status] ?? ev.to_status}
-                        </span>
+                return (
+                  <div key={ev.id} className="flex gap-3">
+                    {/* dot + connecting line */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full border border-border bg-muted/40 flex items-center justify-center shrink-0">
+                        {icon}
                       </div>
-                    ) : (
-                      <p className="text-sm font-medium leading-tight">{ev.note}</p>
-                    )}
+                      {!isLast && <div className="w-px flex-1 bg-border mt-1 mb-1 min-h-[16px]" />}
+                    </div>
 
-                    {/* cancellation note */}
-                    {ev.to_status === "cancelled" && ev.note && (
-                      <p className="text-xs text-muted-foreground mt-1 italic">"{ev.note}"</p>
-                    )}
-
-                    {/* meta: date · time · user */}
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground flex-wrap">
-                      <Calendar className="w-3 h-3 shrink-0" />
-                      <span>{dateStr}</span>
-                      <span className="text-muted-foreground/40">·</span>
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span>{timeStr}</span>
-                      {ev.created_by_name && (
-                        <>
-                          <span className="text-muted-foreground/40">·</span>
-                          <User className="w-3 h-3 shrink-0" />
-                          <span>{ev.created_by_name}</span>
-                        </>
+                    {/* content */}
+                    <div className="pb-5 min-w-0 flex-1">
+                      {/* event label */}
+                      {ev.type === "created" ? (
+                        <p className="text-sm font-semibold leading-tight">Booking created</p>
+                      ) : ev.from_status && ev.to_status ? (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-sm font-semibold mr-1">Status changed</p>
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                            {STATUS_LABELS[ev.from_status] ?? ev.from_status}
+                          </span>
+                          <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${STATUS_COLOR[ev.to_status] ?? "bg-muted text-foreground border-border"}`}>
+                            {STATUS_LABELS[ev.to_status] ?? ev.to_status}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-semibold leading-tight">{ev.note}</p>
                       )}
+
+                      {/* cancellation reason */}
+                      {ev.to_status === "cancelled" && ev.note && (
+                        <p className="text-xs text-muted-foreground mt-0.5 italic">Reason: "{ev.note}"</p>
+                      )}
+
+                      {/* meta row: date · time · user */}
+                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground flex-wrap">
+                        <Calendar className="w-3 h-3 shrink-0" />
+                        <span>{dateStr}</span>
+                        <span className="opacity-40 mx-0.5">·</span>
+                        <Clock className="w-3 h-3 shrink-0" />
+                        <span>{timeStr}</span>
+                        <span className="opacity-40 mx-0.5">·</span>
+                        <User className="w-3 h-3 shrink-0" />
+                        <span className="font-medium text-foreground/70">{actor}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Drawers */}
       <BookingDrawer
