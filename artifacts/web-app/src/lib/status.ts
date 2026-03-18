@@ -6,6 +6,7 @@ export const STATUS_CLASSES: Record<string, string> = {
   completed:     "bg-green-50   text-green-800   border-green-200",
   cancelled:     "bg-red-50     text-red-800     border-red-200",
   no_show:       "bg-gray-100   text-gray-600    border-gray-200",
+  new:           "bg-slate-100  text-slate-700   border-slate-300",
   waiting:       "bg-yellow-50  text-yellow-800  border-yellow-200",
   waiting_parts: "bg-purple-50  text-purple-800  border-purple-200",
   on_hold:       "bg-gray-100   text-gray-600    border-gray-200",

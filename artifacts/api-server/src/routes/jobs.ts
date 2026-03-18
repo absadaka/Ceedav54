@@ -17,7 +17,7 @@ async function resolveTenant(slug: string) {
   return t ?? null;
 }
 
-const VALID_STATUSES = ["waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered", "cancelled"] as const;
+const VALID_STATUSES = ["new", "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered", "cancelled"] as const;
 type JobStatus = typeof VALID_STATUSES[number];
 
 /* ─── GET /jobs ───────────────────────────────────────────────────────────── */
@@ -184,7 +184,7 @@ router.get("/kanban", async (req, res) => {
       .orderBy(jobsTable.seq);
 
     const lanes: Record<string, typeof jobs> = {
-      waiting: [], in_progress: [], waiting_parts: [],
+      new: [], waiting: [], in_progress: [], waiting_parts: [],
       on_hold: [], qc: [], completed: [],
     };
     for (const j of jobs) {
@@ -402,11 +402,11 @@ router.post("/", async (req, res) => {
         customer_concern: customer_concern ?? null,
         internal_note:    internal_note ?? null,
         mileage_in:       mileage_in ?? null,
-        status:       type === "inspection" ? "in_progress" : "waiting",
+        status:       "new",
       })
       .returning();
 
-    const initialStatus = type === "inspection" ? "in_progress" : "waiting";
+    const initialStatus = "new";
     await db.insert(jobStatusHistoryTable).values({
       job_id:    job.id,
       tenant_id: tenant.id,
@@ -545,7 +545,7 @@ router.post("/:id/convert-to-job", async (req, res) => {
         customer_concern:     inspection.customer_concern,
         internal_note:        inspection.internal_note,
         mileage_in:           inspection.mileage_in,
-        status:               "waiting",
+        status:               "new",
         source_inspection_id: inspection.id,
       })
       .returning();
@@ -558,7 +558,7 @@ router.post("/:id/convert-to-job", async (req, res) => {
     await db.insert(jobStatusHistoryTable).values({
       job_id:    newJob.id,
       tenant_id: tenant.id,
-      to_status: "waiting",
+      to_status: "new",
       note:      `Converted from inspection ${inspection.ref}`,
     });
 
