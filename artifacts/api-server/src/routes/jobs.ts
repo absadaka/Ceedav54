@@ -17,7 +17,7 @@ async function resolveTenant(slug: string) {
   return t ?? null;
 }
 
-const VALID_STATUSES = ["new", "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered", "cancelled"] as const;
+const VALID_STATUSES = ["waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered", "cancelled"] as const;
 type JobStatus = typeof VALID_STATUSES[number];
 
 /* ─── GET /jobs ───────────────────────────────────────────────────────────── */
@@ -184,7 +184,7 @@ router.get("/kanban", async (req, res) => {
       .orderBy(jobsTable.seq);
 
     const lanes: Record<string, typeof jobs> = {
-      new: [], waiting: [], in_progress: [], waiting_parts: [],
+      waiting: [], in_progress: [], waiting_parts: [],
       on_hold: [], qc: [], completed: [],
     };
     for (const j of jobs) {
@@ -402,11 +402,11 @@ router.post("/", async (req, res) => {
         customer_concern: customer_concern ?? null,
         internal_note:    internal_note ?? null,
         mileage_in:       mileage_in ?? null,
-        status:       "new",
+        status:       type === "inspection" ? "in_progress" : "waiting",
       })
       .returning();
 
-    const initialStatus = "new";
+    const initialStatus = type === "inspection" ? "in_progress" : "waiting";
     await db.insert(jobStatusHistoryTable).values({
       job_id:    job.id,
       tenant_id: tenant.id,
@@ -545,7 +545,7 @@ router.post("/:id/convert-to-job", async (req, res) => {
         customer_concern:     inspection.customer_concern,
         internal_note:        inspection.internal_note,
         mileage_in:           inspection.mileage_in,
-        status:               "new",
+        status:               "waiting",
         source_inspection_id: inspection.id,
       })
       .returning();
@@ -558,7 +558,7 @@ router.post("/:id/convert-to-job", async (req, res) => {
     await db.insert(jobStatusHistoryTable).values({
       job_id:    newJob.id,
       tenant_id: tenant.id,
-      to_status: "new",
+      to_status: "waiting",
       note:      `Converted from inspection ${inspection.ref}`,
     });
 
@@ -822,61 +822,6 @@ router.delete("/:id/parts/:partId", async (req, res) => {
     return res.json({ ok: true });
   } catch (err) {
     console.error("DELETE /jobs/:id/parts/:partId", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-/* ─── POST /jobs/:id/import-inspection-parts ────────────────────────────────
-   Copies all diagnosis items from the linked inspection into this service job.
-   Existing parts on this job are replaced.
-─────────────────────────────────────────────────────────────────────────── */
-
-router.post("/:id/import-inspection-parts", async (req, res) => {
-  try {
-    const slug   = (req.query.tenant as string) ?? "demo-workshop";
-    const tenant = await resolveTenant(slug);
-    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
-
-    const [job] = await db
-      .select({ source_inspection_id: jobsTable.source_inspection_id })
-      .from(jobsTable)
-      .where(and(eq(jobsTable.id, req.params.id), eq(jobsTable.tenant_id, tenant.id)))
-      .limit(1);
-
-    if (!job) return res.status(404).json({ error: "Job not found" });
-    if (!job.source_inspection_id) return res.status(400).json({ error: "Job has no linked inspection" });
-
-    const inspectionParts = await db
-      .select()
-      .from(jobPartsTable)
-      .where(eq(jobPartsTable.job_id, job.source_inspection_id))
-      .orderBy(jobPartsTable.sort_order);
-
-    if (inspectionParts.length === 0) return res.json({ imported: 0, parts: [] });
-
-    // Replace existing parts on this service job with the inspection items
-    await db.delete(jobPartsTable).where(and(
-      eq(jobPartsTable.job_id, req.params.id),
-      eq(jobPartsTable.tenant_id, tenant.id),
-    ));
-
-    const inserted = await db.insert(jobPartsTable).values(
-      inspectionParts.map((p, i) => ({
-        job_id:          req.params.id,
-        tenant_id:       tenant.id,
-        catalog_item_id: p.catalog_item_id,
-        part_number:     p.part_number,
-        description:     p.description,
-        qty:             p.qty,
-        unit_price:      p.unit_price,
-        line_total:      p.line_total,
-        sort_order:      i,
-      })),
-    ).returning();
-
-    return res.json({ imported: inserted.length, parts: inserted });
-  } catch (err) {
-    console.error("POST /jobs/:id/import-inspection-parts", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });

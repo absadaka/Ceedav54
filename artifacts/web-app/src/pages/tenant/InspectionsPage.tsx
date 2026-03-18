@@ -173,7 +173,7 @@ export default function InspectionsPage() {
       {view === "board" && (
         kanbanLoading ? <KanbanSkeleton /> : (
           <div className="flex gap-4 overflow-x-auto pb-6">
-            {INSPECTION_STATUSES.filter(s => s.key !== "move_to_service_job").map(lane => {
+            {INSPECTION_STATUSES.map(lane => {
               const jobs: KanbanJob[] = filtered?.[lane.key] ?? [];
               return (
                 <div key={lane.key} className="shrink-0 w-64">
