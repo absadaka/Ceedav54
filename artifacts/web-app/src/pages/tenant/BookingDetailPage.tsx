@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, CalendarCheck, Edit, User, Car, Clock, Calendar,
   CheckCircle2, ChevronRight, FileText, MoreHorizontal, XCircle, CalendarClock,
+  PlusCircle, CheckCheck, Ban, Eye, RefreshCw,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -66,7 +67,8 @@ export default function BookingDetailPage() {
     enabled: !!id,
   });
 
-  const bk = data?.booking ?? null;
+  const bk       = data?.booking  ?? null;
+  const activity  = data?.activity ?? [];
 
   const transition = useMutation({
     mutationFn: async ({ status, cancellation_note }: { status: string; cancellation_note?: string }) => {
@@ -354,6 +356,66 @@ export default function BookingDetailPage() {
           })}
         </div>
       </div>
+
+      {/* Activity log */}
+      {activity.length > 0 && (
+        <div className="rounded-lg border border-border bg-background p-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Activity</p>
+          <div className="relative space-y-0">
+            {activity.map((ev: any, i: number) => {
+              const isLast = i === activity.length - 1;
+              const icon = ev.type === "created"
+                ? <PlusCircle className="w-4 h-4 text-primary" />
+                : ev.to_status === "cancelled"
+                ? <Ban className="w-4 h-4 text-destructive" />
+                : ev.to_status === "completed"
+                ? <CheckCheck className="w-4 h-4 text-green-600" />
+                : ev.to_status === "no_show"
+                ? <Eye className="w-4 h-4 text-orange-500" />
+                : <RefreshCw className="w-4 h-4 text-muted-foreground" />;
+
+              const STATUS_LABELS: Record<string, string> = {
+                pending: "Pending", confirmed: "Confirmed", checked_in: "Checked In",
+                in_progress: "In Progress", completed: "Completed",
+                cancelled: "Cancelled", no_show: "No Show",
+              };
+
+              const label = ev.type === "created"
+                ? "Booking created"
+                : ev.from_status && ev.to_status
+                ? `${STATUS_LABELS[ev.from_status] ?? ev.from_status} → ${STATUS_LABELS[ev.to_status] ?? ev.to_status}`
+                : ev.note;
+
+              const ts = new Date(ev.created_at);
+              const dateStr = ts.toLocaleDateString("en-AE", { day: "numeric", month: "short", year: "numeric" });
+              const timeStr = ts.toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" });
+
+              return (
+                <div key={ev.id} className="flex gap-3">
+                  {/* line + dot */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center shrink-0">
+                      {icon}
+                    </div>
+                    {!isLast && <div className="w-px flex-1 bg-border mt-1 mb-1" />}
+                  </div>
+                  {/* content */}
+                  <div className={`pb-4 min-w-0 flex-1 ${isLast ? "" : ""}`}>
+                    <p className="text-sm font-medium leading-tight">{label}</p>
+                    {ev.type === "status_changed" && ev.note && ev.to_status === "cancelled" && (
+                      <p className="text-xs text-muted-foreground mt-0.5 italic">{ev.note}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {dateStr} · {timeStr}
+                      {ev.created_by_name && <span> · {ev.created_by_name}</span>}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Drawers */}
       <BookingDrawer
