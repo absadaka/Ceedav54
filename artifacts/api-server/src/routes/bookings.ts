@@ -331,7 +331,7 @@ router.post("/:id/status", async (req, res) => {
     const tenant = await resolveTenant(slug);
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
-    const { status, cancellation_note } = req.body;
+    const { status, cancellation_note, user_id } = req.body;
     if (!status || !VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: "Invalid status", valid: VALID_STATUSES });
     }
@@ -371,6 +371,7 @@ router.post("/:id/status", async (req, res) => {
       note: status === "cancelled" && cancellation_note
         ? cancellation_note
         : `Status changed to ${STATUS_LABELS[status] ?? status}`,
+      created_by: user_id || null,
     });
 
     res.json({ booking });
