@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSession } from "@/hooks/useAuth";
 import {
   ArrowLeft, CalendarCheck, Edit, User, Car, Clock, Calendar,
-  CheckCircle2, ChevronRight, FileText, MoreHorizontal, XCircle, CalendarClock,
+  ChevronRight, FileText, MoreHorizontal, XCircle, CalendarClock,
   PlusCircle, CheckCheck, Ban, Eye, RefreshCw,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
@@ -189,25 +189,21 @@ export default function BookingDetailPage() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {nextSteps.includes("confirmed") && (
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => transition.mutate({ status: "confirmed" })} disabled={transition.isPending}>
-              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />Confirm
-            </Button>
-          )}
-          {nextSteps.includes("checked_in") && (
-            <Button size="sm" className="gap-1.5" onClick={() => transition.mutate({ status: "checked_in" })} disabled={transition.isPending}>
-              Check in
-            </Button>
-          )}
-          {nextSteps.includes("completed") && (
-            <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={() => transition.mutate({ status: "completed" })} disabled={transition.isPending}>
-              <CheckCheck className="w-3.5 h-3.5" />Complete
-            </Button>
-          )}
-          {nextSteps.includes("no_show") && (
-            <Button size="sm" variant="outline" className="gap-1.5 text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => transition.mutate({ status: "no_show" })} disabled={transition.isPending}>
-              <Eye className="w-3.5 h-3.5" />No Show
-            </Button>
+          {nextSteps.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1.5" disabled={transition.isPending}>
+                  <RefreshCw className="w-3.5 h-3.5" />Change Status
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="text-sm w-44">
+                {nextSteps.map(s => (
+                  <DropdownMenuItem key={s} onClick={() => transition.mutate({ status: s })}>
+                    {STATUS_META[s]?.label ?? s}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
 
           <DropdownMenu>
