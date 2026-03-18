@@ -790,8 +790,10 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Wrench className="w-5 h-5 text-primary" />
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"
+            style={isInspection ? { backgroundColor: "#ff53491a" } : undefined}>
+            <Wrench className="w-5 h-5 text-primary"
+              style={isInspection ? { color: "#ff5349" } : undefined} />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -923,7 +925,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 onClick={() => job.client_id && navigate(`/customers/${job.client_id}`)}
                 className="flex items-start gap-2 w-full hover:opacity-70 transition-opacity text-left"
               >
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-bold text-primary shrink-0">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-bold text-primary shrink-0"
+                  style={isInspection ? { backgroundColor: "#ff53491a", color: "#ff5349" } : undefined}>
                   {job.client_name.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase()}
                 </div>
                 <div>
