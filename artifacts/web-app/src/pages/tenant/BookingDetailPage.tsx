@@ -202,9 +202,11 @@ export default function BookingDetailPage() {
               <Button variant="outline" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="text-sm w-48">
-              <DropdownMenuItem onClick={() => setEditOpen(true)}>
-                <Edit className="w-3.5 h-3.5 mr-2" />Edit booking
-              </DropdownMenuItem>
+              {!["cancelled", "no_show"].includes(bk.status) && (
+                <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                  <Edit className="w-3.5 h-3.5 mr-2" />Edit booking
+                </DropdownMenuItem>
+              )}
               {CANCELLABLE.includes(bk.status) && (
                 <DropdownMenuItem onClick={() => setEditOpen(true)}>
                   <CalendarClock className="w-3.5 h-3.5 mr-2" />Reschedule
