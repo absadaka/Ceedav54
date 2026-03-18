@@ -1120,8 +1120,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   />
                   <Button
                     size="sm"
-                    disabled={addNoteMutation.isPending || !newNote.trim()}
-                    onClick={() => addNoteMutation.mutate(newNote)}
+                    disabled={addNoteMutation.isPending}
+                    onClick={() => { if (newNote.trim()) addNoteMutation.mutate(newNote); }}
                   >
                     {addNoteMutation.isPending ? "Saving…" : "Save note"}
                   </Button>
