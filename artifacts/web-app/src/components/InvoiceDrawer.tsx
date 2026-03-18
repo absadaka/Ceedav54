@@ -47,7 +47,7 @@ export default function InvoiceDrawer({
   const qc      = useQueryClient();
   const isEdit  = !!invoice;
 
-  const [clientId,  setClientId]  = useState(defaultClientId ?? "");
+  const [clientId,  setClientId]  = useState(defaultClientId ?? "__none__");
   const [vehicleId, setVehicleId] = useState(defaultVehicleId ?? "");
   const [taxRate,   setTaxRate]   = useState("5.00");
   const [discount,  setDiscount]  = useState("0.00");
@@ -56,14 +56,14 @@ export default function InvoiceDrawer({
 
   useEffect(() => {
     if (invoice) {
-      setClientId(invoice.client_id ?? "");
+      setClientId(invoice.client_id ?? "__none__");
       setVehicleId(invoice.vehicle_id ?? "");
       setTaxRate(invoice.tax_rate ?? "5.00");
       setDiscount(invoice.discount ?? "0.00");
       setDueAt(invoice.due_at ? invoice.due_at.split("T")[0] : "");
       setNotes(invoice.notes ?? "");
     } else {
-      setClientId(defaultClientId ?? "");
+      setClientId(defaultClientId ?? "__none__");
       setVehicleId(defaultVehicleId ?? "");
       setTaxRate("5.00");
       setDiscount("0.00");
@@ -82,7 +82,7 @@ export default function InvoiceDrawer({
   const mutation = useMutation({
     mutationFn: async () => {
       const body = {
-        client_id:  clientId  || null,
+        client_id:  (clientId === "__none__" || !clientId) ? null : clientId,
         vehicle_id: vehicleId || null,
         job_id:     defaultJobId || null,
         tax_rate:   taxRate,
@@ -131,7 +131,7 @@ export default function InvoiceDrawer({
             <Select value={clientId} onValueChange={setClientId}>
               <SelectTrigger><SelectValue placeholder="Select customer…" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">— No customer —</SelectItem>
+                <SelectItem value="__none__">— No customer —</SelectItem>
                 {clients.map(c => (
                   <SelectItem key={c.id} value={c.id}>{c.name} {c.phone && `· ${c.phone}`}</SelectItem>
                 ))}
