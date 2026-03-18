@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { sql, eq, and, or, desc, ilike, isNull, gte, lte } from "drizzle-orm";
+import { sql, eq, and, or, asc, desc, ilike, isNull, gte, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
@@ -218,7 +218,7 @@ router.get("/:id", async (req, res) => {
       .from(bookingActivityTable)
       .leftJoin(actByAlias, eq(actByAlias.id, bookingActivityTable.created_by))
       .where(eq(bookingActivityTable.booking_id, req.params.id))
-      .orderBy(desc(bookingActivityTable.created_at));
+      .orderBy(asc(bookingActivityTable.created_at));
 
     res.json({ booking, activity });
   } catch (e: any) {
