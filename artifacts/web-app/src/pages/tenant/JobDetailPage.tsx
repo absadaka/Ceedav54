@@ -529,6 +529,17 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to cancel job"),
   });
 
+  const importInspectionPartsMutation = useMutation({
+    mutationFn: () =>
+      fetch(`${API}/api/jobs/${id}/import-inspection-parts?tenant=${TENANT}`, { method: "POST" })
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      toast.success(`${data.imported} diagnosis item${data.imported === 1 ? "" : "s"} imported`);
+    },
+    onError: () => toast.error("Failed to import diagnosis items"),
+  });
+
   const removePartMutation = useMutation({
     mutationFn: (partId: string) =>
       fetch(`${API}/api/jobs/${id}/parts/${partId}?tenant=${TENANT}`, { method: "DELETE" })
@@ -897,11 +908,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {isInspection && (
                 <TabsTrigger value="parts">Diagnosis ({parts.length})</TabsTrigger>
               )}
-              {!isInspection && job.source_inspection_id && (
-                <TabsTrigger value="inspection">Inspection ({inspectionParts.length})</TabsTrigger>
-              )}
-              {!isInspection && !job.source_inspection_id && (
-                <TabsTrigger value="parts">Parts ({parts.length})</TabsTrigger>
+              {!isInspection && (
+                <TabsTrigger value="parts">Inspection ({parts.length})</TabsTrigger>
               )}
               <TabsTrigger value="time">Time ({fmtMinutes(totalMinutes)})</TabsTrigger>
               <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
@@ -1001,7 +1009,57 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             </TabsContent>
 
             {/* ── Parts / Diagnosis tab ────────────────────────────────── */}
-            <TabsContent value="parts" className="mt-0">
+            <TabsContent value="parts" className="mt-0 space-y-4">
+              {/* Inspection findings section — only for service jobs linked to an inspection */}
+              {!isInspection && job.source_inspection_id && (
+                <div className="border border-border rounded-lg bg-background overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Inspection findings
+                      {inspectionRef && <span className="ml-2 text-muted-foreground/60 normal-case font-normal">from {inspectionRef}</span>}
+                    </p>
+                    <Button
+                      size="sm" variant="outline" className="h-7 text-xs gap-1"
+                      disabled={importInspectionPartsMutation.isPending || inspectionParts.length === 0}
+                      onClick={() => importInspectionPartsMutation.mutate()}
+                    >
+                      <LinkIcon className="w-3 h-3" />
+                      {importInspectionPartsMutation.isPending ? "Updating…" : "Update diagnosis items"}
+                    </Button>
+                  </div>
+                  {inspectionParts.length === 0 ? (
+                    <div className="p-6 text-center text-sm text-muted-foreground/50">No items recorded in inspection</div>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Description</th>
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Part #</th>
+                          <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Qty</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inspectionParts.map((p: any) => (
+                          <tr key={p.id} className="border-b border-border last:border-0">
+                            <td className="px-4 py-2.5 text-sm">{p.description}</td>
+                            <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number || "—"}</td>
+                            <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.qty).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  {inspectionTechNote && (
+                    <div className="px-4 py-3 border-t border-border bg-muted/20">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-1">
+                        <Wrench className="w-3.5 h-3.5" />Technician note from inspection
+                      </p>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{inspectionTechNote}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="border border-border rounded-lg bg-background overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -1092,52 +1150,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 )}
               </div>
             </TabsContent>
-
-            {/* ── Inspection tab (service jobs linked to an inspection) ── */}
-            {!isInspection && job.source_inspection_id && (
-              <TabsContent value="inspection" className="mt-0 space-y-4">
-                <div className="border border-border rounded-lg bg-background overflow-hidden">
-                  <div className="px-4 py-3 border-b border-border bg-muted/30">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      Inspection findings
-                      {inspectionRef && <span className="ml-2 text-muted-foreground/60 normal-case font-normal">from {inspectionRef}</span>}
-                    </p>
-                  </div>
-
-                  {inspectionParts.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-muted-foreground/50">No items recorded in inspection</div>
-                  ) : (
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Description</th>
-                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Part #</th>
-                          <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Qty</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {inspectionParts.map((p: any) => (
-                          <tr key={p.id} className="border-b border-border last:border-0">
-                            <td className="px-4 py-2.5 text-sm">{p.description}</td>
-                            <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number || "—"}</td>
-                            <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.qty).toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-
-                {inspectionTechNote && (
-                  <div className="border border-border rounded-lg bg-background p-4 space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                      <Wrench className="w-3.5 h-3.5" />Technician notes from inspection
-                    </p>
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{inspectionTechNote}</p>
-                  </div>
-                )}
-              </TabsContent>
-            )}
 
             {/* ── Time tab ─────────────────────────────────────────────── */}
             <TabsContent value="time" className="mt-0 space-y-3">
