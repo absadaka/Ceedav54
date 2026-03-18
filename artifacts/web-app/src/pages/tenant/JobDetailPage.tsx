@@ -543,6 +543,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showAddPart,       setShowAddPart]       = useState(false);
   const [showAddManualPart, setShowAddManualPart] = useState(false);
   const [showAddPhoto,   setShowAddPhoto]   = useState(false);
+  const [dirtyParts,     setDirtyParts]     = useState(false);
   const [newNote,        setNewNote]        = useState("");
   const [timerNote,      setTimerNote]      = useState("");
 
@@ -584,6 +585,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["job", id] });
       qc.invalidateQueries({ queryKey: ["quotations"] });
+      setDirtyParts(false);
       toast.success(`Quotation ${data.quotation?.ref} updated`);
       navigate(`/quotations/${data.quotation?.id}`);
     },
@@ -782,8 +784,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
             </Button>
           )}
-          {/* Update quotation — only shown when linked quotation is out of sync with current parts */}
-          {quotation && quotationOutOfSync && (
+          {/* Update quotation — shown when out of sync server-side OR parts were just added */}
+          {!isInspection && (dirtyParts || (quotation && quotationOutOfSync)) && (
             <Button
               size="sm"
               variant="outline"
@@ -1196,6 +1198,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <AddDiagnosisForm jobId={job.id} onAdded={() => {
                       qc.invalidateQueries({ queryKey: ["job", id] });
                       setShowAddPart(false);
+                      if (!isInspection) setDirtyParts(true);
                     }} />
                   </div>
                 )}
@@ -1204,6 +1207,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <AddManualPartForm jobId={job.id} onAdded={() => {
                       qc.invalidateQueries({ queryKey: ["job", id] });
                       setShowAddManualPart(false);
+                      if (!isInspection) setDirtyParts(true);
                     }} />
                   </div>
                 )}
