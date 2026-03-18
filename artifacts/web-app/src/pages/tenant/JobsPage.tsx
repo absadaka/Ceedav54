@@ -9,6 +9,7 @@ import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge }    from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { statusClass, statusLabel } from "@/lib/status";
 import JobDrawer     from "@/components/JobDrawer";
@@ -128,8 +129,9 @@ export default function JobsPage() {
   const [, navigate]    = useLocation();
   const [view, setView] = useState<"board" | "list">("board");
   const [q, setQ]       = useState("");
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [movingJob, setMovingJob]   = useState<KanbanJob | null>(null);
+  const [drawerOpen, setDrawerOpen]     = useState(false);
+  const [movingJob, setMovingJob]       = useState<KanbanJob | null>(null);
+  const [expandedLane, setExpandedLane] = useState<typeof JOB_STATUSES[number] | null>(null);
 
   const { data: kanbanData, isLoading: kanbanLoading } = useQuery<Record<string, KanbanJob[]>>({
     queryKey: ["jobs-kanban"],
@@ -184,23 +186,38 @@ export default function JobsPage() {
           const row2 = JOB_STATUSES.slice(4);
           const renderLane = (lane: typeof JOB_STATUSES[number]) => {
             const jobs: KanbanJob[] = filtered?.[lane.key] ?? [];
+            const visible = jobs.slice(0, 3);
+            const extra   = jobs.length - visible.length;
             return (
               <div key={lane.key} className="min-w-0">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{lane.label}</span>
+                  <button
+                    onClick={() => setExpandedLane(lane)}
+                    className="text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
+                  >
+                    {lane.label}
+                  </button>
                   <span className={cn(
-                    "text-[10px] font-semibold rounded-full px-1.5 py-0.5 border",
+                    "text-[10px] font-semibold rounded-full px-1.5 py-0.5 border cursor-pointer",
                     jobs.length > 0 ? lane.color : "bg-muted text-muted-foreground border-border",
-                  )}>{jobs.length}</span>
+                  )} onClick={() => jobs.length > 0 && setExpandedLane(lane)}>{jobs.length}</span>
                 </div>
                 <div className={cn(
-                  "min-h-[120px] space-y-2 rounded-lg p-1",
+                  "min-h-[80px] space-y-2 rounded-lg p-1",
                   jobs.length === 0 && "border border-dashed border-border flex items-center justify-center",
                 )}>
                   {jobs.length === 0
                     ? <p className="text-xs text-muted-foreground/40 py-4">No service jobs</p>
-                    : jobs.map(job => <KanbanCard key={job.id} job={job} onClick={() => navigate(`/jobs/${job.id}`)} />)}
+                    : visible.map(job => <KanbanCard key={job.id} job={job} onClick={() => navigate(`/jobs/${job.id}`)} />)}
                 </div>
+                {extra > 0 && (
+                  <button
+                    onClick={() => setExpandedLane(lane)}
+                    className="mt-2 w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+                  >
+                    +{extra} more
+                  </button>
+                )}
               </div>
             );
           };
@@ -213,6 +230,30 @@ export default function JobsPage() {
           );
         })()
       )}
+
+      {/* Lane sheet — all jobs for the selected status */}
+      <Sheet open={!!expandedLane} onOpenChange={o => !o && setExpandedLane(null)}>
+        <SheetContent side="right" className="w-[420px] sm:w-[480px] flex flex-col p-0">
+          <SheetHeader className="px-6 py-4 border-b border-border shrink-0">
+            <div className="flex items-center gap-2">
+              {expandedLane && (
+                <span className={cn("text-[11px] font-semibold rounded-full px-2 py-0.5 border", expandedLane.color)}>
+                  {(filtered?.[expandedLane.key] ?? []).length}
+                </span>
+              )}
+              <SheetTitle className="text-base">{expandedLane?.label}</SheetTitle>
+            </div>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+            {expandedLane && (filtered?.[expandedLane.key] ?? []).length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-12">No service jobs in this status</p>
+            )}
+            {expandedLane && (filtered?.[expandedLane.key] ?? []).map(job => (
+              <KanbanCard key={job.id} job={job} onClick={() => { setExpandedLane(null); navigate(`/jobs/${job.id}`); }} />
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {view === "list" && (
         <div className="rounded-lg border border-border bg-background overflow-hidden">
