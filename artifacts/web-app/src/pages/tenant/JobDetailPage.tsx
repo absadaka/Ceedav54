@@ -23,10 +23,6 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { cn }       from "@/lib/utils";
 import { statusClass, statusLabel } from "@/lib/status";
 import { toast }    from "sonner";
@@ -470,7 +466,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
   const [editOpen,       setEditOpen]       = useState(false);
   const [statusOpen,     setStatusOpen]     = useState(false);
-  const [deleteOpen,     setDeleteOpen]     = useState(false);
   const [cancelOpen,     setCancelOpen]     = useState(false);
   const [cancelNote,     setCancelNote]     = useState("");
   const [assignOpen,     setAssignOpen]     = useState(false);
@@ -527,17 +522,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     staleTime: 10_000,
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: () => fetch(`${API}/api/jobs/${id}?tenant=${TENANT}`, { method: "DELETE" })
-      .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["jobs"] });
-      qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
-      toast.success("Job deleted");
-      navigate(backPath);
-    },
-    onError: () => toast.error("Failed to delete job"),
-  });
 
   const cancelMutation = useMutation({
     mutationFn: (note: string) =>
@@ -775,9 +759,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   <X className="w-3.5 h-3.5 mr-2" />Cancel job
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem className="text-destructive" onClick={() => setDeleteOpen(true)}>
-                <Trash2 className="w-3.5 h-3.5 mr-2" />Delete job
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -1437,26 +1418,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {job.ref}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the job card and all related time logs, parts, and photos. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deleteMutation.mutate()}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? "Deleting…" : "Delete job"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
