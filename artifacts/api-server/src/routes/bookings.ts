@@ -65,7 +65,6 @@ router.get("/", async (req, res) => {
 
     const conditions = [
       eq(bookingsTable.tenant_id, tenant.id),
-      isNull(bookingsTable.deleted_at),
       ...(status && VALID_STATUSES.includes(status as BookingStatus)
         ? [eq(bookingsTable.status, status as BookingStatus)] : []),
       ...(dateFrom ? [gte(bookingsTable.scheduled_at, new Date(dateFrom))] : []),
@@ -93,6 +92,7 @@ router.get("/", async (req, res) => {
           notes:        bookingsTable.notes,
           mileage_in:   bookingsTable.mileage_in,
           created_at:   bookingsTable.created_at,
+          deleted_at:   bookingsTable.deleted_at,
           client_id:    bookingsTable.client_id,
           client_name:  clientsTable.name,
           client_phone: clientsTable.phone,
