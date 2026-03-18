@@ -2,9 +2,10 @@ import {
   ArrowLeft, Wrench, User, Car, Clock, AlertTriangle, Plus,
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
-  Link as LinkIcon, X, Receipt, FileText,
+  Link as LinkIcon, X, Receipt, FileText, Search,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Button }  from "@/components/ui/button";
@@ -193,30 +194,122 @@ function AddPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => void })
   );
 }
 
+/* ─── TYPE_META — catalog item type colours ──────────────────────────────── */
+const TYPE_META: Record<string, { label: string; cls: string }> = {
+  labour:     { label: "Labour",     cls: "bg-blue-100 text-blue-700 border-blue-200" },
+  part:       { label: "Part",       cls: "bg-green-100 text-green-700 border-green-200" },
+  consumable: { label: "Consumable", cls: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  sublet:     { label: "Sublet",     cls: "bg-purple-100 text-purple-700 border-purple-200" },
+  package:    { label: "Package",    cls: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+  service:    { label: "Service",    cls: "bg-cyan-100 text-cyan-700 border-cyan-200" },
+};
+
+/* ─── CatalogDropdown — portal dropdown ─────────────────────────────────── */
+function CatalogDropdown({
+  items,
+  anchorRef,
+  onSelect,
+  onClose,
+}: {
+  items: any[];
+  anchorRef: React.RefObject<HTMLDivElement>;
+  onSelect: (item: any) => void;
+  onClose: () => void;
+}) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    if (anchorRef.current) setRect(anchorRef.current.getBoundingClientRect());
+  }, [anchorRef]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  if (!rect) return null;
+
+  const style: React.CSSProperties = {
+    position: "fixed",
+    top:  rect.bottom + 6,
+    left: rect.left,
+    width: rect.width,
+    zIndex: 9999,
+  };
+
+  return createPortal(
+    <div style={style} className="rounded-xl border border-border bg-popover shadow-2xl overflow-hidden">
+      {/* list */}
+      <div className="max-h-72 overflow-y-auto">
+        {items.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground">No catalog items match your search</div>
+        ) : (
+          items.map((item: any) => {
+            const tm = TYPE_META[item.type] ?? { label: item.type ?? "Item", cls: "bg-gray-100 text-gray-600 border-gray-200" };
+            const price = item.unit_price ? `AED ${parseFloat(item.unit_price).toFixed(2)}` : null;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onMouseDown={e => { e.preventDefault(); onSelect(item); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent/60 text-left border-b border-border/40 last:border-0 transition-colors"
+              >
+                <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded border ${tm.cls}`}>
+                  {tm.label}
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-medium truncate">{item.name}</span>
+                  {item.sku && (
+                    <span className="block text-xs text-muted-foreground font-mono mt-0.5">{item.sku}</span>
+                  )}
+                </span>
+                {price && (
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">{price}</span>
+                )}
+              </button>
+            );
+          })
+        )}
+      </div>
+      {items.length > 0 && (
+        <div className="px-3 py-1.5 border-t border-border bg-muted/40 text-[10px] text-muted-foreground text-right">
+          {items.length} result{items.length !== 1 ? "s" : ""}
+        </div>
+      )}
+    </div>,
+    document.body
+  );
+}
+
 /* ─── AddDiagnosisForm ────────────────────────────────────────────────────── */
 function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
   const [search,   setSearch]   = useState("");
   const [selected, setSelected] = useState<{ name: string; sku?: string } | null>(null);
   const [qty,      setQty]      = useState("1");
-  const [showDrop, setShowDrop] = useState(false);
+  const [open,     setOpen]     = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   const { data: catData } = useQuery({
     queryKey: ["catalog", TENANT],
     queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
     staleTime: 60_000,
   });
+
   const allCatalog: any[] = (catData?.items ?? []).filter((i: any) => i.is_active !== false);
   const filtered = allCatalog.filter(i =>
     !search ||
     i.name.toLowerCase().includes(search.toLowerCase()) ||
     (i.sku ?? "").toLowerCase().includes(search.toLowerCase())
-  ).slice(0, 8);
+  );
 
-  function pickItem(item: any) {
+  const pickItem = useCallback((item: any) => {
     setSelected({ name: item.name, sku: item.sku ?? "" });
     setSearch(item.name);
-    setShowDrop(false);
-  }
+    setOpen(false);
+  }, []);
+
+  const closeDropdown = useCallback(() => setOpen(false), []);
 
   const mutation = useMutation({
     mutationFn: () => fetch(`${API}/api/jobs/${jobId}/parts?tenant=${TENANT}`, {
@@ -238,45 +331,59 @@ function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => vo
   });
 
   return (
-    <div className="border border-dashed border-border rounded-lg p-4 mt-3 space-y-3 bg-muted/20">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add service</p>
+    <div className="border border-dashed border-primary/30 rounded-lg p-4 mt-3 space-y-3 bg-primary/5">
+      <p className="text-xs font-semibold text-primary/70 uppercase tracking-wide">Add service / part</p>
       <div className="grid grid-cols-4 gap-3 items-end">
-        <div className="col-span-3 space-y-1 relative">
-          <Label className="text-xs">Service *</Label>
-          <Input
-            className="h-8 text-sm"
-            placeholder="Search catalog…"
-            value={search}
-            onChange={e => { setSearch(e.target.value); setSelected(null); setShowDrop(true); }}
-            onFocus={() => setShowDrop(true)}
-            onBlur={() => setTimeout(() => setShowDrop(false), 150)}
-          />
-          {showDrop && filtered.length > 0 && (
-            <div className="absolute z-50 top-full left-0 mt-1 w-full rounded-md border bg-popover shadow-lg overflow-hidden">
-              {filtered.map((item: any) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="w-full flex items-center px-3 py-2 text-xs hover:bg-accent text-left gap-2"
-                  onMouseDown={() => pickItem(item)}
-                >
-                  <span className="font-medium truncate">{item.name}</span>
-                  {item.sku && <span className="text-muted-foreground font-mono shrink-0">{item.sku}</span>}
-                </button>
-              ))}
-            </div>
+        <div className="col-span-3 space-y-1" ref={anchorRef}>
+          <Label className="text-xs">Service or part *</Label>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              className="h-8 text-sm pl-7 pr-3"
+              placeholder="Search catalog or type custom…"
+              value={search}
+              onChange={e => {
+                setSearch(e.target.value);
+                setSelected(null);
+                setOpen(true);
+              }}
+              onFocus={() => setOpen(true)}
+              onBlur={() => setTimeout(() => setOpen(false), 100)}
+            />
+          </div>
+          {selected && (
+            <p className="text-[10px] text-green-700 font-medium">
+              ✓ From catalog{selected.sku ? ` · SKU: ${selected.sku}` : ""}
+            </p>
           )}
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Qty</Label>
-          <Input type="number" min="0.01" step="0.01" value={qty} onChange={e => setQty(e.target.value)} className="h-8 text-sm" />
+          <Input
+            type="number" min="0.01" step="0.01"
+            value={qty} onChange={e => setQty(e.target.value)}
+            className="h-8 text-sm"
+          />
         </div>
         <div className="col-span-4 flex justify-end gap-2">
-          <Button size="sm" disabled={(!selected && !search.trim()) || mutation.isPending} onClick={() => mutation.mutate()}>
+          <Button
+            size="sm"
+            disabled={(!selected && !search.trim()) || mutation.isPending}
+            onClick={() => mutation.mutate()}
+          >
             {mutation.isPending ? "Adding…" : "Add service"}
           </Button>
         </div>
       </div>
+
+      {open && (
+        <CatalogDropdown
+          items={filtered}
+          anchorRef={anchorRef}
+          onSelect={pickItem}
+          onClose={closeDropdown}
+        />
+      )}
     </div>
   );
 }
