@@ -792,8 +792,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"
             style={isInspection ? { backgroundColor: "#ff53491a" } : undefined}>
-            <Wrench className="w-5 h-5 text-primary"
-              style={isInspection ? { color: "#ff5349" } : undefined} />
+            {isInspection
+              ? <Search className="w-5 h-5" style={{ color: "#ff5349" }} />
+              : <Wrench className="w-5 h-5 text-primary" />}
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
