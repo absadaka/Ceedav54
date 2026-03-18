@@ -17,7 +17,7 @@ async function resolveTenant(slug: string) {
   return t ?? null;
 }
 
-const VALID_STATUSES = ["waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered"] as const;
+const VALID_STATUSES = ["waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered", "cancelled"] as const;
 type JobStatus = typeof VALID_STATUSES[number];
 
 /* ─── GET /jobs ───────────────────────────────────────────────────────────── */
@@ -227,8 +227,9 @@ router.get("/:id", async (req, res) => {
         scheduled_date:  jobsTable.scheduled_date,
         customer_concern: jobsTable.customer_concern,
         technician_note: jobsTable.technician_note,
-        qc_note:         jobsTable.qc_note,
-        internal_note:   jobsTable.internal_note,
+        qc_note:           jobsTable.qc_note,
+        internal_note:     jobsTable.internal_note,
+        cancellation_note: jobsTable.cancellation_note,
         created_at:      jobsTable.created_at,
         updated_at:      jobsTable.updated_at,
         client_id:       jobsTable.client_id,
@@ -583,7 +584,7 @@ router.post("/:id/status", async (req, res) => {
       .limit(1);
     if (!existing) return res.status(404).json({ error: "Job not found" });
 
-    const { status, note, changed_by } = req.body as { status: JobStatus; note?: string; changed_by?: string };
+    const { status, note, changed_by, cancellation_note } = req.body as { status: JobStatus; note?: string; changed_by?: string; cancellation_note?: string };
 
     if (!VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` });
@@ -604,6 +605,9 @@ router.post("/:id/status", async (req, res) => {
     if (status === "qc") {
       updates.qc_at = now;
       if (changed_by) updates.qc_by = changed_by;
+    }
+    if (status === "cancelled") {
+      updates.cancellation_note = cancellation_note ?? null;
     }
 
     const [job] = await db

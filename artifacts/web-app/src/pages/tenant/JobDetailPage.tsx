@@ -18,7 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -79,7 +79,7 @@ interface JobDetail {
   bay: string | null; started_at: string | null; completed_at: string | null; qc_at: string | null;
   mileage_in: string | null; mileage_out: string | null; scheduled_date: string | null;
   customer_concern: string | null; technician_note: string | null;
-  qc_note: string | null; internal_note: string | null;
+  qc_note: string | null; internal_note: string | null; cancellation_note: string | null;
   created_at: string; updated_at: string;
   client_id: string | null; client_name: string | null; client_phone: string | null; client_email: string | null;
   vehicle_id: string | null; plate_number: string | null; make: string | null; model: string | null;
@@ -471,6 +471,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [editOpen,       setEditOpen]       = useState(false);
   const [statusOpen,     setStatusOpen]     = useState(false);
   const [deleteOpen,     setDeleteOpen]     = useState(false);
+  const [cancelOpen,     setCancelOpen]     = useState(false);
+  const [cancelNote,     setCancelNote]     = useState("");
   const [assignOpen,     setAssignOpen]     = useState(false);
   const [showAddPart,       setShowAddPart]       = useState(false);
   const [showAddManualPart, setShowAddManualPart] = useState(false);
@@ -535,6 +537,24 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       navigate(backPath);
     },
     onError: () => toast.error("Failed to delete job"),
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (note: string) =>
+      fetch(`${API}/api/jobs/${id}/status?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "cancelled", cancellation_note: note || null }),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      qc.invalidateQueries({ queryKey: ["jobs"] });
+      qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
+      toast.success("Job cancelled");
+      setCancelOpen(false);
+      setCancelNote("");
+    },
+    onError: () => toast.error("Failed to cancel job"),
   });
 
   const removePartMutation = useMutation({
@@ -723,9 +743,11 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               </Button>
             </>
           )}
-          <Button size="sm" onClick={() => setStatusOpen(true)}>
-            Move status
-          </Button>
+          {job.status !== "cancelled" && (
+            <Button size="sm" onClick={() => setStatusOpen(true)}>
+              Move status
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
             <Edit className="w-3.5 h-3.5 mr-1.5" />Edit
           </Button>
@@ -745,6 +767,14 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
                 </DropdownMenuItem>
               )}
+              {job.status !== "cancelled" && (
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => { setCancelNote(""); setCancelOpen(true); }}
+                >
+                  <X className="w-3.5 h-3.5 mr-2" />Cancel job
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem className="text-destructive" onClick={() => setDeleteOpen(true)}>
                 <Trash2 className="w-3.5 h-3.5 mr-2" />Delete job
               </DropdownMenuItem>
@@ -760,6 +790,19 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         <StatCard icon={Camera} label="Photos" value={`${photos.length}`} />
         <StatCard icon={History} label="Status changes" value={`${statusHistory.length}`} />
       </div>
+
+      {/* Cancellation banner */}
+      {job.status === "cancelled" && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 flex items-start gap-3">
+          <X className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-destructive">Job cancelled</p>
+            {job.cancellation_note && (
+              <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-wrap">{job.cancellation_note}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left column */}
@@ -958,7 +1001,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {job.qc_note ?? <span className="text-muted-foreground/50 italic">No QC note yet</span>}
                   </p>
-                  {job.status !== "qc" && job.status !== "completed" && job.status !== "delivered" && (
+                  {job.status !== "qc" && job.status !== "completed" && job.status !== "delivered" && job.status !== "cancelled" && (
                     <Button size="sm" variant="outline" className="text-blue-700 border-blue-300" onClick={() => setStatusOpen(true)}>
                       Send to QC
                     </Button>
@@ -1361,6 +1404,38 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       />
 
       <AssignTechDialog jobId={job.id} open={assignOpen} onClose={() => setAssignOpen(false)} />
+
+      {/* Cancel job dialog */}
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel {job.ref}?</DialogTitle>
+            <DialogDescription>
+              The job will be marked as cancelled. You can optionally provide a reason.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="cancel-note">Reason (optional)</Label>
+            <Textarea
+              id="cancel-note"
+              placeholder="e.g. Customer requested cancellation…"
+              value={cancelNote}
+              onChange={e => setCancelNote(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>Back</Button>
+            <Button
+              variant="destructive"
+              disabled={cancelMutation.isPending}
+              onClick={() => cancelMutation.mutate(cancelNote)}
+            >
+              {cancelMutation.isPending ? "Cancelling…" : "Cancel job"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
