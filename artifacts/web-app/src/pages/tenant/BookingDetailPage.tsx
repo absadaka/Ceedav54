@@ -26,11 +26,12 @@ const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const STATUS_META: Record<string, { label: string; color: string; next: string[] }> = {
-  pending:    { label: "Pending",     color: "bg-yellow-100 text-yellow-800 border-yellow-200", next: ["confirmed", "checked_in"] },
-  confirmed:  { label: "Confirmed",   color: "bg-blue-100 text-blue-800 border-blue-200",       next: ["checked_in", "pending"] },
-  checked_in: { label: "Checked In",  color: "bg-indigo-100 text-indigo-800 border-indigo-200", next: [] },
-  cancelled:  { label: "Cancelled",   color: "bg-gray-100 text-gray-600 border-gray-300",       next: [] },
-  no_show:    { label: "No Show",     color: "bg-red-100 text-red-700 border-red-200",           next: [] },
+  pending:    { label: "Pending",     color: "bg-yellow-100 text-yellow-800 border-yellow-200",  next: ["confirmed", "checked_in"] },
+  confirmed:  { label: "Confirmed",   color: "bg-blue-100 text-blue-800 border-blue-200",        next: ["checked_in", "pending"] },
+  checked_in: { label: "Checked In",  color: "bg-indigo-100 text-indigo-800 border-indigo-200",  next: ["completed", "no_show"] },
+  completed:  { label: "Completed",   color: "bg-green-100 text-green-800 border-green-200",     next: [] },
+  cancelled:  { label: "Cancelled",   color: "bg-gray-100 text-gray-600 border-gray-300",        next: [] },
+  no_show:    { label: "No Show",     color: "bg-red-100 text-red-700 border-red-200",            next: [] },
 };
 
 const CANCELLABLE = ["pending", "confirmed", "checked_in", "in_progress"];
@@ -196,6 +197,16 @@ export default function BookingDetailPage() {
           {nextSteps.includes("checked_in") && (
             <Button size="sm" className="gap-1.5" onClick={() => transition.mutate({ status: "checked_in" })} disabled={transition.isPending}>
               Check in
+            </Button>
+          )}
+          {nextSteps.includes("completed") && (
+            <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={() => transition.mutate({ status: "completed" })} disabled={transition.isPending}>
+              <CheckCheck className="w-3.5 h-3.5" />Complete
+            </Button>
+          )}
+          {nextSteps.includes("no_show") && (
+            <Button size="sm" variant="outline" className="gap-1.5 text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => transition.mutate({ status: "no_show" })} disabled={transition.isPending}>
+              <Eye className="w-3.5 h-3.5" />No Show
             </Button>
           )}
 
