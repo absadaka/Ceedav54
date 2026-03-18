@@ -1135,16 +1135,18 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {isInspection ? "Diagnosis items" : "Inspection items"}
                   </p>
-                  <div className="flex gap-1.5">
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                      onClick={() => { setShowAddPart(p => !p); setShowAddManualPart(false); }}>
-                      <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : "Add service"}
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                      onClick={() => { setShowAddManualPart(p => !p); setShowAddPart(false); }}>
-                      <Plus className="w-3 h-3" />{showAddManualPart ? "Cancel" : "Add parts"}
-                    </Button>
-                  </div>
+                  {(isInspection || job.status === "waiting_parts") && (
+                    <div className="flex gap-1.5">
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                        onClick={() => { setShowAddPart(p => !p); setShowAddManualPart(false); }}>
+                        <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : "Add service"}
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                        onClick={() => { setShowAddManualPart(p => !p); setShowAddPart(false); }}>
+                        <Plus className="w-3 h-3" />{showAddManualPart ? "Cancel" : "Add parts"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {parts.length === 0 && !showAddPart && !showAddManualPart ? (
