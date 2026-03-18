@@ -3,7 +3,7 @@ import { sql, eq, and, or, asc, desc, ilike, isNull, inArray } from "drizzle-orm
 import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
-  quotationsTable, bookingsTable,
+  quotationsTable, quoteLineItemsTable, bookingsTable,
   jobsTable, jobStatusHistoryTable, jobAssignmentsTable,
   jobTimeLogsTable, jobPartsTable, jobPhotosTable, jobNotesTable,
 } from "@workspace/db";
@@ -269,7 +269,7 @@ router.get("/:id", async (req, res) => {
     const changedByAlias = alias(usersTable, "changer");
     const asgTechAlias   = alias(usersTable, "asgtech");
 
-    const [statusHistory, assignments, timeLogs, parts, photos, quotation, inspectionParts, inspectionJob, notes] = await Promise.all([
+    const [statusHistory, assignments, timeLogs, parts, photos, quotation, quoteLines, inspectionParts, inspectionJob, notes] = await Promise.all([
       db
         .select({
           id:          jobStatusHistoryTable.id,
@@ -322,6 +322,11 @@ router.get("/:id", async (req, res) => {
         ? db.select().from(quotationsTable).where(eq(quotationsTable.id, job.quotation_id!)).limit(1)
         : Promise.resolve([]),
 
+      // Quotation line items (for sync-status comparison)
+      job.quotation_id
+        ? db.select().from(quoteLineItemsTable).where(eq(quoteLineItemsTable.quotation_id, job.quotation_id!))
+        : Promise.resolve([]),
+
       // Source inspection parts (read-only reference for service jobs)
       job.source_inspection_id
         ? db.select().from(jobPartsTable).where(eq(jobPartsTable.job_id, job.source_inspection_id)).orderBy(jobPartsTable.sort_order)
@@ -350,6 +355,26 @@ router.get("/:id", async (req, res) => {
 
     const totalMinutes = timeLogs.reduce((acc, l) => acc + (l.minutes ?? 0), 0);
 
+    // ── Quotation out-of-sync detection ────────────────────────────────────
+    // Compare current job parts against quotation positive line items.
+    // A "fingerprint" is: sorted array of "description|qty" strings.
+    let quotationOutOfSync = false;
+    if (quotation[0] && (quoteLines as any[]).length >= 0) {
+      const positiveLines = (quoteLines as any[]).filter(l => parseFloat(l.line_total ?? "0") >= 0);
+
+      const partsFP = [...parts]
+        .map(p => `${(p.description ?? "").trim().toLowerCase()}|${parseFloat(String(p.qty ?? 1)).toFixed(4)}`)
+        .sort();
+
+      const linesFP = [...positiveLines]
+        .map(l => `${(l.description ?? "").trim().toLowerCase()}|${parseFloat(String(l.qty ?? 1)).toFixed(4)}`)
+        .sort();
+
+      quotationOutOfSync =
+        partsFP.length !== linesFP.length ||
+        partsFP.some((fp, i) => fp !== linesFP[i]);
+    }
+
     return res.json({
       job,
       statusHistory,
@@ -359,6 +384,7 @@ router.get("/:id", async (req, res) => {
       parts,
       photos,
       quotation: quotation[0] ?? null,
+      quotationOutOfSync,
       inspectionParts,
       inspectionTechNote: (inspectionJob as any[])[0]?.technician_note ?? null,
       inspectionRef:      (inspectionJob as any[])[0]?.ref ?? null,

@@ -757,6 +757,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   }
 
   const { job, statusHistory, assignments, timeLogs, totalMinutes, parts, photos, quotation,
+          quotationOutOfSync = false,
           inspectionParts = [], inspectionTechNote, inspectionRef,
           techNotes = [] } = data as any;
   const isInspection = moduleType === "inspection";
@@ -825,12 +826,12 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
             </Button>
           )}
-          {/* Update quotation — shown for any job that already has a linked quotation */}
-          {quotation && (
+          {/* Update quotation — only shown when linked quotation is out of sync with current parts */}
+          {quotation && quotationOutOfSync && (
             <Button
               size="sm"
               variant="outline"
-              className="gap-1.5"
+              className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
               disabled={syncQuotationMutation.isPending}
               onClick={() => syncQuotationMutation.mutate()}
             >
