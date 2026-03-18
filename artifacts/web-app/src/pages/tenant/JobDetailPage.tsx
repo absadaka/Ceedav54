@@ -147,55 +147,6 @@ function StatCard({ icon: Icon, label, value, accent, color }: { icon: React.Ele
   );
 }
 
-/* ─── AddPartForm ─────────────────────────────────────────────────────────── */
-function AddPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
-  const [form, setForm] = useState({ description: "", part_number: "", qty: "1", unit_price: "0" });
-  const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }));
-
-  const mutation = useMutation({
-    mutationFn: () => fetch(`${API}/api/jobs/${jobId}/parts?tenant=${TENANT}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-    onSuccess: () => {
-      onAdded();
-      setForm({ description: "", part_number: "", qty: "1", unit_price: "0" });
-      toast.success("Part added");
-    },
-    onError: () => toast.error("Failed to add part"),
-  });
-
-  return (
-    <div className="border border-dashed border-border rounded-lg p-4 mt-3 space-y-3 bg-muted/20">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add part / labour</p>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2 space-y-1">
-          <Label className="text-xs">Description *</Label>
-          <Input placeholder="e.g. Engine Air Filter" value={form.description} onChange={e => set("description", e.target.value)} className="h-8 text-sm" />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Part #</Label>
-          <Input placeholder="Optional" value={form.part_number} onChange={e => set("part_number", e.target.value)} className="h-8 text-sm" />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Qty</Label>
-          <Input type="number" min="0.01" step="0.01" value={form.qty} onChange={e => set("qty", e.target.value)} className="h-8 text-sm" />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Unit price (AED)</Label>
-          <Input type="number" min="0" step="0.01" value={form.unit_price} onChange={e => set("unit_price", e.target.value)} className="h-8 text-sm" />
-        </div>
-        <div className="flex items-end">
-          <Button size="sm" disabled={!form.description || mutation.isPending} onClick={() => mutation.mutate()} className="w-full">
-            {mutation.isPending ? "Adding…" : "Add"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ─── TYPE_META — catalog item type colours ──────────────────────────────── */
 const TYPE_META: Record<string, { label: string; cls: string }> = {
   labour:     { label: "Labour",     cls: "bg-blue-100 text-blue-700 border-blue-200" },
@@ -1184,22 +1135,16 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {isInspection ? "Diagnosis items" : "Inspection items"}
                   </p>
-                  {isInspection ? (
-                    <div className="flex gap-1.5">
-                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                        onClick={() => { setShowAddPart(p => !p); setShowAddManualPart(false); }}>
-                        <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : "Add service"}
-                      </Button>
-                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                        onClick={() => { setShowAddManualPart(p => !p); setShowAddPart(false); }}>
-                        <Plus className="w-3 h-3" />{showAddManualPart ? "Cancel" : "Add parts"}
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowAddPart(p => !p)}>
-                      <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : "Add"}
+                  <div className="flex gap-1.5">
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                      onClick={() => { setShowAddPart(p => !p); setShowAddManualPart(false); }}>
+                      <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : "Add service"}
                     </Button>
-                  )}
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
+                      onClick={() => { setShowAddManualPart(p => !p); setShowAddPart(false); }}>
+                      <Plus className="w-3 h-3" />{showAddManualPart ? "Cancel" : "Add parts"}
+                    </Button>
+                  </div>
                 </div>
 
                 {parts.length === 0 && !showAddPart && !showAddManualPart ? (
@@ -1246,17 +1191,10 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 )}
                 {showAddPart && (
                   <div className="px-4 pb-4">
-                    {isInspection ? (
-                      <AddDiagnosisForm jobId={job.id} onAdded={() => {
-                        qc.invalidateQueries({ queryKey: ["job", id] });
-                        setShowAddPart(false);
-                      }} />
-                    ) : (
-                      <AddPartForm jobId={job.id} onAdded={() => {
-                        qc.invalidateQueries({ queryKey: ["job", id] });
-                        setShowAddPart(false);
-                      }} />
-                    )}
+                    <AddDiagnosisForm jobId={job.id} onAdded={() => {
+                      qc.invalidateQueries({ queryKey: ["job", id] });
+                      setShowAddPart(false);
+                    }} />
                   </div>
                 )}
                 {showAddManualPart && (
