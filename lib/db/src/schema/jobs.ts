@@ -12,7 +12,7 @@ export const quoteStatusEnum = pgEnum("quote_status", [
 ]);
 
 export const jobStatusEnum = pgEnum("job_status", [
-  "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered",
+  "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered", "cancelled",
 ]);
 
 export const jobPriorityEnum = pgEnum("job_priority", [
@@ -141,6 +141,7 @@ export const jobsTable = pgTable("jobs", {
   technician_note:       text("technician_note"),
   qc_note:               text("qc_note"),
   internal_note:         text("internal_note"),
+  cancellation_note:     text("cancellation_note"),
   source_inspection_id:  uuid("source_inspection_id"),
   // Audit
   created_at:      timestamp("created_at",    { withTimezone: true }).defaultNow().notNull(),
