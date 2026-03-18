@@ -12,7 +12,7 @@ export const quoteStatusEnum = pgEnum("quote_status", [
 ]);
 
 export const jobStatusEnum = pgEnum("job_status", [
-  "new", "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered", "cancelled",
+  "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered", "cancelled",
 ]);
 
 export const jobPriorityEnum = pgEnum("job_priority", [
@@ -127,7 +127,7 @@ export const jobsTable = pgTable("jobs", {
   advisor_id:      uuid("advisor_id").references(() => usersTable.id, { onDelete: "set null" }),
   // primary technician (quick assignment — use job_assignments for multi-tech)
   technician_id:   uuid("technician_id").references(() => usersTable.id, { onDelete: "set null" }),
-  status:          jobStatusEnum("status").notNull().default("new"),
+  status:          jobStatusEnum("status").notNull().default("waiting"),
   priority:        jobPriorityEnum("priority").notNull().default("normal"),
   bay:             text("bay"),
   started_at:      timestamp("started_at",    { withTimezone: true }),
