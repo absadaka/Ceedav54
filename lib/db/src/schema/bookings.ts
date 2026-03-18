@@ -53,3 +53,24 @@ export const insertBookingSchema = createInsertSchema(bookingsTable).omit({
 });
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookingsTable.$inferSelect;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BOOKING ACTIVITY  (audit trail of status changes and notes)
+───────────────────────────────────────────────────────────────────────── */
+
+export const bookingActivityTable = pgTable("booking_activity", {
+  id:          uuid("id").defaultRandom().primaryKey(),
+  booking_id:  uuid("booking_id").references(() => bookingsTable.id, { onDelete: "cascade" }).notNull(),
+  tenant_id:   uuid("tenant_id").references(() => tenantsTable.id,  { onDelete: "cascade" }).notNull(),
+  type:        text("type").notNull(),          // "created" | "status_changed" | "rescheduled" | "note"
+  from_status: text("from_status"),
+  to_status:   text("to_status"),
+  note:        text("note"),
+  created_by:  uuid("created_by").references(() => usersTable.id, { onDelete: "set null" }),
+  created_at:  timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("ba_booking_idx").on(t.booking_id),
+  index("ba_tenant_idx").on(t.tenant_id),
+]);
+
+export type BookingActivity = typeof bookingActivityTable.$inferSelect;

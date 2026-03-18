@@ -3,7 +3,7 @@ import { sql, eq, and, or, desc, ilike, isNull, gte, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
-  bookingsTable,
+  bookingsTable, bookingActivityTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -173,8 +173,9 @@ router.get("/:id", async (req, res) => {
         booking_type: bookingsTable.booking_type,
         scheduled_at: bookingsTable.scheduled_at,
         duration_min: bookingsTable.duration_min,
-        notes:        bookingsTable.notes,
-        mileage_in:   bookingsTable.mileage_in,
+        notes:             bookingsTable.notes,
+        cancellation_note: bookingsTable.cancellation_note,
+        mileage_in:        bookingsTable.mileage_in,
         created_at:   bookingsTable.created_at,
         updated_at:   bookingsTable.updated_at,
         client_id:    bookingsTable.client_id,
@@ -202,7 +203,24 @@ router.get("/:id", async (req, res) => {
       .limit(1);
 
     if (!booking) return res.status(404).json({ error: "Booking not found" });
-    res.json({ booking });
+
+    const actByAlias = alias(usersTable, "act_by");
+    const activity = await db
+      .select({
+        id:          bookingActivityTable.id,
+        type:        bookingActivityTable.type,
+        from_status: bookingActivityTable.from_status,
+        to_status:   bookingActivityTable.to_status,
+        note:        bookingActivityTable.note,
+        created_at:  bookingActivityTable.created_at,
+        created_by_name: actByAlias.name,
+      })
+      .from(bookingActivityTable)
+      .leftJoin(actByAlias, eq(actByAlias.id, bookingActivityTable.created_by))
+      .where(eq(bookingActivityTable.booking_id, req.params.id))
+      .orderBy(desc(bookingActivityTable.created_at));
+
+    res.json({ booking, activity });
   } catch (e: any) {
     console.error("GET /bookings/:id", e);
     res.status(500).json({ error: e.message });
@@ -252,6 +270,14 @@ router.post("/", async (req, res) => {
         status: "pending",
       })
       .returning();
+
+    await db.insert(bookingActivityTable).values({
+      booking_id: booking.id,
+      tenant_id:  tenant.id,
+      type:       "created",
+      to_status:  "pending",
+      note:       `Booking ${ref} created`,
+    });
 
     res.status(201).json({ booking });
   } catch (e: any) {
@@ -310,6 +336,13 @@ router.post("/:id/status", async (req, res) => {
       return res.status(400).json({ error: "Invalid status", valid: VALID_STATUSES });
     }
 
+    // Fetch current status before updating
+    const [current] = await db
+      .select({ status: bookingsTable.status })
+      .from(bookingsTable)
+      .where(and(eq(bookingsTable.id, req.params.id), eq(bookingsTable.tenant_id, tenant.id)))
+      .limit(1);
+
     const updateFields: Record<string, any> = { status, updated_at: new Date() };
     if (status === "cancelled" && cancellation_note !== undefined) {
       updateFields.cancellation_note = cancellation_note || null;
@@ -322,6 +355,24 @@ router.post("/:id/status", async (req, res) => {
       .returning();
 
     if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    // Log activity
+    const STATUS_LABELS: Record<string, string> = {
+      pending: "Pending", confirmed: "Confirmed", checked_in: "Checked In",
+      in_progress: "In Progress", completed: "Completed",
+      cancelled: "Cancelled", no_show: "No Show",
+    };
+    await db.insert(bookingActivityTable).values({
+      booking_id:  req.params.id,
+      tenant_id:   tenant.id,
+      type:        "status_changed",
+      from_status: current?.status ?? null,
+      to_status:   status,
+      note: status === "cancelled" && cancellation_note
+        ? cancellation_note
+        : `Status changed to ${STATUS_LABELS[status] ?? status}`,
+    });
+
     res.json({ booking });
   } catch (e: any) {
     console.error("POST /bookings/:id/status", e);
