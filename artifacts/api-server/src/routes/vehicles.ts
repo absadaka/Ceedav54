@@ -236,6 +236,37 @@ router.put("/vehicles/:id", async (req, res) => {
   }
 });
 
+/* ─── PATCH /vehicles/:id — partial update (only provided fields) ─────── */
+router.patch("/vehicles/:id", async (req, res) => {
+  try {
+    const slug      = (req.query["tenant"] as string) || "demo-workshop";
+    const vehicleId = req.params["id"]!;
+    const tenant    = await resolveTenant(slug);
+    if (!tenant) { res.status(404).json({ error: "Tenant not found" }); return; }
+
+    const body = req.body as Record<string, string | undefined>;
+    const patch: Record<string, unknown> = { updated_at: new Date() };
+    if (body.vin     !== undefined) patch.vin     = body.vin?.trim()     || null;
+    if (body.mileage !== undefined) patch.mileage = body.mileage?.trim() || null;
+    if (body.plate   !== undefined) patch.plate   = body.plate?.trim().toUpperCase() || null;
+    if (body.make    !== undefined) patch.make    = body.make?.trim()    || null;
+    if (body.model   !== undefined) patch.model   = body.model?.trim()   || null;
+    if (body.year    !== undefined) patch.year    = body.year?.trim()    || null;
+    if (body.color   !== undefined) patch.color   = body.color?.trim()   || null;
+
+    const [updated] = await db.update(vehiclesTable)
+      .set(patch)
+      .where(and(eq(vehiclesTable.id, vehicleId), eq(vehiclesTable.tenant_id, tenant.id)))
+      .returning();
+
+    if (!updated) { res.status(404).json({ error: "Vehicle not found" }); return; }
+    res.json(updated);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 /* ─── DELETE ─────────────────────────────────────────────────────────────── */
 router.delete("/vehicles/:id", async (req, res) => {
   try {
