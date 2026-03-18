@@ -1,4 +1,5 @@
 export const STATUS_CLASSES: Record<string, string> = {
+  new:           "bg-slate-100  text-slate-700   border-slate-300",
   pending:       "bg-yellow-50  text-yellow-800  border-yellow-200",
   confirmed:     "bg-blue-50    text-blue-800    border-blue-200",
   checked_in:    "bg-violet-50  text-violet-800  border-violet-200",
