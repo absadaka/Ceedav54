@@ -814,7 +814,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {!isInspection && (
+          {!isInspection && parts.length > 0 && (
             <Button
               size="sm"
               variant="outline"
@@ -867,7 +867,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {(job.status === "completed" || job.status === "delivered") && (
+              {(job.status === "completed" || job.status === "delivered") && parts.length > 0 && (
                 <DropdownMenuItem
                   onClick={() => createInvoiceMutation.mutate()}
                   disabled={createInvoiceMutation.isPending}
