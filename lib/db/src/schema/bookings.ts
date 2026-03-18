@@ -31,8 +31,9 @@ export const bookingsTable = pgTable("bookings", {
   booking_type: text("booking_type"),                   // "inspection" | "service_job"
   scheduled_at: timestamp("scheduled_at", { withTimezone: true }).notNull(),
   duration_min: integer("duration_min").notNull().default(60),
-  notes:        text("notes"),
-  mileage_in:   text("mileage_in"),
+  notes:              text("notes"),
+  cancellation_note:  text("cancellation_note"),
+  mileage_in:         text("mileage_in"),
   // Audit
   created_at:   timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updated_at:   timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

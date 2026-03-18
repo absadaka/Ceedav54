@@ -3,14 +3,18 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, CalendarCheck, Edit, User, Car, Clock, Calendar,
-  CheckCircle2, ChevronRight, FileText, MoreHorizontal, XCircle,
+  CheckCircle2, ChevronRight, FileText, MoreHorizontal, XCircle, CalendarClock,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import BookingDrawer, { type BookingRow } from "@/components/BookingDrawer";
 import QuotationDrawer from "@/components/QuotationDrawer";
@@ -55,6 +59,8 @@ export default function BookingDetailPage() {
 
   const [editOpen,    setEditOpen]    = useState(false);
   const [quoteOpen,   setQuoteOpen]   = useState(false);
+  const [cancelOpen,  setCancelOpen]  = useState(false);
+  const [cancelNote,  setCancelNote]  = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["booking", id],
@@ -65,11 +71,11 @@ export default function BookingDetailPage() {
   const bk = data?.booking ?? null;
 
   const transition = useMutation({
-    mutationFn: async (status: string) => {
+    mutationFn: async ({ status, cancellation_note }: { status: string; cancellation_note?: string }) => {
       const res = await fetch(`${API}/api/bookings/${id}/status?tenant=${TENANT}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, cancellation_note }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Failed" }));
@@ -80,7 +86,7 @@ export default function BookingDetailPage() {
     onSuccess: async ({ status }) => {
       qc.invalidateQueries({ queryKey: ["booking", id] });
       qc.invalidateQueries({ queryKey: ["bookings"] });
-      toast.success("Status updated");
+      toast.success(status === "cancelled" ? "Booking cancelled" : "Status updated");
 
       if (status === "checked_in" && bk) {
         const bookingType = bk.booking_type;
@@ -130,6 +136,12 @@ export default function BookingDetailPage() {
     onSuccess: () => { toast.success("Booking deleted"); navigate("/bookings"); },
   });
 
+  function handleCancelSubmit() {
+    transition.mutate({ status: "cancelled", cancellation_note: cancelNote.trim() || undefined });
+    setCancelOpen(false);
+    setCancelNote("");
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-5">
@@ -175,12 +187,12 @@ export default function BookingDetailPage() {
 
         <div className="flex items-center gap-2 flex-wrap">
           {nextSteps.includes("confirmed") && (
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => transition.mutate("confirmed")} disabled={transition.isPending}>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => transition.mutate({ status: "confirmed" })} disabled={transition.isPending}>
               <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />Confirm
             </Button>
           )}
           {nextSteps.includes("checked_in") && (
-            <Button size="sm" className="gap-1.5" onClick={() => transition.mutate("checked_in")} disabled={transition.isPending}>
+            <Button size="sm" className="gap-1.5" onClick={() => transition.mutate({ status: "checked_in" })} disabled={transition.isPending}>
               Check in
             </Button>
           )}
@@ -189,8 +201,15 @@ export default function BookingDetailPage() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="text-sm w-44">
-              <DropdownMenuItem onClick={() => setEditOpen(true)}><Edit className="w-3.5 h-3.5 mr-2" />Edit booking</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="text-sm w-48">
+              <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                <Edit className="w-3.5 h-3.5 mr-2" />Edit booking
+              </DropdownMenuItem>
+              {CANCELLABLE.includes(bk.status) && (
+                <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                  <CalendarClock className="w-3.5 h-3.5 mr-2" />Reschedule
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setQuoteOpen(true)}>
                 <FileText className="w-3.5 h-3.5 mr-2" />Create quotation
@@ -198,7 +217,7 @@ export default function BookingDetailPage() {
               {nextSteps.includes("pending") && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => transition.mutate("pending")}>
+                  <DropdownMenuItem onClick={() => transition.mutate({ status: "pending" })}>
                     Revert to Pending
                   </DropdownMenuItem>
                 </>
@@ -208,11 +227,7 @@ export default function BookingDetailPage() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
-                    onClick={() => {
-                      if (confirm("Cancel this booking? The booking details will be kept in the customer's history.")) {
-                        transition.mutate("cancelled");
-                      }
-                    }}
+                    onClick={() => { setCancelNote(""); setCancelOpen(true); }}
                   >
                     <XCircle className="w-3.5 h-3.5 mr-2" />Cancel booking
                   </DropdownMenuItem>
@@ -311,6 +326,16 @@ export default function BookingDetailPage() {
         </div>
       )}
 
+      {/* Cancellation note */}
+      {bk.status === "cancelled" && bk.cancellation_note && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-1.5">
+          <p className="text-xs font-semibold text-destructive uppercase tracking-wide flex items-center gap-1.5">
+            <XCircle className="w-3 h-3" />Cancellation reason
+          </p>
+          <p className="text-sm whitespace-pre-wrap">{bk.cancellation_note}</p>
+        </div>
+      )}
+
       {/* Status timeline */}
       <div className="rounded-lg border border-border bg-background p-4">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Status flow</p>
@@ -343,6 +368,38 @@ export default function BookingDetailPage() {
         onClose={() => setQuoteOpen(false)}
         quotation={{ id: "", ref: "", status: "draft", client_id: bk.client_id, client_name: bk.client_name, vehicle_id: bk.vehicle_id, plate_number: bk.plate_number, advisor_id: bk.advisor_id, advisor_name: bk.advisor_name, booking_id: bk.id, estimated_hours: null, subtotal: "0", discount: "0", tax_rate: "5", tax_amount: "0", total: "0", notes: bk.notes, internal_note: null, expires_at: null } as any}
       />
+
+      {/* Cancel dialog */}
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel booking</DialogTitle>
+            <DialogDescription>
+              The booking will be marked as cancelled but kept in the customer's history.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-1">
+            <label className="text-sm font-medium">Cancellation reason <span className="text-muted-foreground font-normal">(optional)</span></label>
+            <Textarea
+              placeholder="e.g. Customer requested cancellation, part unavailable…"
+              value={cancelNote}
+              onChange={e => setCancelNote(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>Keep booking</Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelSubmit}
+              disabled={transition.isPending}
+            >
+              {transition.isPending ? "Cancelling…" : "Cancel booking"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
