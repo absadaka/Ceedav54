@@ -3,11 +3,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
-import { Button }   from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label }    from "@/components/ui/label";
-import { cn }       from "@/lib/utils";
-import { toast }    from "sonner";
+import { Button }        from "@/components/ui/button";
+import { Textarea }      from "@/components/ui/textarea";
+import { Label }         from "@/components/ui/label";
+import { cn }            from "@/lib/utils";
+import { toast }         from "sonner";
+import { AlertTriangle } from "lucide-react";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -49,15 +50,17 @@ interface Props {
   jobRef: string;
   currentStatus: string;
   moduleType?: "inspection" | "service_job";
+  vehicleVin?: string | null;
   onSuccess?: (newStatus: string, data?: unknown) => void;
 }
 
 export default function StatusTransitionModal({
-  open, onOpenChange, jobId, jobRef, currentStatus, moduleType, onSuccess,
+  open, onOpenChange, jobId, jobRef, currentStatus, moduleType, vehicleVin, onSuccess,
 }: Props) {
   const qc       = useQueryClient();
   const [target, setTarget] = useState<string>("");
   const [note,   setNote]   = useState("");
+  const [vinWarning, setVinWarning] = useState(false);
 
   const statuses = moduleType === "inspection" ? INSPECTION_STATUSES : JOB_STATUSES;
 
@@ -103,8 +106,15 @@ export default function StatusTransitionModal({
     onError: () => toast.error(target === MOVE_TO_SERVICE_KEY ? "Could not create service job" : "Could not update status"),
   });
 
+  const needsVin = moduleType !== "inspection" && currentStatus === "new" && target === "waiting" && !vehicleVin;
+
+  const handleConfirm = () => {
+    if (needsVin) { setVinWarning(true); return; }
+    mutation.mutate();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={v => { onOpenChange(v); if (!v) { setTarget(""); setNote(""); } }}>
+    <Dialog open={open} onOpenChange={v => { onOpenChange(v); if (!v) { setTarget(""); setNote(""); setVinWarning(false); } }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Move {jobRef}</DialogTitle>
@@ -122,7 +132,7 @@ export default function StatusTransitionModal({
               <button
                 key={s.key}
                 disabled={disabled}
-                onClick={() => !disabled && setTarget(s.key)}
+                onClick={() => { if (!disabled) { setTarget(s.key); setVinWarning(false); } }}
                 className={cn(
                   "rounded-lg border px-3 py-2.5 text-xs font-medium text-left transition-all",
                   s.color,
@@ -138,6 +148,16 @@ export default function StatusTransitionModal({
             );
           })}
         </div>
+
+        {vinWarning && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" />
+            <span>
+              Please fill in the vehicle <strong>VIN number</strong> before checking in.
+              Edit the vehicle record and add the VIN, then try again.
+            </span>
+          </div>
+        )}
 
         {target !== MOVE_TO_SERVICE_KEY && (
           <div className="space-y-1.5">
@@ -155,7 +175,7 @@ export default function StatusTransitionModal({
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             disabled={!target || mutation.isPending}
-            onClick={() => mutation.mutate()}
+            onClick={handleConfirm}
           >
             {mutation.isPending
               ? (target === MOVE_TO_SERVICE_KEY ? "Creating…" : "Saving…")

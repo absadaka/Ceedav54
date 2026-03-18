@@ -1470,6 +1470,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         jobRef={job.ref}
         currentStatus={job.status}
         moduleType={moduleType}
+        vehicleVin={job.vin}
         onSuccess={(newStatus, data) => {
           if (newStatus === "move_to_service_job") {
             const d = data as { job?: { id?: string; ref?: string } };
