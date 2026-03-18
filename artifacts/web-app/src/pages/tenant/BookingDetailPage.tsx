@@ -192,7 +192,7 @@ export default function BookingDetailPage() {
           {nextSteps.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" className="gap-1.5" disabled={transition.isPending}>
+                <Button size="sm" className="gap-1.5" disabled={transition.isPending}>
                   <RefreshCw className="w-3.5 h-3.5" />Change Status
                 </Button>
               </DropdownMenuTrigger>
