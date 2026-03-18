@@ -892,7 +892,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard icon={Timer} label="Labor time" value={fmtMinutes(totalMinutes)} accent={!!runningLog} />
-        <StatCard icon={Package} label={isInspection ? "Diagnosis" : "Parts used"} value={`${parts.length} items`} />
+        <StatCard icon={Package} label={isInspection ? "Diagnosis" : "Inspection"} value={`${parts.length} items`} />
         <StatCard icon={Camera} label="Photos" value={`${photos.length}`} />
         <StatCard icon={History} label="Status changes" value={`${statusHistory.length}`} />
       </div>
@@ -1054,7 +1054,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 <TabsTrigger value="inspection">Inspection ({inspectionParts.length})</TabsTrigger>
               )}
               {!isInspection && !job.source_inspection_id && (
-                <TabsTrigger value="parts">Parts ({parts.length})</TabsTrigger>
+                <TabsTrigger value="parts">Inspection ({parts.length})</TabsTrigger>
               )}
               <TabsTrigger value="time">Time ({fmtMinutes(totalMinutes)})</TabsTrigger>
               <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
@@ -1185,7 +1185,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               <div className="border border-border rounded-lg bg-background overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    {isInspection ? "Diagnosis items" : "Parts & labour"}
+                    {isInspection ? "Diagnosis items" : "Inspection items"}
                   </p>
                   {isInspection ? (
                     <div className="flex gap-1.5">
@@ -1207,7 +1207,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
                 {parts.length === 0 && !showAddPart && !showAddManualPart ? (
                   <div className="p-8 text-center text-sm text-muted-foreground/50">
-                    {isInspection ? "No diagnosis items added yet" : "No parts added yet"}
+                    {isInspection ? "No diagnosis items added yet" : "No inspection items added yet"}
                   </div>
                 ) : (
                   <table className="w-full text-sm">
