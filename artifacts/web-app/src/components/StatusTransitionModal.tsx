@@ -23,6 +23,7 @@ function getCurrentUserId(): string | undefined {
 const MOVE_TO_SERVICE_KEY = "move_to_service_job";
 
 export const INSPECTION_STATUSES = [
+  { key: "new",                 label: "New",                color: "bg-slate-100  text-slate-700  border-slate-300"  },
   { key: "in_progress",         label: "Checked In",         color: "bg-orange-100 text-orange-800 border-orange-300" },
   { key: "completed",           label: "Completed",          color: "bg-green-100  text-green-800  border-green-300"  },
   { key: "delivered",           label: "Delivered",          color: "bg-teal-100   text-teal-800   border-teal-300"   },
@@ -30,7 +31,8 @@ export const INSPECTION_STATUSES = [
 ] as const;
 
 export const JOB_STATUSES = [
-  { key: "waiting",       label: "Checked In",     color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  { key: "new",          label: "New",            color: "bg-slate-100  text-slate-700  border-slate-300"  },
+  { key: "waiting",      label: "Checked In",     color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
   { key: "in_progress",  label: "In progress",    color: "bg-orange-100 text-orange-800 border-orange-300" },
   { key: "waiting_parts",label: "Waiting parts",  color: "bg-purple-100 text-purple-800 border-purple-300" },
   { key: "qc",           label: "QC Check",       color: "bg-blue-100   text-blue-800   border-blue-300"   },
@@ -111,25 +113,27 @@ export default function StatusTransitionModal({
 
         <div className="grid grid-cols-2 gap-2 py-2">
           {statuses.map(s => {
-            const isCurrent = s.key === currentStatus;
+            const isCurrent  = s.key === currentStatus;
             const isSelected = s.key === target;
             const isConvert  = s.key === MOVE_TO_SERVICE_KEY;
+            const isNew      = s.key === "new";
+            const disabled   = isCurrent || (isNew && currentStatus !== "new");
             return (
               <button
                 key={s.key}
-                disabled={isCurrent}
-                onClick={() => setTarget(s.key)}
+                disabled={disabled}
+                onClick={() => !disabled && setTarget(s.key)}
                 className={cn(
                   "rounded-lg border px-3 py-2.5 text-xs font-medium text-left transition-all",
                   s.color,
                   isSelected && "ring-2 ring-primary ring-offset-1",
-                  isCurrent && "opacity-40 cursor-not-allowed",
-                  !isCurrent && !isSelected && "hover:opacity-80",
+                  disabled && "opacity-40 cursor-not-allowed",
+                  !disabled && !isSelected && "hover:opacity-80",
                   isConvert && "col-span-2",
                 )}
               >
                 {s.label}
-                {isCurrent && <span className="ml-1 text-[10px]">(current)</span>}
+                {isCurrent && <span className="ml-1 text-[10px] opacity-70">(current)</span>}
               </button>
             );
           })}
