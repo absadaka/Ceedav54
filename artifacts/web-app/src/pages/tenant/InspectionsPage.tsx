@@ -78,7 +78,10 @@ function KanbanCard({ job, onClick }: { job: KanbanJob; onClick: () => void }) {
     <div onClick={onClick} className="bg-background border border-border rounded-lg p-3 h-[148px] flex flex-col justify-between cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all group">
       <div className="space-y-1.5">
         <div className="flex items-start justify-between gap-1.5">
-          <span className="text-[11px] font-mono font-semibold text-muted-foreground">{job.ref}</span>
+          <div className="flex items-center gap-1">
+            <ClipboardCheck className="w-3 h-3 shrink-0" style={{ color: "#ff5349" }} />
+            <span className="text-[11px] font-mono font-semibold text-muted-foreground">{job.ref}</span>
+          </div>
           {job.priority !== "normal" && (
             <span className={cn("text-[10px] font-medium border rounded px-1 py-0.5 shrink-0", PRIORITY_COLORS[job.priority])}>{job.priority}</span>
           )}
@@ -89,7 +92,7 @@ function KanbanCard({ job, onClick }: { job: KanbanJob; onClick: () => void }) {
       </div>
       <div className="space-y-1">
         <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-          <User className="w-3 h-3 shrink-0" />
+          <User className="w-3 h-3 shrink-0" style={{ color: "#ff5349" }} />
           <span className="truncate">{job.client_name ?? "—"}</span>
         </div>
         <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
