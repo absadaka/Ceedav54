@@ -379,11 +379,93 @@ router.post("/from-job/:jobId", async (req, res) => {
     }
 
     await recalcTotals(quotation.id);
+
+    // Link quotation back to the job
+    await db.update(jobsTable)
+      .set({ quotation_id: quotation.id, updated_at: new Date() })
+      .where(eq(jobsTable.id, job.id));
+
     const [fresh] = await db.select().from(quotationsTable).where(eq(quotationsTable.id, quotation.id)).limit(1);
 
     return res.status(201).json({ quotation: fresh });
   } catch (err) {
     console.error("POST /quotations/from-job/:jobId", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ─── POST /quotations/sync-from-job/:jobId  —  re-sync existing quotation from job parts ─ */
+router.post("/sync-from-job/:jobId", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const [job] = await db
+      .select()
+      .from(jobsTable)
+      .where(and(eq(jobsTable.id, req.params.jobId), eq(jobsTable.tenant_id, tenant.id)))
+      .limit(1);
+    if (!job) return res.status(404).json({ error: "Job not found" });
+    if (!job.quotation_id) return res.status(400).json({ error: "No quotation linked to this job" });
+
+    const [quotation] = await db
+      .select()
+      .from(quotationsTable)
+      .where(and(eq(quotationsTable.id, job.quotation_id), eq(quotationsTable.tenant_id, tenant.id)))
+      .limit(1);
+    if (!quotation) return res.status(404).json({ error: "Quotation not found" });
+
+    // Delete existing non-discount line items (preserve any manual discounts)
+    await db.delete(quoteLineItemsTable)
+      .where(eq(quoteLineItemsTable.quotation_id, quotation.id));
+
+    // Fetch current job parts
+    const jobParts = await db
+      .select()
+      .from(jobPartsTable)
+      .where(and(eq(jobPartsTable.job_id, job.id), eq(jobPartsTable.tenant_id, tenant.id)));
+
+    // Catalog lookup for pricing
+    const catalogItems = await db
+      .select()
+      .from(catalogItemsTable)
+      .where(and(eq(catalogItemsTable.tenant_id, tenant.id), eq(catalogItemsTable.is_active, true)));
+
+    const catalogByName = new Map(catalogItems.map(c => [c.name.toLowerCase().trim(), c]));
+    const catalogBySku  = new Map(
+      catalogItems.filter(c => c.sku).map(c => [c.sku!.toLowerCase().trim(), c])
+    );
+
+    let lineOrder = 0;
+    for (const p of jobParts) {
+      const sku     = (p.part_number ?? "").toLowerCase().trim();
+      const name    = (p.description  ?? "").toLowerCase().trim();
+      const matched = (sku && catalogBySku.get(sku)) || catalogByName.get(name);
+
+      const unitPrice = matched ? matched.unit_price : "0.00";
+      const qty       = Number(p.qty ?? 1);
+      const lineTotal = matched
+        ? (qty * Number(matched.unit_price)).toFixed(2)
+        : "0.00";
+
+      await db.insert(quoteLineItemsTable).values({
+        quotation_id: quotation.id,
+        sort_order:   lineOrder++,
+        description:  p.description,
+        part_number:  p.part_number ?? null,
+        qty:          p.qty,
+        unit_price:   unitPrice,
+        line_total:   lineTotal,
+      });
+    }
+
+    await recalcTotals(quotation.id);
+    const [fresh] = await db.select().from(quotationsTable).where(eq(quotationsTable.id, quotation.id)).limit(1);
+
+    return res.status(200).json({ quotation: fresh });
+  } catch (err) {
+    console.error("POST /quotations/sync-from-job/:jobId", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
