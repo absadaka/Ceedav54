@@ -819,7 +819,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {!isInspection && parts.length > 0 && (
+          {!isInspection && job.status === "completed" && (
             <Button
               size="sm"
               variant="outline"
@@ -872,15 +872,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {(job.status === "completed" || job.status === "delivered") && parts.length > 0 && (
-                <DropdownMenuItem
-                  onClick={() => createInvoiceMutation.mutate()}
-                  disabled={createInvoiceMutation.isPending}
-                >
-                  <Receipt className="w-3.5 h-3.5 mr-2" />
-                  {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
-                </DropdownMenuItem>
-              )}
               {job.status !== "cancelled" && (
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"
