@@ -14,7 +14,7 @@ async function resolveTenant(slug: string) {
 }
 
 const VALID_STATUSES = [
-  "pending", "confirmed", "checked_in",
+  "pending", "confirmed", "checked_in", "in_progress", "completed", "cancelled", "no_show",
 ] as const;
 type BookingStatus = typeof VALID_STATUSES[number];
 
