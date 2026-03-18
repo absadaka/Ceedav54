@@ -20,10 +20,13 @@ function getCurrentUserId(): string | undefined {
   } catch { return undefined; }
 }
 
+const MOVE_TO_SERVICE_KEY = "move_to_service_job";
+
 export const INSPECTION_STATUSES = [
-  { key: "in_progress",  label: "Checked In",     color: "bg-orange-100 text-orange-800 border-orange-300" },
-  { key: "completed",    label: "Completed",      color: "bg-green-100  text-green-800  border-green-300"  },
-  { key: "delivered",    label: "Delivered",      color: "bg-teal-100   text-teal-800   border-teal-300"   },
+  { key: "in_progress",         label: "Checked In",         color: "bg-orange-100 text-orange-800 border-orange-300" },
+  { key: "completed",           label: "Completed",          color: "bg-green-100  text-green-800  border-green-300"  },
+  { key: "delivered",           label: "Delivered",          color: "bg-teal-100   text-teal-800   border-teal-300"   },
+  { key: MOVE_TO_SERVICE_KEY,   label: "Move to Service Job", color: "bg-indigo-100 text-indigo-800 border-indigo-300" },
 ] as const;
 
 export const JOB_STATUSES = [
@@ -44,7 +47,7 @@ interface Props {
   jobRef: string;
   currentStatus: string;
   moduleType?: "inspection" | "service_job";
-  onSuccess?: (newStatus: string) => void;
+  onSuccess?: (newStatus: string, data?: unknown) => void;
 }
 
 export default function StatusTransitionModal({
@@ -57,10 +60,19 @@ export default function StatusTransitionModal({
   const statuses = moduleType === "inspection" ? INSPECTION_STATUSES : JOB_STATUSES;
 
   const findLabel = (key: string) =>
-    statuses.find(s => s.key === key)?.label ?? JOB_STATUSES.find(s => s.key === key)?.label ?? key;
+    [...INSPECTION_STATUSES, ...JOB_STATUSES].find(s => s.key === key)?.label ?? key;
 
   const mutation = useMutation({
     mutationFn: async () => {
+      if (target === MOVE_TO_SERVICE_KEY) {
+        const r = await fetch(`${API}/api/jobs/${jobId}/convert-to-job?tenant=${TENANT}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!r.ok) throw new Error("Conversion failed");
+        return { __action: MOVE_TO_SERVICE_KEY, ...(await r.json()) };
+      }
+
       const r = await fetch(`${API}/api/jobs/${jobId}/status?tenant=${TENANT}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,18 +81,24 @@ export default function StatusTransitionModal({
       if (!r.ok) throw new Error("Status transition failed");
       return r.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["jobs"] });
       qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
       qc.invalidateQueries({ queryKey: ["inspections-kanban"] });
       qc.invalidateQueries({ queryKey: ["job", jobId] });
-      toast.success(`Job ${jobRef} moved to ${findLabel(target)}`);
-      onSuccess?.(target);
+
+      if (target === MOVE_TO_SERVICE_KEY) {
+        toast.success(`Service job ${(data as { job?: { ref?: string } }).job?.ref ?? ""} created`);
+      } else {
+        toast.success(`${jobRef} moved to ${findLabel(target)}`);
+      }
+
+      onSuccess?.(target, data);
       onOpenChange(false);
       setTarget("");
       setNote("");
     },
-    onError: () => toast.error("Could not update status"),
+    onError: () => toast.error(target === MOVE_TO_SERVICE_KEY ? "Could not create service job" : "Could not update status"),
   });
 
   return (
@@ -95,6 +113,7 @@ export default function StatusTransitionModal({
           {statuses.map(s => {
             const isCurrent = s.key === currentStatus;
             const isSelected = s.key === target;
+            const isConvert  = s.key === MOVE_TO_SERVICE_KEY;
             return (
               <button
                 key={s.key}
@@ -106,6 +125,7 @@ export default function StatusTransitionModal({
                   isSelected && "ring-2 ring-primary ring-offset-1",
                   isCurrent && "opacity-40 cursor-not-allowed",
                   !isCurrent && !isSelected && "hover:opacity-80",
+                  isConvert && "col-span-2",
                 )}
               >
                 {s.label}
@@ -115,15 +135,17 @@ export default function StatusTransitionModal({
           })}
         </div>
 
-        <div className="space-y-1.5">
-          <Label className="text-sm">Note <span className="text-muted-foreground font-normal">(optional)</span></Label>
-          <Textarea
-            rows={2}
-            placeholder="Reason for status change…"
-            value={note}
-            onChange={e => setNote(e.target.value)}
-          />
-        </div>
+        {target !== MOVE_TO_SERVICE_KEY && (
+          <div className="space-y-1.5">
+            <Label className="text-sm">Note <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Textarea
+              rows={2}
+              placeholder="Reason for status change…"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+            />
+          </div>
+        )}
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -131,7 +153,9 @@ export default function StatusTransitionModal({
             disabled={!target || mutation.isPending}
             onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? "Saving…" : "Confirm"}
+            {mutation.isPending
+              ? (target === MOVE_TO_SERVICE_KEY ? "Creating…" : "Saving…")
+              : (target === MOVE_TO_SERVICE_KEY ? "Convert" : "Confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>
