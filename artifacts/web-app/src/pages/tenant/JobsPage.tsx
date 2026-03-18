@@ -18,26 +18,36 @@ import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+function KanbanSkeletonCol({ s }: { s: typeof JOB_STATUSES[number] }) {
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center justify-between mb-3">
+        <Skeleton className="h-3.5 w-24" /><Skeleton className="h-4 w-5 rounded-full" />
+      </div>
+      <div className="space-y-2">
+        {Array.from({ length: s.key === "in_progress" ? 2 : 1 }).map((_, i) => (
+          <div key={i} className="bg-background border border-border rounded-lg p-3 space-y-2.5">
+            <Skeleton className="h-3 w-full" /><Skeleton className="h-2.5 w-3/4" />
+            <div className="flex items-center justify-between pt-1">
+              <Skeleton className="h-5 w-14 rounded-full" /><Skeleton className="w-6 h-6 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function KanbanSkeleton() {
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
-      {JOB_STATUSES.map(s => (
-        <div key={s.key} className="shrink-0 w-64">
-          <div className="flex items-center justify-between mb-3">
-            <Skeleton className="h-3.5 w-24" /><Skeleton className="h-4 w-5 rounded-full" />
-          </div>
-          <div className="space-y-2">
-            {Array.from({ length: s.key === "in_progress" ? 2 : 1 }).map((_, i) => (
-              <div key={i} className="bg-background border border-border rounded-lg p-3 space-y-2.5">
-                <Skeleton className="h-3 w-full" /><Skeleton className="h-2.5 w-3/4" />
-                <div className="flex items-center justify-between pt-1">
-                  <Skeleton className="h-5 w-14 rounded-full" /><Skeleton className="w-6 h-6 rounded-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+    <div className="space-y-6 pb-4">
+      <div className="grid grid-cols-4 gap-4">
+        {JOB_STATUSES.slice(0, 4).map(s => <KanbanSkeletonCol key={s.key} s={s} />)}
+      </div>
+      <div className="border-t border-dashed border-border" />
+      <div className="grid grid-cols-3 gap-4">
+        {JOB_STATUSES.slice(4).map(s => <KanbanSkeletonCol key={s.key} s={s} />)}
+      </div>
     </div>
   );
 }
@@ -169,32 +179,39 @@ export default function JobsPage() {
       </div>
 
       {view === "board" && (
-        kanbanLoading ? <KanbanSkeleton /> : (
-          <div className="flex gap-4 overflow-x-auto pb-6">
-            {JOB_STATUSES.map(lane => {
-              const jobs: KanbanJob[] = filtered?.[lane.key] ?? [];
-              return (
-                <div key={lane.key} className="shrink-0 w-64">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{lane.label}</span>
-                    <span className={cn(
-                      "text-[10px] font-semibold rounded-full px-1.5 py-0.5 border",
-                      jobs.length > 0 ? lane.color : "bg-muted text-muted-foreground border-border",
-                    )}>{jobs.length}</span>
-                  </div>
-                  <div className={cn(
-                    "min-h-[120px] space-y-2 rounded-lg p-1",
-                    jobs.length === 0 && "border border-dashed border-border flex items-center justify-center",
-                  )}>
-                    {jobs.length === 0
-                      ? <p className="text-xs text-muted-foreground/40 py-4">No service jobs</p>
-                      : jobs.map(job => <KanbanCard key={job.id} job={job} onClick={() => navigate(`/jobs/${job.id}`)} />)}
-                  </div>
+        kanbanLoading ? <KanbanSkeleton /> : (() => {
+          const row1 = JOB_STATUSES.slice(0, 4);
+          const row2 = JOB_STATUSES.slice(4);
+          const renderLane = (lane: typeof JOB_STATUSES[number]) => {
+            const jobs: KanbanJob[] = filtered?.[lane.key] ?? [];
+            return (
+              <div key={lane.key} className="min-w-0">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{lane.label}</span>
+                  <span className={cn(
+                    "text-[10px] font-semibold rounded-full px-1.5 py-0.5 border",
+                    jobs.length > 0 ? lane.color : "bg-muted text-muted-foreground border-border",
+                  )}>{jobs.length}</span>
                 </div>
-              );
-            })}
-          </div>
-        )
+                <div className={cn(
+                  "min-h-[120px] space-y-2 rounded-lg p-1",
+                  jobs.length === 0 && "border border-dashed border-border flex items-center justify-center",
+                )}>
+                  {jobs.length === 0
+                    ? <p className="text-xs text-muted-foreground/40 py-4">No service jobs</p>
+                    : jobs.map(job => <KanbanCard key={job.id} job={job} onClick={() => navigate(`/jobs/${job.id}`)} />)}
+                </div>
+              </div>
+            );
+          };
+          return (
+            <div className="space-y-6 pb-6">
+              <div className="grid grid-cols-4 gap-4">{row1.map(renderLane)}</div>
+              <div className="border-t border-dashed border-border" />
+              <div className="grid grid-cols-3 gap-4">{row2.map(renderLane)}</div>
+            </div>
+          );
+        })()
       )}
 
       {view === "list" && (
