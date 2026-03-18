@@ -4,8 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, FileText, Edit, Trash2, Send, CheckCircle2, XCircle,
   ArrowRight, Plus, X, User, Car, Clock, Loader2,
-  MoreHorizontal, AlertTriangle,
+  MoreHorizontal, AlertTriangle, Download,
 } from "lucide-react";
+import { pdf } from "@react-pdf/renderer";
+import QuotationPDFDocument from "@/components/QuotationPDF";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
@@ -360,6 +362,7 @@ export default function QuotationDetailPage() {
   const [addPayOpen,     setAddPayOpen]     = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [deleteOpen,  setDeleteOpen]  = useState(false);
+  const [pdfLoading,  setPdfLoading]  = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["quotation", id],
@@ -376,6 +379,33 @@ export default function QuotationDetailPage() {
     const lt = parseFloat(l.line_total ?? "0");
     return lt < 0 ? sum + Math.abs(lt) : sum;
   }, 0);
+
+  async function downloadPDF() {
+    if (!qt) return;
+    setPdfLoading(true);
+    try {
+      const blob = await pdf(
+        <QuotationPDFDocument
+          shopName={getSession()?.tenantName ?? "Workshop"}
+          qt={qt}
+          lines={lines}
+          advs={advs}
+          totalPaid={totalPaid}
+          balance={balance}
+        />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${qt.ref}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Failed to generate PDF");
+    } finally {
+      setPdfLoading(false);
+    }
+  }
 
   const action = useMutation({
     mutationFn: ({ act, body = {} }: { act: string; body?: any }) =>
@@ -490,6 +520,19 @@ export default function QuotationDetailPage() {
               <ArrowRight className="w-3.5 h-3.5" />View job card
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            onClick={downloadPDF}
+            disabled={pdfLoading}
+          >
+            {pdfLoading
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Download className="w-3.5 h-3.5" />
+            }
+            {pdfLoading ? "Generating…" : "Download PDF"}
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
