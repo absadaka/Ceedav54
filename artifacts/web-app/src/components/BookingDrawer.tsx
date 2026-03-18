@@ -36,6 +36,7 @@ export interface BookingRow {
   advisor_id: string | null;
   advisor_name: string | null;
   booking_type?: string | null;
+  deleted_at?: string | null;
 }
 
 interface Props {

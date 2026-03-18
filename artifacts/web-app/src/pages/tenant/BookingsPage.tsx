@@ -475,11 +475,12 @@ export default function BookingsPage() {
                     </tr>
                   )
                   : rows.map(row => {
+                    const isDeleted = !!row.deleted_at;
                     const sm = STATUS_META[row.status] ?? { label: row.status, color: "bg-gray-100 text-gray-700 border-gray-200", dot: "bg-gray-400" };
                     return (
                       <tr
                         key={row.id}
-                        className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer"
+                        className={`border-b border-border last:border-0 cursor-pointer transition-colors ${isDeleted ? "opacity-50 bg-muted/20 hover:bg-muted/30" : "hover:bg-muted/30"}`}
                         onClick={() => navigate(`/bookings/${row.id}`)}
                       >
                         <td className="px-4 py-3">
@@ -502,9 +503,16 @@ export default function BookingsPage() {
                           }
                         </td>
                         <td className="px-4 py-3 hidden lg:table-cell">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border ${sm.color}`}>
-                            {sm.label}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border ${sm.color}`}>
+                              {sm.label}
+                            </span>
+                            {isDeleted && (
+                              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border bg-gray-100 text-gray-500 border-gray-300">
+                                Deleted
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 hidden sm:table-cell text-xs text-muted-foreground">
                           {SOURCE_LABEL[row.source] ?? row.source}
