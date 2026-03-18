@@ -1,5 +1,5 @@
 import {
-  Inspect, ClipboardCheck, Plus, Search, LayoutGrid, List,
+  UserSearch, ClipboardCheck, Plus, Search, LayoutGrid, List,
   ChevronRight, Clock, User, Car,
 } from "lucide-react";
 import { useState, useMemo } from "react";
@@ -79,7 +79,7 @@ function KanbanCard({ job, onClick }: { job: KanbanJob; onClick: () => void }) {
       <div className="space-y-1.5">
         <div className="flex items-start justify-between gap-1.5">
           <div className="flex items-center gap-1">
-            <Inspect className="w-3 h-3 shrink-0" style={{ color: "#ff5349" }} />
+            <UserSearch className="w-3 h-3 shrink-0" style={{ color: "#ff5349" }} />
             <span className="text-[11px] font-mono font-semibold text-muted-foreground">{job.ref}</span>
           </div>
           {job.priority !== "normal" && (
