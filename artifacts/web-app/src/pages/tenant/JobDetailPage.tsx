@@ -507,11 +507,27 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       body: JSON.stringify({}),
     }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
     onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
       qc.invalidateQueries({ queryKey: ["quotations"] });
       toast.success(`Quotation ${data.quotation?.ref} created`);
       navigate(`/quotations/${data.quotation?.id}`);
     },
     onError: () => toast.error("Failed to create quotation"),
+  });
+
+  const syncQuotationMutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/quotations/sync-from-job/${id}?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      qc.invalidateQueries({ queryKey: ["quotations"] });
+      toast.success(`Quotation ${data.quotation?.ref} updated`);
+      navigate(`/quotations/${data.quotation?.id}`);
+    },
+    onError: () => toast.error("Failed to update quotation"),
   });
 
 
@@ -702,7 +718,21 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
             </Button>
           )}
-          {isInspection && (job.status === "completed" || job.status === "delivered") && (
+          {/* Update quotation — shown for any job that already has a linked quotation */}
+          {quotation && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              disabled={syncQuotationMutation.isPending}
+              onClick={() => syncQuotationMutation.mutate()}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              {syncQuotationMutation.isPending ? "Updating…" : "Update quotation"}
+            </Button>
+          )}
+          {/* Create quotation — only for inspections without an existing quotation */}
+          {!quotation && isInspection && (job.status === "completed" || job.status === "delivered") && (
             <Button
               size="sm"
               variant="outline"
