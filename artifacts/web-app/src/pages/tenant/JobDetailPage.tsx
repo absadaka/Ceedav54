@@ -836,7 +836,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             <Button
               size="sm"
               variant="outline"
-              className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
+              className="gap-1.5"
               disabled={syncQuotationMutation.isPending}
               onClick={() => syncQuotationMutation.mutate()}
             >
