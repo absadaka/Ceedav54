@@ -278,3 +278,21 @@ export const insertJobPhotoSchema = createInsertSchema(jobPhotosTable).omit({
 });
 export type InsertJobPhoto = z.infer<typeof insertJobPhotoSchema>;
 export type JobPhoto = typeof jobPhotosTable.$inferSelect;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   JOB NOTES  (technician note log — one row per note entry)
+───────────────────────────────────────────────────────────────────────── */
+
+export const jobNotesTable = pgTable("job_notes", {
+  id:          uuid("id").defaultRandom().primaryKey(),
+  job_id:      uuid("job_id").references(() => jobsTable.id, { onDelete: "cascade" }).notNull(),
+  tenant_id:   uuid("tenant_id").references(() => tenantsTable.id, { onDelete: "cascade" }).notNull(),
+  note:        text("note").notNull(),
+  created_by:  uuid("created_by").references(() => usersTable.id, { onDelete: "set null" }),
+  created_at:  timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("job_notes_job_idx").on(t.job_id),
+  index("job_notes_tenant_idx").on(t.tenant_id),
+]);
+
+export type JobNote = typeof jobNotesTable.$inferSelect;

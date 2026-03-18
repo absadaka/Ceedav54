@@ -29,6 +29,8 @@ import { toast }    from "sonner";
 import JobDrawer, { type JobRow } from "@/components/JobDrawer";
 import StatusTransitionModal, { JOB_STATUSES, INSPECTION_STATUSES } from "@/components/StatusTransitionModal";
 
+import { getSession } from "@/hooks/useAuth";
+
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -105,6 +107,14 @@ interface Part {
 interface Photo {
   id: string; url: string; caption: string | null; photo_type: string; created_at: string;
 }
+interface TechNote {
+  id: string;
+  note: string;
+  created_by: string | null;
+  created_by_name: string | null;
+  created_at: string;
+}
+
 interface DetailData {
   job: JobDetail;
   statusHistory: StatusHistoryEntry[];
@@ -114,6 +124,7 @@ interface DetailData {
   parts: Part[];
   photos: Photo[];
   quotation: { ref: string; total: string; status: string } | null;
+  techNotes: TechNote[];
 }
 
 /* ─── StatCard ───────────────────────────────────────────────────────────── */
@@ -472,7 +483,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showAddPart,       setShowAddPart]       = useState(false);
   const [showAddManualPart, setShowAddManualPart] = useState(false);
   const [showAddPhoto,   setShowAddPhoto]   = useState(false);
-  const [noteText,       setNoteText]       = useState("");
+  const [newNote,        setNewNote]        = useState("");
   const [timerNote,      setTimerNote]      = useState("");
 
   const createInvoiceMutation = useMutation({
@@ -553,18 +564,21 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to release technician"),
   });
 
-  const techNotesMutation = useMutation({
-    mutationFn: (technician_note: string) =>
-      fetch(`${API}/api/jobs/${id}?tenant=${TENANT}`, {
-        method: "PUT",
+  const addNoteMutation = useMutation({
+    mutationFn: (note: string) => {
+      const session = getSession();
+      return fetch(`${API}/api/jobs/${id}/notes?tenant=${TENANT}`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ technician_note }),
-      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+        body: JSON.stringify({ note, created_by: session?.userId ?? null }),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["job", id] });
-      toast.success("Notes saved");
+      setNewNote("");
+      toast.success("Note saved");
     },
-    onError: () => toast.error("Failed to save notes"),
+    onError: () => toast.error("Failed to save note"),
   });
 
   const startTimerMutation = useMutation({
@@ -620,7 +634,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   }
 
   const { job, statusHistory, assignments, timeLogs, totalMinutes, parts, photos, quotation,
-          inspectionParts = [], inspectionTechNote, inspectionRef } = data as any;
+          inspectionParts = [], inspectionTechNote, inspectionRef,
+          techNotes = [] } = data as any;
   const isInspection = moduleType === "inspection";
   const statusSet    = isInspection ? INSPECTION_STATUSES : JOB_STATUSES;
   const currentLane  = statusSet.find(s => s.key === job.status) ?? JOB_STATUSES.find(s => s.key === job.status);
@@ -920,26 +935,53 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 </p>
               </div>
 
-              {/* Technician notes */}
+              {/* Technician notes log */}
               <div className="border border-border rounded-lg bg-background p-4 space-y-3">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                   <Wrench className="w-3.5 h-3.5" />Technician notes
                 </p>
-                <Textarea
-                  rows={4}
-                  placeholder="Record findings, work done, recommendations…"
-                  defaultValue={job.technician_note ?? ""}
-                  key={job.technician_note ?? ""}
-                  onChange={e => setNoteText(e.target.value)}
-                  className="text-sm resize-none"
-                />
-                <Button
-                  size="sm"
-                  disabled={techNotesMutation.isPending}
-                  onClick={() => techNotesMutation.mutate(noteText || job.technician_note || "")}
-                >
-                  {techNotesMutation.isPending ? "Saving…" : "Save notes"}
-                </Button>
+
+                {/* Existing notes timeline */}
+                {techNotes.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {(techNotes as TechNote[]).map((n) => (
+                      <div key={n.id} className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium text-foreground">
+                            {n.created_by_name ?? "Unknown"}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground shrink-0">
+                            {new Date(n.created_at).toLocaleString("en-GB", {
+                              day: "2-digit", month: "short", year: "numeric",
+                              hour: "2-digit", minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{n.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground/50 italic">No notes yet.</p>
+                )}
+
+                {/* Add new note */}
+                <div className="space-y-2 pt-1 border-t border-border">
+                  <Textarea
+                    rows={3}
+                    placeholder="Add a new note — findings, work done, recommendations…"
+                    value={newNote}
+                    onChange={e => setNewNote(e.target.value)}
+                    className="text-sm resize-none"
+                  />
+                  <Button
+                    size="sm"
+                    disabled={addNoteMutation.isPending || !newNote.trim()}
+                    onClick={() => addNoteMutation.mutate(newNote)}
+                  >
+                    {addNoteMutation.isPending ? "Saving…" : "Save note"}
+                  </Button>
+                </div>
               </div>
 
               {/* QC review */}
