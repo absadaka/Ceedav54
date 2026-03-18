@@ -3,12 +3,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
-import { Button }        from "@/components/ui/button";
-import { Textarea }      from "@/components/ui/textarea";
-import { Label }         from "@/components/ui/label";
-import { cn }            from "@/lib/utils";
-import { toast }         from "sonner";
-import { AlertTriangle } from "lucide-react";
+import { Button }   from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input }    from "@/components/ui/input";
+import { Label }    from "@/components/ui/label";
+import { cn }       from "@/lib/utils";
+import { toast }    from "sonner";
+import { AlertTriangle, Car } from "lucide-react";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -51,16 +52,23 @@ interface Props {
   currentStatus: string;
   moduleType?: "inspection" | "service_job";
   vehicleVin?: string | null;
+  vehicleId?: string | null;
+  vehicleMileage?: string | null;
   onSuccess?: (newStatus: string, data?: unknown) => void;
 }
 
 export default function StatusTransitionModal({
-  open, onOpenChange, jobId, jobRef, currentStatus, moduleType, vehicleVin, onSuccess,
+  open, onOpenChange, jobId, jobRef, currentStatus, moduleType,
+  vehicleVin, vehicleId, vehicleMileage, onSuccess,
 }: Props) {
-  const qc       = useQueryClient();
-  const [target, setTarget] = useState<string>("");
-  const [note,   setNote]   = useState("");
+  const qc = useQueryClient();
+
+  const [target,     setTarget]     = useState<string>("");
+  const [note,       setNote]       = useState("");
   const [vinWarning, setVinWarning] = useState(false);
+
+  const [inputVin,     setInputVin]     = useState("");
+  const [inputMileage, setInputMileage] = useState("");
 
   const statuses = moduleType === "inspection" ? INSPECTION_STATUSES : JOB_STATUSES;
 
@@ -102,8 +110,34 @@ export default function StatusTransitionModal({
       onOpenChange(false);
       setTarget("");
       setNote("");
+      setVinWarning(false);
+      setInputVin("");
+      setInputMileage("");
     },
     onError: () => toast.error(target === MOVE_TO_SERVICE_KEY ? "Could not create service job" : "Could not update status"),
+  });
+
+  const saveVehicleMutation = useMutation({
+    mutationFn: async () => {
+      if (!vehicleId) throw new Error("No vehicle id");
+      const body: Record<string, string> = {};
+      if (inputVin.trim())     body.vin     = inputVin.trim();
+      if (inputMileage.trim()) body.mileage = inputMileage.trim();
+      const r = await fetch(`${API}/api/vehicles/${vehicleId}?tenant=${TENANT}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error("Vehicle save failed");
+      return r.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", jobId] });
+      qc.invalidateQueries({ queryKey: ["vehicles"] });
+      toast.success("Vehicle details saved");
+      mutation.mutate();
+    },
+    onError: () => toast.error("Could not save vehicle details"),
   });
 
   const needsVin = moduleType !== "inspection" && currentStatus === "new" && target === "waiting" && !vehicleVin;
@@ -113,8 +147,32 @@ export default function StatusTransitionModal({
     mutation.mutate();
   };
 
+  const handleSaveAndCheckIn = () => {
+    const vinOk = !!vehicleVin || !!inputVin.trim();
+    if (!vinOk) {
+      toast.error("Please enter the VIN number");
+      return;
+    }
+    if (inputVin.trim() || inputMileage.trim()) {
+      saveVehicleMutation.mutate();
+    } else {
+      mutation.mutate();
+    }
+  };
+
+  const isBusy = mutation.isPending || saveVehicleMutation.isPending;
+
+  const missingVin     = !vehicleVin;
+  const missingMileage = !vehicleMileage;
+
   return (
-    <Dialog open={open} onOpenChange={v => { onOpenChange(v); if (!v) { setTarget(""); setNote(""); setVinWarning(false); } }}>
+    <Dialog open={open} onOpenChange={v => {
+      onOpenChange(v);
+      if (!v) {
+        setTarget(""); setNote(""); setVinWarning(false);
+        setInputVin(""); setInputMileage("");
+      }
+    }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Move {jobRef}</DialogTitle>
@@ -149,17 +207,74 @@ export default function StatusTransitionModal({
           })}
         </div>
 
-        {vinWarning && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
-            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" />
-            <span>
-              Please fill in the vehicle <strong>VIN number</strong> before checking in.
-              Edit the vehicle record and add the VIN, then try again.
-            </span>
+        {/* ── Missing vehicle details form ── */}
+        {vinWarning && vehicleId && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-3">
+            <div className="flex items-start gap-2 text-xs text-amber-800">
+              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" />
+              <span>
+                <strong>Missing vehicle details.</strong> Fill in the fields below to save them to the vehicle record and continue check-in.
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {missingVin && (
+                <div className="space-y-1">
+                  <Label className="text-xs flex items-center gap-1">
+                    <Car className="w-3 h-3" /> VIN number <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    placeholder="e.g. 1HGBH41JXMN109186"
+                    value={inputVin}
+                    onChange={e => setInputVin(e.target.value.toUpperCase())}
+                    className="h-8 text-xs font-mono uppercase"
+                    maxLength={17}
+                  />
+                </div>
+              )}
+
+              {missingMileage && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Current mileage (km) <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 45000"
+                    value={inputMileage}
+                    onChange={e => setInputMileage(e.target.value)}
+                    className="h-8 text-xs"
+                    min={0}
+                  />
+                </div>
+              )}
+
+              {!missingVin && missingMileage && (
+                <p className="text-[11px] text-amber-700">VIN is already on file — you can add the mileage or skip.</p>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 h-7 text-xs"
+                disabled={isBusy}
+                onClick={() => mutation.mutate()}
+              >
+                Skip & check in anyway
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 h-7 text-xs"
+                disabled={isBusy || (missingVin && !inputVin.trim())}
+                onClick={handleSaveAndCheckIn}
+              >
+                {isBusy ? "Saving…" : "Save & check in"}
+              </Button>
+            </div>
           </div>
         )}
 
-        {target !== MOVE_TO_SERVICE_KEY && (
+        {target !== MOVE_TO_SERVICE_KEY && !vinWarning && (
           <div className="space-y-1.5">
             <Label className="text-sm">Note <span className="text-muted-foreground font-normal">(optional)</span></Label>
             <Textarea
@@ -171,17 +286,19 @@ export default function StatusTransitionModal({
           </div>
         )}
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button
-            disabled={!target || mutation.isPending}
-            onClick={handleConfirm}
-          >
-            {mutation.isPending
-              ? (target === MOVE_TO_SERVICE_KEY ? "Creating…" : "Saving…")
-              : (target === MOVE_TO_SERVICE_KEY ? "Convert" : "Confirm")}
-          </Button>
-        </DialogFooter>
+        {!vinWarning && (
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button
+              disabled={!target || isBusy}
+              onClick={handleConfirm}
+            >
+              {isBusy
+                ? (target === MOVE_TO_SERVICE_KEY ? "Creating…" : "Saving…")
+                : (target === MOVE_TO_SERVICE_KEY ? "Convert" : "Confirm")}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
