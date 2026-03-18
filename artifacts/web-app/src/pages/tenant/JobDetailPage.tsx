@@ -129,13 +129,15 @@ interface DetailData {
 }
 
 /* ─── StatCard ───────────────────────────────────────────────────────────── */
-function StatCard({ icon: Icon, label, value, accent }: { icon: React.ElementType; label: string; value: string; accent?: boolean }) {
+function StatCard({ icon: Icon, label, value, accent, color }: { icon: React.ElementType; label: string; value: string; accent?: boolean; color?: string }) {
   return (
     <div className={cn("border rounded-lg bg-background p-4 flex gap-3 items-start",
       accent ? "border-orange-200 bg-orange-50/40" : "border-border")}>
       <div className={cn("w-8 h-8 rounded-md flex items-center justify-center shrink-0",
-        accent ? "bg-orange-100" : "bg-primary/10")}>
-        <Icon className={cn("w-4 h-4", accent ? "text-orange-600" : "text-primary")} />
+        accent ? "bg-orange-100" : "bg-primary/10")}
+        style={color && !accent ? { backgroundColor: color + "1a" } : undefined}>
+        <Icon className={cn("w-4 h-4", accent ? "text-orange-600" : "text-primary")}
+          style={color && !accent ? { color } : undefined} />
       </div>
       <div>
         <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</div>
@@ -891,10 +893,10 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={Timer} label="Labor time" value={fmtMinutes(totalMinutes)} accent={!!runningLog} />
-        <StatCard icon={Package} label={isInspection ? "Diagnosis" : "Inspection"} value={`${parts.length} items`} />
-        <StatCard icon={Camera} label="Photos" value={`${photos.length}`} />
-        <StatCard icon={History} label="Status changes" value={`${statusHistory.length}`} />
+        <StatCard icon={Timer} label="Labor time" value={fmtMinutes(totalMinutes)} accent={!!runningLog} color={isInspection ? "#ff5349" : undefined} />
+        <StatCard icon={Package} label={isInspection ? "Diagnosis" : "Inspection"} value={`${parts.length} items`} color={isInspection ? "#ff5349" : undefined} />
+        <StatCard icon={Camera} label="Photos" value={`${photos.length}`} color={isInspection ? "#ff5349" : undefined} />
+        <StatCard icon={History} label="Status changes" value={`${statusHistory.length}`} color={isInspection ? "#ff5349" : undefined} />
       </div>
 
       {/* Cancellation banner */}
