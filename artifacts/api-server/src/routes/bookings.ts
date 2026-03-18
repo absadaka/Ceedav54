@@ -305,14 +305,19 @@ router.post("/:id/status", async (req, res) => {
     const tenant = await resolveTenant(slug);
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
-    const { status } = req.body;
+    const { status, cancellation_note } = req.body;
     if (!status || !VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: "Invalid status", valid: VALID_STATUSES });
     }
 
+    const updateFields: Record<string, any> = { status, updated_at: new Date() };
+    if (status === "cancelled" && cancellation_note !== undefined) {
+      updateFields.cancellation_note = cancellation_note || null;
+    }
+
     const [booking] = await db
       .update(bookingsTable)
-      .set({ status, updated_at: new Date() })
+      .set(updateFields)
       .where(and(eq(bookingsTable.id, req.params.id), eq(bookingsTable.tenant_id, tenant.id)))
       .returning();
 
