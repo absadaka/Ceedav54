@@ -23,6 +23,7 @@ function getCurrentUserId(): string | undefined {
 const MOVE_TO_SERVICE_KEY = "move_to_service_job";
 
 export const INSPECTION_STATUSES = [
+  { key: "new",                 label: "New",                color: "bg-slate-100  text-slate-700  border-slate-300"  },
   { key: "in_progress",         label: "Checked In",         color: "bg-orange-100 text-orange-800 border-orange-300" },
   { key: "completed",           label: "Completed",          color: "bg-green-100  text-green-800  border-green-300"  },
   { key: "delivered",           label: "Delivered",          color: "bg-teal-100   text-teal-800   border-teal-300"   },
@@ -30,7 +31,8 @@ export const INSPECTION_STATUSES = [
 ] as const;
 
 export const JOB_STATUSES = [
-  { key: "waiting",       label: "Checked In",     color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  { key: "new",          label: "New",            color: "bg-slate-100  text-slate-700  border-slate-300"  },
+  { key: "waiting",      label: "Checked In",     color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
   { key: "in_progress",  label: "In progress",    color: "bg-orange-100 text-orange-800 border-orange-300" },
   { key: "waiting_parts",label: "Waiting parts",  color: "bg-purple-100 text-purple-800 border-purple-300" },
   { key: "qc",           label: "QC Check",       color: "bg-blue-100   text-blue-800   border-blue-300"   },
