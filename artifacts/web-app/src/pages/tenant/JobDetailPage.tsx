@@ -147,6 +147,121 @@ function StatCard({ icon: Icon, label, value, accent, color }: { icon: React.Ele
   );
 }
 
+/* ─── ServiceFlowTracker ─────────────────────────────────────────────────── */
+function ServiceFlowTracker({
+  currentStatus,
+  statusHistory,
+  isInspection,
+}: {
+  currentStatus: string;
+  statusHistory: StatusHistoryEntry[];
+  isInspection: boolean;
+}) {
+  const stages = (isInspection ? INSPECTION_STATUSES : JOB_STATUSES).filter(
+    (s) => s.key !== "move_to_service_job"
+  );
+  const reachedAt: Record<string, string> = {};
+  for (const entry of statusHistory) {
+    if (entry.to_status && !reachedAt[entry.to_status]) {
+      reachedAt[entry.to_status] = entry.created_at;
+    }
+  }
+  const currentIdx = stages.findIndex((s) => s.key === currentStatus);
+  const isCancelled = currentStatus === "cancelled";
+
+  return (
+    <div className="rounded-xl border border-border bg-gradient-to-br from-background via-background to-muted/20 px-5 pt-4 pb-5 shadow-sm overflow-hidden relative">
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(circle_at_60%_50%,_hsl(var(--primary))_0%,_transparent_70%)]" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-4 rounded-full bg-primary/60" />
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Service Flow Tracker
+          </span>
+        </div>
+        {isCancelled && (
+          <span className="text-[10px] font-bold uppercase tracking-wide text-red-600 bg-red-50 border border-red-200 rounded-full px-2.5 py-0.5">
+            Cancelled
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-start">
+        {stages.map((stage, idx) => {
+          const isPast    = !isCancelled && currentIdx > idx;
+          const isCurrent = !isCancelled && idx === currentIdx;
+          const timestamp = reachedAt[stage.key];
+
+          return (
+            <div key={stage.key} className="flex items-start flex-1 min-w-0">
+              <div className="flex flex-col items-center flex-1 min-w-0">
+                <div className="flex items-center w-full">
+                  {idx > 0 && (
+                    <div
+                      className={cn(
+                        "flex-1 h-[2px] rounded-full transition-colors",
+                        isPast ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-border"
+                      )}
+                    />
+                  )}
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center border-2 shrink-0 transition-all duration-300",
+                      isPast
+                        ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                        : isCurrent
+                        ? "bg-background border-primary text-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.12)]"
+                        : "bg-background border-border text-muted-foreground"
+                    )}
+                  >
+                    {isPast ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : (
+                      <span className={cn("text-[10px] font-bold", isCurrent ? "text-primary" : "text-muted-foreground/60")}>
+                        {idx + 1}
+                      </span>
+                    )}
+                  </div>
+                  {idx < stages.length - 1 && (
+                    <div
+                      className={cn(
+                        "flex-1 h-[2px] rounded-full transition-colors",
+                        isPast ? "bg-primary" : "bg-border"
+                      )}
+                    />
+                  )}
+                </div>
+
+                <div className="flex flex-col items-center mt-2 px-1 min-w-0 w-full">
+                  <span
+                    className={cn(
+                      "text-[10px] font-semibold text-center leading-tight truncate w-full",
+                      isCurrent
+                        ? "text-primary"
+                        : isPast
+                        ? "text-foreground/70"
+                        : "text-muted-foreground/50"
+                    )}
+                  >
+                    {stage.label}
+                  </span>
+                  {timestamp ? (
+                    <span className="text-[9px] text-muted-foreground/50 text-center mt-0.5 leading-none">
+                      {new Date(timestamp).toLocaleDateString("en-AE", { day: "numeric", month: "short" })}
+                    </span>
+                  ) : (
+                    <span className="text-[9px] text-transparent mt-0.5 leading-none select-none">–</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ─── TYPE_META — catalog item type colours ──────────────────────────────── */
 const TYPE_META: Record<string, { label: string; cls: string }> = {
   labour:     { label: "Labour",     cls: "bg-blue-100 text-blue-700 border-blue-200" },
@@ -837,6 +952,13 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Service Flow Tracker */}
+      <ServiceFlowTracker
+        currentStatus={job.status}
+        statusHistory={statusHistory}
+        isInspection={isInspection}
+      />
 
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
