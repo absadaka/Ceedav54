@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -55,11 +55,12 @@ interface Props {
   vehicleId?: string | null;
   vehicleMileage?: string | null;
   onSuccess?: (newStatus: string, data?: unknown) => void;
+  initialTarget?: string;
 }
 
 export default function StatusTransitionModal({
   open, onOpenChange, jobId, jobRef, currentStatus, moduleType,
-  vehicleVin, vehicleId, vehicleMileage, onSuccess,
+  vehicleVin, vehicleId, vehicleMileage, onSuccess, initialTarget,
 }: Props) {
   const qc = useQueryClient();
 
@@ -69,6 +70,10 @@ export default function StatusTransitionModal({
 
   const [inputVin,     setInputVin]     = useState("");
   const [inputMileage, setInputMileage] = useState("");
+
+  useEffect(() => {
+    if (open && initialTarget) setTarget(initialTarget);
+  }, [open, initialTarget]);
 
   const statuses = moduleType === "inspection" ? INSPECTION_STATUSES : JOB_STATUSES;
 

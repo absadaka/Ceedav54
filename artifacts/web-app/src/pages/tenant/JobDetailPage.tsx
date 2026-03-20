@@ -152,10 +152,12 @@ function ServiceFlowTracker({
   currentStatus,
   statusHistory,
   isInspection,
+  onStepClick,
 }: {
   currentStatus: string;
   statusHistory: StatusHistoryEntry[];
   isInspection: boolean;
+  onStepClick?: (statusKey: string) => void;
 }) {
   const stages = (isInspection ? INSPECTION_STATUSES : JOB_STATUSES).filter(
     (s) => s.key !== "move_to_service_job"
@@ -166,8 +168,21 @@ function ServiceFlowTracker({
       reachedAt[entry.to_status] = entry.created_at;
     }
   }
-  const currentIdx = stages.findIndex((s) => s.key === currentStatus);
+  const currentIdx  = stages.findIndex((s) => s.key === currentStatus);
   const isCancelled = currentStatus === "cancelled";
+
+  const [celebrating, setCelebrating] = useState(false);
+  const prevIdxRef = useRef(currentIdx);
+
+  useEffect(() => {
+    if (currentIdx > prevIdxRef.current) {
+      setCelebrating(true);
+      const t = setTimeout(() => setCelebrating(false), 700);
+      prevIdxRef.current = currentIdx;
+      return () => clearTimeout(t);
+    }
+    prevIdxRef.current = currentIdx;
+  }, [currentIdx]);
 
   return (
     <div className="rounded-xl border border-border bg-gradient-to-br from-background via-background to-muted/20 px-5 pt-4 pb-5 shadow-sm overflow-hidden relative">
@@ -188,9 +203,11 @@ function ServiceFlowTracker({
 
       <div className="flex items-start">
         {stages.map((stage, idx) => {
-          const isPast    = !isCancelled && currentIdx > idx;
-          const isCurrent = !isCancelled && idx === currentIdx;
-          const timestamp = reachedAt[stage.key];
+          const isPast      = !isCancelled && currentIdx > idx;
+          const isCurrent   = !isCancelled && idx === currentIdx;
+          const isFuture    = isCancelled || idx > currentIdx;
+          const isClickable = !isCancelled && onStepClick && idx !== currentIdx;
+          const timestamp   = reachedAt[stage.key];
 
           return (
             <div key={stage.key} className="flex items-start flex-1 min-w-0">
@@ -199,19 +216,25 @@ function ServiceFlowTracker({
                   {idx > 0 && (
                     <div
                       className={cn(
-                        "flex-1 h-[2px] rounded-full transition-colors",
+                        "flex-1 h-[2px] rounded-full transition-colors duration-500",
                         isPast ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-border"
                       )}
                     />
                   )}
-                  <div
+                  <button
+                    disabled={!isClickable}
+                    onClick={() => isClickable && onStepClick?.(stage.key)}
                     className={cn(
                       "w-8 h-8 rounded-full flex items-center justify-center border-2 shrink-0 transition-all duration-300",
                       isPast
                         ? "bg-primary border-primary text-primary-foreground shadow-sm"
                         : isCurrent
                         ? "bg-background border-primary text-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.12)]"
-                        : "bg-background border-border text-muted-foreground"
+                        : "bg-background border-border text-muted-foreground",
+                      isPast && celebrating ? "step-celebrate" : "",
+                      isClickable && !isPast && "hover:border-primary/60 hover:text-primary/80 hover:scale-110 cursor-pointer",
+                      isClickable && isPast && "hover:scale-110 cursor-pointer",
+                      !isClickable && "cursor-default"
                     )}
                   >
                     {isPast ? (
@@ -221,11 +244,11 @@ function ServiceFlowTracker({
                         {idx + 1}
                       </span>
                     )}
-                  </div>
+                  </button>
                   {idx < stages.length - 1 && (
                     <div
                       className={cn(
-                        "flex-1 h-[2px] rounded-full transition-colors",
+                        "flex-1 h-[2px] rounded-full transition-colors duration-500",
                         isPast ? "bg-primary" : "bg-border"
                       )}
                     />
@@ -233,18 +256,22 @@ function ServiceFlowTracker({
                 </div>
 
                 <div className="flex flex-col items-center mt-2 px-1 min-w-0 w-full">
-                  <span
+                  <button
+                    disabled={!isClickable}
+                    onClick={() => isClickable && onStepClick?.(stage.key)}
                     className={cn(
-                      "text-[10px] font-semibold text-center leading-tight truncate w-full",
+                      "text-[10px] font-semibold text-center leading-tight truncate w-full transition-colors",
                       isCurrent
                         ? "text-primary"
                         : isPast
                         ? "text-foreground/70"
-                        : "text-muted-foreground/50"
+                        : "text-muted-foreground/50",
+                      isClickable && !isCurrent && "hover:text-primary/70",
+                      isClickable ? "cursor-pointer" : "cursor-default"
                     )}
                   >
                     {stage.label}
-                  </span>
+                  </button>
                   {timestamp ? (
                     <span className="text-[9px] text-muted-foreground/50 text-center mt-0.5 leading-none">
                       {new Date(timestamp).toLocaleDateString("en-AE", { day: "numeric", month: "short" })}
@@ -652,6 +679,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
   const [editOpen,       setEditOpen]       = useState(false);
   const [statusOpen,     setStatusOpen]     = useState(false);
+  const [statusTarget,   setStatusTarget]   = useState<string | undefined>(undefined);
   const [cancelOpen,     setCancelOpen]     = useState(false);
   const [cancelNote,     setCancelNote]     = useState("");
   const [assignOpen,     setAssignOpen]     = useState(false);
@@ -958,6 +986,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         currentStatus={job.status}
         statusHistory={statusHistory}
         isInspection={isInspection}
+        onStepClick={(key) => { setStatusTarget(key); setStatusOpen(true); }}
       />
 
       {/* Stats strip */}
@@ -1591,7 +1620,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
       <StatusTransitionModal
         open={statusOpen}
-        onOpenChange={setStatusOpen}
+        onOpenChange={(v) => { setStatusOpen(v); if (!v) setStatusTarget(undefined); }}
         jobId={job.id}
         jobRef={job.ref}
         currentStatus={job.status}
@@ -1599,6 +1628,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         vehicleVin={job.vin}
         vehicleId={job.vehicle_id}
         vehicleMileage={job.mileage_in}
+        initialTarget={statusTarget}
         onSuccess={(newStatus, data) => {
           if (newStatus === "move_to_service_job") {
             const d = data as { job?: { id?: string; ref?: string } };
