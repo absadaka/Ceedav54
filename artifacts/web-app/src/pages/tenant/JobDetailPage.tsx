@@ -979,6 +979,14 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to remove payment"),
   });
 
+  const approveQuotationMutation = useMutation({
+    mutationFn: () =>
+      fetch(`${API}/api/quotations/${quotation?.id}/approve?tenant=${TENANT}`, { method: "POST" })
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Quotation approved"); },
+    onError: () => toast.error("Failed to approve quotation"),
+  });
+
   const shareQuotationMutation = useMutation({
     mutationFn: (channels: { whatsapp: boolean; sms: boolean; email: boolean }) =>
       fetch(`${API}/api/quotations/${quotation?.id}/send?tenant=${TENANT}`, {
@@ -1988,7 +1996,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 const steps = [
                   { key: "created",  label: hasQuotation ? "Created"  : "Create",   done: hasQuotation, clickable: !hasQuotation },
                   { key: "shared",   label: isShared ? "Shared" : "Share",          done: isShared,     clickable: hasQuotation && !isShared },
-                  { key: "approved", label: isApproved ? "Approved" : isRejected ? "Rejected" : "Approve", done: isApproved || isRejected, clickable: false },
+                  { key: "approved", label: isApproved ? "Approved" : isRejected ? "Rejected" : "Approve", done: isApproved || isRejected, clickable: isShared && !isApproved && !isRejected },
                 ];
 
                 return (
@@ -1996,7 +2004,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <div className="inline-flex items-center gap-3 rounded-full border border-border bg-muted/30 px-5 py-2">
                       {steps.map((step, i) => {
                         const showRejected = isRejected && step.key === "approved";
-                        const isActive = step.clickable && !createQuotationMutation.isPending;
+                        const isActive = step.clickable && !createQuotationMutation.isPending && !approveQuotationMutation.isPending;
                         return (
                           <div key={step.key} className="flex items-center">
                             <button
@@ -2005,6 +2013,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                               onClick={() => {
                                 if (step.key === "created" && !hasQuotation) createQuotationMutation.mutate();
                                 if (step.key === "shared" && hasQuotation && !isShared) setShowShareModal(true);
+                                if (step.key === "approved" && isShared && !isApproved && !isRejected) approveQuotationMutation.mutate();
                               }}
                               className={cn(
                                 "flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
@@ -2013,7 +2022,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                                   : "cursor-default"
                               )}
                             >
-                              {createQuotationMutation.isPending && step.key === "created" ? (
+                              {(createQuotationMutation.isPending && step.key === "created") || (approveQuotationMutation.isPending && step.key === "approved") ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
                               ) : (
                                 <div className={cn(
@@ -2032,7 +2041,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                                 showRejected ? "text-red-600" :
                                 step.done ? "text-foreground" : "text-muted-foreground/50"
                               )}>
-                                {createQuotationMutation.isPending && step.key === "created" ? "Creating…" : step.label}
+                                {createQuotationMutation.isPending && step.key === "created" ? "Creating…" :
+                                 approveQuotationMutation.isPending && step.key === "approved" ? "Approving…" : step.label}
                               </span>
                             </button>
                             {i < steps.length - 1 && (
