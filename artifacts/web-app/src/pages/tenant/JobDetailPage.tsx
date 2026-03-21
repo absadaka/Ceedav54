@@ -2029,7 +2029,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                               className={cn(
                                 "flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
                                 isActive && step.done
-                                  ? "cursor-pointer hover:bg-muted/60 ring-1 ring-blue-400 ring-offset-1"
+                                  ? "cursor-pointer hover:opacity-70"
                                   : isActive
                                   ? "cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                                   : "cursor-default"
@@ -2040,9 +2040,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                               ) : (
                                 <div className={cn(
                                   "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
-                                  isActive ? "bg-white/20 text-white" :
                                   showRejected ? "bg-red-500 text-white" :
                                   step.done ? "bg-green-500 text-white" :
+                                  isActive ? "bg-white/20 text-white" :
                                   "bg-muted-foreground/20 text-muted-foreground/50"
                                 )}>
                                   {showRejected ? "✕" : step.done ? "✓" : isActive ? "+" : ""}
@@ -2050,9 +2050,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                               )}
                               <span className={cn(
                                 "text-[11px] font-medium whitespace-nowrap",
-                                isActive ? "text-white font-semibold" :
                                 showRejected ? "text-red-600" :
-                                step.done ? "text-foreground" : "text-muted-foreground/50"
+                                step.done ? "text-foreground" :
+                                isActive ? "text-white font-semibold" : "text-muted-foreground/50"
                               )}>
                                 {createQuotationMutation.isPending && step.key === "created" ? "Creating…" :
                                  approveQuotationMutation.isPending && step.key === "approved" ? "Approving…" : step.label}
