@@ -1013,15 +1013,13 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     placeholder="Enter VIN…"
                     onChange={e => setInlineValue(e.target.value)}
                     onKeyDown={e => {
-                      if (e.key === "Enter" && job.vehicle_id) {
-                        e.preventDefault();
-                        patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: inlineValue } });
-                      }
-                      if (e.key === "Escape") setInlineField(null);
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      if (e.key === "Escape") { setInlineValue(job.vin ?? ""); (e.target as HTMLInputElement).blur(); }
                     }}
                     onBlur={() => {
-                      if (job.vehicle_id && inlineValue !== (job.vin ?? "")) {
-                        patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: inlineValue } });
+                      const trimmed = inlineValue.trim();
+                      if (job.vehicle_id && trimmed !== (job.vin ?? "")) {
+                        patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: trimmed } });
                       } else {
                         setInlineField(null);
                       }
@@ -1056,12 +1054,13 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     placeholder="e.g. 45000"
                     onChange={e => setInlineValue(e.target.value)}
                     onKeyDown={e => {
-                      if (e.key === "Enter") { e.preventDefault(); patchJobMutation.mutate({ mileage_in: inlineValue }); }
-                      if (e.key === "Escape") setInlineField(null);
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      if (e.key === "Escape") { setInlineValue(job.mileage_in ?? ""); (e.target as HTMLInputElement).blur(); }
                     }}
                     onBlur={() => {
-                      if (inlineValue !== (job.mileage_in ?? "")) {
-                        patchJobMutation.mutate({ mileage_in: inlineValue });
+                      const val = inlineValue.trim();
+                      if (val !== (job.mileage_in ?? "")) {
+                        patchJobMutation.mutate({ mileage_in: val });
                       } else {
                         setInlineField(null);
                       }
@@ -1096,12 +1095,13 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     placeholder="e.g. A1"
                     onChange={e => setInlineValue(e.target.value)}
                     onKeyDown={e => {
-                      if (e.key === "Enter") { e.preventDefault(); patchJobMutation.mutate({ bay: inlineValue }); }
-                      if (e.key === "Escape") setInlineField(null);
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      if (e.key === "Escape") { setInlineValue(job.bay ?? ""); (e.target as HTMLInputElement).blur(); }
                     }}
                     onBlur={() => {
-                      if (inlineValue !== (job.bay ?? "")) {
-                        patchJobMutation.mutate({ bay: inlineValue });
+                      const val = inlineValue.trim();
+                      if (val !== (job.bay ?? "")) {
+                        patchJobMutation.mutate({ bay: val });
                       } else {
                         setInlineField(null);
                       }
