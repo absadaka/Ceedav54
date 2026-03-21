@@ -391,19 +391,22 @@ function CatalogDropdown({
 }
 
 /* ─── AddQuoteLineInline ──────────────────────────────────────────────────── */
-function AddQuoteLineInline({ quotationId, onAdded, onCancel }: { quotationId: string; onAdded: () => void; onCancel: () => void }) {
+function AddQuoteLineInline({ quotationId, lineType, onAdded, onCancel }: { quotationId: string; lineType: "service" | "part"; onAdded: () => void; onCancel: () => void }) {
   const [search, setSearch] = useState("");
   const [description, setDescription] = useState("");
   const [qty, setQty] = useState("1");
   const [unitPrice, setUnitPrice] = useState("0.00");
   const [showDrop, setShowDrop] = useState(false);
 
+  const catalogTypes = lineType === "service" ? ["labour", "sublet", "package"] : ["part", "consumable"];
+  const dbType = lineType === "service" ? "labour" : "part";
+
   const { data: catData } = useQuery({
     queryKey: ["catalog", TENANT],
     queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
     staleTime: 60_000,
   });
-  const allCatalog: any[] = (catData?.items ?? []).filter((i: any) => i.is_active !== false);
+  const allCatalog: any[] = (catData?.items ?? []).filter((i: any) => i.is_active !== false && catalogTypes.includes(i.type));
   const filtered = allCatalog.filter(i =>
     !search || i.name.toLowerCase().includes(search.toLowerCase()) || (i.sku ?? "").toLowerCase().includes(search.toLowerCase())
   ).slice(0, 8);
@@ -421,7 +424,7 @@ function AddQuoteLineInline({ quotationId, onAdded, onCancel }: { quotationId: s
     mutationFn: () => fetch(`${API}/api/quotations/${quotationId}/lines?tenant=${TENANT}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description: description || search, type: "labour", qty, unit_price: unitPrice, discount: "0.00" }),
+      body: JSON.stringify({ description: description || search, type: dbType, qty, unit_price: unitPrice, discount: "0.00" }),
     }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
     onSuccess: () => {
       toast.success("Line item added");
@@ -436,7 +439,7 @@ function AddQuoteLineInline({ quotationId, onAdded, onCancel }: { quotationId: s
         <div className="relative">
           <Input
             className="h-7 text-xs"
-            placeholder="Search catalog or type description…"
+            placeholder={lineType === "service" ? "Search services or type description…" : "Search parts or type description…"}
             value={search}
             onChange={e => { setSearch(e.target.value); setDescription(e.target.value); setShowDrop(true); }}
             onFocus={() => setShowDrop(true)}
@@ -780,7 +783,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showAddManualPart, setShowAddManualPart] = useState(false);
   const [showAddPhoto,   setShowAddPhoto]   = useState(false);
   const [dirtyParts,     setDirtyParts]     = useState(false);
-  const [showAddQtLine,  setShowAddQtLine]  = useState(false);
+  const [addQtLineType,  setAddQtLineType]  = useState<"service" | "part" | null>(null);
   const [showAddQtDiscount, setShowAddQtDiscount] = useState(false);
   const [showAddAdvance, setShowAddAdvance] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -2207,20 +2210,25 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Line items ({quoteLineItems.length})</p>
                       <div className="flex gap-2">
-                        {!showAddQtLine && (
-                          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setShowAddQtLine(true); setShowAddQtDiscount(false); }}>
-                            <Plus className="w-3 h-3" />Add item
-                          </Button>
+                        {!addQtLineType && (
+                          <>
+                            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setAddQtLineType("service"); setShowAddQtDiscount(false); }}>
+                              <Plus className="w-3 h-3" />Add Service
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setAddQtLineType("part"); setShowAddQtDiscount(false); }}>
+                              <Plus className="w-3 h-3" />Add Part
+                            </Button>
+                          </>
                         )}
                         {!showAddQtDiscount && (
                           <Button size="sm" variant="outline" className="h-7 gap-1 text-xs text-orange-600 border-orange-200 hover:bg-orange-50"
-                            onClick={() => { setShowAddQtDiscount(true); setShowAddQtLine(false); }}>
+                            onClick={() => { setShowAddQtDiscount(true); setAddQtLineType(null); }}>
                             <Plus className="w-3 h-3" />Discount
                           </Button>
                         )}
                       </div>
                     </div>
-                    <div className={showAddQtLine ? "overflow-visible" : "overflow-x-auto"}>
+                    <div className={addQtLineType ? "overflow-visible" : "overflow-x-auto"}>
                       <table className="w-full text-sm min-w-[400px]">
                         <thead>
                           <tr className="border-b border-border text-left">
@@ -2244,18 +2252,19 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                               </td>
                             </tr>
                           ))}
-                          {quoteLineItems.length === 0 && !showAddQtLine && (
+                          {quoteLineItems.length === 0 && !addQtLineType && (
                             <tr>
                               <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground/50">
-                                No line items yet. Click "Add item" or sync from diagnosis.
+                                No line items yet. Click "Add Service" or "Add Part" above.
                               </td>
                             </tr>
                           )}
-                          {showAddQtLine && (
+                          {addQtLineType && (
                             <AddQuoteLineInline
                               quotationId={quotation.id}
-                              onAdded={() => { qc.invalidateQueries({ queryKey: ["job", id] }); setShowAddQtLine(false); }}
-                              onCancel={() => setShowAddQtLine(false)}
+                              lineType={addQtLineType}
+                              onAdded={() => { qc.invalidateQueries({ queryKey: ["job", id] }); setAddQtLineType(null); }}
+                              onCancel={() => setAddQtLineType(null)}
                             />
                           )}
                         </tbody>
