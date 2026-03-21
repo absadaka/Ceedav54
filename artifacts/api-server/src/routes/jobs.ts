@@ -6,6 +6,7 @@ import {
   quotationsTable, quoteLineItemsTable, bookingsTable,
   jobsTable, jobStatusHistoryTable, jobAssignmentsTable,
   jobTimeLogsTable, jobPartsTable, jobPhotosTable, jobNotesTable,
+  catalogItemsTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -679,6 +680,37 @@ router.post("/:id/status", async (req, res) => {
     if (status === "qc") {
       updates.qc_at = now;
       if (changed_by) updates.qc_by = changed_by;
+
+      const zeroPriceParts = await db.select()
+        .from(jobPartsTable)
+        .where(and(
+          eq(jobPartsTable.job_id, req.params.id!),
+          eq(jobPartsTable.tenant_id, tenant.id),
+          eq(jobPartsTable.unit_price, "0.00"),
+        ));
+
+      if (zeroPriceParts.length > 0) {
+        const catalogItems = await db.select()
+          .from(catalogItemsTable)
+          .where(eq(catalogItemsTable.tenant_id, tenant.id));
+
+        for (const part of zeroPriceParts) {
+          const match = catalogItems.find(c =>
+            c.name.toLowerCase() === part.description.toLowerCase() ||
+            (c.sku && part.part_number && c.sku.toLowerCase() === part.part_number.toLowerCase())
+          );
+          if (match && parseFloat(match.unit_price) > 0) {
+            const price = parseFloat(match.unit_price);
+            const qty = parseFloat(part.qty);
+            await db.update(jobPartsTable)
+              .set({
+                unit_price: price.toFixed(2),
+                line_total: (qty * price).toFixed(2),
+              })
+              .where(eq(jobPartsTable.id, part.id));
+          }
+        }
+      }
     }
     if (status === "cancelled") {
       updates.cancellation_note = cancellation_note ?? null;
