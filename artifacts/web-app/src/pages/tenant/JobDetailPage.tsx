@@ -380,7 +380,7 @@ function CatalogDropdown({
 /* ─── AddDiagnosisForm ────────────────────────────────────────────────────── */
 function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
   const [search,   setSearch]   = useState("");
-  const [selected, setSelected] = useState<{ name: string; sku?: string } | null>(null);
+  const [selected, setSelected] = useState<{ name: string; sku?: string; unit_price?: string } | null>(null);
   const [qty,      setQty]      = useState("1");
   const [open,     setOpen]     = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -399,7 +399,7 @@ function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => vo
   );
 
   const pickItem = useCallback((item: any) => {
-    setSelected({ name: item.name, sku: item.sku ?? "" });
+    setSelected({ name: item.name, sku: item.sku ?? "", unit_price: item.unit_price ?? "0" });
     setSearch(item.name);
     setOpen(false);
   }, []);
@@ -414,7 +414,7 @@ function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => vo
         description: selected?.name ?? search,
         part_number: selected?.sku ?? "",
         qty,
-        unit_price: "0",
+        unit_price: selected?.unit_price ?? "0",
       }),
     }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
     onSuccess: () => {
@@ -877,6 +877,17 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to remove part"),
   });
 
+  const updatePartPriceMutation = useMutation({
+    mutationFn: ({ partId, unit_price }: { partId: string; unit_price: string }) =>
+      fetch(`${API}/api/jobs/${id}/parts/${partId}?tenant=${TENANT}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unit_price }),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Price updated"); },
+    onError: () => toast.error("Failed to update price"),
+  });
+
   const removePhotoMutation = useMutation({
     mutationFn: (photoId: string) =>
       fetch(`${API}/api/jobs/${id}/photos/${photoId}?tenant=${TENANT}`, { method: "DELETE" })
@@ -968,6 +979,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           techNotes = [] } = data as any;
   const isInspection = moduleType === "inspection";
   const isInspectionStage = isInspection || job.status === "on_hold";
+  const isEstimationStage = job.status === "qc";
   const statusSet    = isInspection ? INSPECTION_STATUSES : JOB_STATUSES;
   const currentLane  = statusSet.find(s => s.key === job.status) ?? JOB_STATUSES.find(s => s.key === job.status);
   const partsTotal  = parts.reduce((sum, p) => sum + parseFloat(p.line_total), 0);
@@ -1613,18 +1625,45 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Description</th>
                         {!isInspectionStage && <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Part #</th>}
                         <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Qty</th>
-                        {!isInspectionStage && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Unit</th>}
+                        {!isInspectionStage && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Unit Price</th>}
                         {!isInspectionStage && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Total</th>}
                         <th className="px-2 py-2" />
                       </tr>
                     </thead>
                     <tbody>
-                      {parts.map(p => (
-                        <tr key={p.id} className="border-b border-border last:border-0">
+                      {parts.map(p => {
+                        const needsPrice = !isInspectionStage && parseFloat(p.unit_price) === 0;
+                        return (
+                        <tr key={p.id} className={cn("border-b border-border last:border-0", needsPrice && isEstimationStage ? "bg-amber-50 dark:bg-amber-950/20" : "")}>
                           <td className="px-4 py-2.5 text-sm">{p.description}</td>
                           {!isInspectionStage && <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number ?? "—"}</td>}
                           <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.qty).toFixed(2)}</td>
-                          {!isInspectionStage && <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.unit_price).toFixed(2)}</td>}
+                          {!isInspectionStage && (
+                            <td className="px-4 py-2.5 text-right text-sm">
+                              {isEstimationStage ? (
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  defaultValue={parseFloat(p.unit_price).toFixed(2)}
+                                  className={cn(
+                                    "w-24 text-right text-sm bg-transparent border rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500",
+                                    needsPrice ? "border-amber-400 bg-amber-50 dark:bg-amber-950/30" : "border-border"
+                                  )}
+                                  onBlur={e => {
+                                    const val = e.target.value.trim();
+                                    if (val === "" || isNaN(Number(val))) { e.target.value = parseFloat(p.unit_price).toFixed(2); return; }
+                                    if (parseFloat(val).toFixed(2) !== parseFloat(p.unit_price).toFixed(2)) {
+                                      updatePartPriceMutation.mutate({ partId: p.id, unit_price: val });
+                                    }
+                                  }}
+                                  onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                                />
+                              ) : (
+                                <span>{parseFloat(p.unit_price).toFixed(2)}</span>
+                              )}
+                            </td>
+                          )}
                           {!isInspectionStage && <td className="px-4 py-2.5 text-right text-sm font-medium">{parseFloat(p.line_total).toFixed(2)}</td>}
                           <td className="px-2 py-2">
                             <button onClick={() => removePartMutation.mutate(p.id)}
@@ -1633,7 +1672,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                             </button>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                       {!isInspectionStage && parts.length > 0 && (
                         <tr className="bg-muted/30">
                           <td colSpan={4} className="px-4 py-2 text-xs font-semibold text-right">Total</td>

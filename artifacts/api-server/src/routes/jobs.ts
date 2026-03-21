@@ -879,6 +879,50 @@ router.post("/:id/parts", async (req, res) => {
 
 /* ─── DELETE /jobs/:id/parts/:partId ────────────────────────────────────── */
 
+router.patch("/:id/parts/:partId", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const { unit_price, qty, description } = req.body as Record<string, string | undefined>;
+    const patch: Record<string, unknown> = {};
+    if (unit_price !== undefined) patch.unit_price = parseFloat(unit_price).toFixed(2);
+    if (qty !== undefined)        patch.qty        = parseFloat(qty).toFixed(2);
+    if (description !== undefined) patch.description = description;
+
+    if (patch.unit_price !== undefined || patch.qty !== undefined) {
+      const qVal = patch.qty !== undefined ? parseFloat(patch.qty as string) : undefined;
+      const pVal = patch.unit_price !== undefined ? parseFloat(patch.unit_price as string) : undefined;
+
+      const [existing] = await db.select().from(jobPartsTable).where(and(
+        eq(jobPartsTable.id, req.params.partId!),
+        eq(jobPartsTable.job_id, req.params.id!),
+        eq(jobPartsTable.tenant_id, tenant.id),
+      )).limit(1);
+      if (!existing) return res.status(404).json({ error: "Part not found" });
+
+      const finalQty   = qVal ?? parseFloat(existing.qty);
+      const finalPrice = pVal ?? parseFloat(existing.unit_price);
+      patch.line_total = (finalQty * finalPrice).toFixed(2);
+    }
+
+    const [updated] = await db.update(jobPartsTable)
+      .set(patch)
+      .where(and(
+        eq(jobPartsTable.id, req.params.partId!),
+        eq(jobPartsTable.job_id, req.params.id!),
+        eq(jobPartsTable.tenant_id, tenant.id),
+      ))
+      .returning();
+
+    return res.json({ part: updated });
+  } catch (err) {
+    console.error("PATCH /jobs/:id/parts/:partId", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.delete("/:id/parts/:partId", async (req, res) => {
   try {
     const slug   = (req.query.tenant as string) ?? "demo-workshop";
