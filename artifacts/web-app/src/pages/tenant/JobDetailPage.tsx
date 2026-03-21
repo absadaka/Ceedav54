@@ -985,14 +985,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             )}
           </div>
           <div className="flex items-center gap-2 ml-auto">
-            {job.status !== "cancelled" && (
-              <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setStatusOpen(true)}>
-                Move status
-              </Button>
-            )}
-            <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setEditOpen(true)}>
-              <Edit className="w-3.5 h-3.5 mr-1" />Edit
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="px-2 h-8">
