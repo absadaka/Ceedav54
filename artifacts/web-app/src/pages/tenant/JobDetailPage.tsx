@@ -2,7 +2,7 @@ import {
   ArrowLeft, Wrench, User, Car, Clock, AlertTriangle, Plus,
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
-  Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList,
+  Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -690,6 +690,38 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [newNote,        setNewNote]        = useState("");
   const [timerNote,      setTimerNote]      = useState("");
 
+  const [inlineField,    setInlineField]    = useState<string | null>(null);
+  const [inlineValue,    setInlineValue]    = useState("");
+
+  const patchJobMutation = useMutation({
+    mutationFn: (data: Record<string, string>) =>
+      fetch(`${API}/api/jobs/${id}?tenant=${TENANT}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Saved"); setInlineField(null); },
+    onError: () => toast.error("Failed to save"),
+  });
+
+  const patchVehicleMutation = useMutation({
+    mutationFn: ({ vehicleId, data }: { vehicleId: string; data: Record<string, string> }) =>
+      fetch(`${API}/api/vehicles/${vehicleId}?tenant=${TENANT}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Saved"); setInlineField(null); },
+    onError: () => toast.error("Failed to save"),
+  });
+
+  const { data: teamData } = useQuery({
+    queryKey: ["technicians"],
+    queryFn: () => fetch(`${API}/api/jobs/meta/technicians?tenant=${TENANT}`).then(r => r.json()),
+    staleTime: 60_000,
+  });
+  const teamMembers: Array<{ id: string; name: string; role: string }> = teamData?.data ?? [];
+
   const createInvoiceMutation = useMutation({
     mutationFn: () => fetch(`${API}/api/invoices/from-job/${id}?tenant=${TENANT}`, {
       method: "POST",
@@ -916,54 +948,165 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 {job.color && <><span className="text-border">•</span><span>{job.color}</span></>}
                 {job.plate_number && <><span className="text-border">•</span><span className="font-mono font-semibold text-foreground">{job.plate_number}</span></>}
               </div>
-              <p className="text-xs text-muted-foreground font-mono mt-1">VIN: {job.vin ?? "—"}</p>
+              <div className="flex items-center gap-1 mt-1 group/vin">
+                <span className="text-xs text-muted-foreground font-mono">VIN:</span>
+                {inlineField === "vin" ? (
+                  <input
+                    autoFocus
+                    className="text-xs font-mono bg-transparent border-b border-primary outline-none min-w-[10rem]"
+                    value={inlineValue}
+                    placeholder="Enter VIN…"
+                    onChange={e => setInlineValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && job.vehicle_id) patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: inlineValue } });
+                      if (e.key === "Escape") setInlineField(null);
+                    }}
+                    onBlur={() => setInlineField(null)}
+                  />
+                ) : (
+                  <button
+                    className="text-xs font-mono text-muted-foreground hover:text-foreground flex items-center gap-1 disabled:opacity-40"
+                    disabled={!job.vehicle_id}
+                    onClick={() => { setInlineField("vin"); setInlineValue(job.vin ?? ""); }}
+                  >
+                    {job.vin ?? "—"}
+                    <Pencil className="w-3 h-3 opacity-0 group-hover/vin:opacity-40" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Info strip */}
           <div className="flex items-center gap-0 lg:gap-0 border-t lg:border-t-0 lg:border-l border-border pt-4 lg:pt-0 lg:pl-6 flex-wrap gap-y-3">
-            {[
-              {
-                label: "MILEAGE",
-                value: job.mileage_in ? `${parseInt(job.mileage_in).toLocaleString()} mi` : "—",
-              },
-              {
-                label: "BAY",
-                value: job.bay ?? "—",
-              },
-              {
-                label: "ADVISOR",
-                value: job.advisor_name ? job.advisor_name.split(" ").map((p, i) => i === 0 ? p : p[0] + ".").join(" ") : "—",
-              },
-              {
-                label: "STATUS",
-                value: jobStatusLabel(job.status, isInspection),
-                valueClass: currentLane ? currentLane.color.replace("bg-", "text-").replace(/ text-\S+/, "").replace("border-", "") : "text-blue-600",
-                isStatus: true,
-              },
-              {
-                label: "EST. COMPLETION",
-                value: job.scheduled_date ? (() => {
-                  const d = new Date(job.scheduled_date);
-                  const today = new Date();
-                  const isToday = d.toDateString() === today.toDateString();
-                  return isToday ? `Today, ${d.toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}` : fmtDate(job.scheduled_date);
-                })() : "—",
-              },
-            ].map((item, idx) => (
-              <div key={item.label} className="flex items-stretch">
-                {idx > 0 && <div className="w-px bg-border mx-4 hidden sm:block" />}
-                <div className="text-center min-w-[70px]">
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">{item.label}</p>
-                  <p className={cn(
-                    "text-sm font-semibold leading-snug",
-                    item.isStatus ? "text-blue-600" : "text-foreground"
-                  )}>
-                    {item.value}
-                  </p>
-                </div>
+
+            {/* MILEAGE — inline editable */}
+            <div className="flex items-stretch">
+              <div className="text-center min-w-[70px] group/mileage">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Mileage</p>
+                {inlineField === "mileage" ? (
+                  <input
+                    autoFocus
+                    type="number"
+                    className="text-sm font-semibold bg-transparent border-b border-primary outline-none w-24 text-center"
+                    value={inlineValue}
+                    placeholder="e.g. 45000"
+                    onChange={e => setInlineValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") patchJobMutation.mutate({ mileage_in: inlineValue });
+                      if (e.key === "Escape") setInlineField(null);
+                    }}
+                    onBlur={() => setInlineField(null)}
+                  />
+                ) : (
+                  <button
+                    className="text-sm font-semibold text-foreground flex items-center gap-1 mx-auto hover:text-primary"
+                    onClick={() => { setInlineField("mileage"); setInlineValue(job.mileage_in ?? ""); }}
+                  >
+                    {job.mileage_in ? `${parseInt(job.mileage_in).toLocaleString()} mi` : "—"}
+                    <Pencil className="w-3 h-3 opacity-0 group-hover/mileage:opacity-40 shrink-0" />
+                  </button>
+                )}
               </div>
-            ))}
+            </div>
+
+            <div className="w-px bg-border mx-4 hidden sm:block" />
+
+            {/* BAY — inline editable */}
+            <div className="flex items-stretch">
+              <div className="text-center min-w-[70px] group/bay">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Bay</p>
+                {inlineField === "bay" ? (
+                  <input
+                    autoFocus
+                    className="text-sm font-semibold bg-transparent border-b border-primary outline-none w-16 text-center"
+                    value={inlineValue}
+                    placeholder="e.g. A1"
+                    onChange={e => setInlineValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") patchJobMutation.mutate({ bay: inlineValue });
+                      if (e.key === "Escape") setInlineField(null);
+                    }}
+                    onBlur={() => setInlineField(null)}
+                  />
+                ) : (
+                  <button
+                    className="text-sm font-semibold text-foreground flex items-center gap-1 mx-auto hover:text-primary"
+                    onClick={() => { setInlineField("bay"); setInlineValue(job.bay ?? ""); }}
+                  >
+                    {job.bay ?? "—"}
+                    <Pencil className="w-3 h-3 opacity-0 group-hover/bay:opacity-40 shrink-0" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="w-px bg-border mx-4 hidden sm:block" />
+
+            {/* ADVISOR — inline dropdown */}
+            <div className="flex items-stretch">
+              <div className="text-center min-w-[70px] group/advisor">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Advisor</p>
+                {inlineField === "advisor" ? (
+                  <select
+                    autoFocus
+                    className="text-sm font-semibold bg-background border border-primary rounded outline-none px-1 py-0.5 text-center"
+                    value={inlineValue}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setInlineValue(val);
+                      patchJobMutation.mutate({ advisor_id: val });
+                    }}
+                    onBlur={() => setInlineField(null)}
+                    onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
+                  >
+                    <option value="">— unassigned —</option>
+                    {teamMembers.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <button
+                    className="text-sm font-semibold text-foreground flex items-center gap-1 mx-auto hover:text-primary"
+                    onClick={() => { setInlineField("advisor"); setInlineValue(job.advisor_id ?? ""); }}
+                  >
+                    {job.advisor_name ? job.advisor_name.split(" ").map((p, i) => i === 0 ? p : p[0] + ".").join(" ") : "—"}
+                    <Pencil className="w-3 h-3 opacity-0 group-hover/advisor:opacity-40 shrink-0" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="w-px bg-border mx-4 hidden sm:block" />
+
+            {/* STATUS — static */}
+            <div className="flex items-stretch">
+              <div className="text-center min-w-[70px]">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Status</p>
+                <p className="text-sm font-semibold text-blue-600 leading-snug">
+                  {jobStatusLabel(job.status, isInspection)}
+                </p>
+              </div>
+            </div>
+
+            <div className="w-px bg-border mx-4 hidden sm:block" />
+
+            {/* EST. COMPLETION — static */}
+            <div className="flex items-stretch">
+              <div className="text-center min-w-[70px]">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Est. Completion</p>
+                <p className="text-sm font-semibold text-foreground leading-snug">
+                  {job.scheduled_date ? (() => {
+                    const d = new Date(job.scheduled_date);
+                    const today = new Date();
+                    return d.toDateString() === today.toDateString()
+                      ? `Today, ${d.toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}`
+                      : fmtDate(job.scheduled_date);
+                  })() : "—"}
+                </p>
+              </div>
+            </div>
+
           </div>
         </div>
 
