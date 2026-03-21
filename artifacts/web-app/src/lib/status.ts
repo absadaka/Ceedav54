@@ -9,7 +9,7 @@ export const STATUS_CLASSES: Record<string, string> = {
   new:           "bg-slate-100  text-slate-700   border-slate-300",
   waiting:       "bg-yellow-50  text-yellow-800  border-yellow-200",
   waiting_parts: "bg-purple-50  text-purple-800  border-purple-200",
-  on_hold:       "bg-gray-100   text-gray-600    border-gray-200",
+  on_hold:       "bg-indigo-50  text-indigo-800  border-indigo-200",
   qc:            "bg-blue-50    text-blue-800    border-blue-200",
   draft:         "bg-gray-100   text-gray-600    border-gray-200",
   sent:          "bg-blue-50    text-blue-800    border-blue-200",
