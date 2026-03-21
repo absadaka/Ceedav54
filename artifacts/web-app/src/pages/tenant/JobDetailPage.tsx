@@ -916,9 +916,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 {job.color && <><span className="text-border">•</span><span>{job.color}</span></>}
                 {job.plate_number && <><span className="text-border">•</span><span className="font-mono font-semibold text-foreground">{job.plate_number}</span></>}
               </div>
-              {job.vin && (
-                <p className="text-xs text-muted-foreground font-mono mt-1">VIN: {job.vin}</p>
-              )}
+              <p className="text-xs text-muted-foreground font-mono mt-1">VIN: {job.vin ?? "—"}</p>
             </div>
           </div>
 
