@@ -691,6 +691,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [inlineField,    setInlineField]    = useState<string | null>(null);
   const [inlineValue,    setInlineValue]    = useState("");
   const inlineSavedRef = useRef(false);
+  const [showFullTimeline, setShowFullTimeline] = useState(false);
 
   const patchJobMutation = useMutation({
     mutationFn: (data: Record<string, string>) =>
@@ -1340,31 +1341,71 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             {statusHistory.length === 0 ? (
               <p className="text-sm text-muted-foreground/50 italic">No activity yet.</p>
             ) : (
-              <div className="space-y-0">
-                {[...statusHistory].reverse().map((h, idx, arr) => (
-                  <div key={h.id} className="flex gap-4">
-                    {/* Dot + line */}
-                    <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-blue-600 shrink-0 mt-0.5" />
-                      {idx < arr.length - 1 && (
-                        <div className="w-px flex-1 bg-slate-200 my-1.5" />
-                      )}
+              <>
+                <div className="space-y-0">
+                  {[...statusHistory].reverse().slice(0, 4).map((h, idx, arr) => (
+                    <div key={h.id} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-blue-600 shrink-0 mt-0.5" />
+                        {idx < arr.length - 1 && (
+                          <div className="w-px flex-1 bg-slate-200 my-1.5" />
+                        )}
+                      </div>
+                      <div className={cn("min-w-0", idx < arr.length - 1 ? "pb-5" : "")}>
+                        <p className="text-sm font-semibold text-foreground leading-tight">
+                          {jobStatusLabel(h.to_status, isInspection)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {h.changed_by_name ? `${h.changed_by_name} · ` : ""}
+                          {new Date(h.created_at).toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
                     </div>
-                    {/* Content */}
-                    <div className={cn("min-w-0", idx < arr.length - 1 ? "pb-5" : "")}>
-                      <p className="text-sm font-semibold text-foreground leading-tight">
-                        {jobStatusLabel(h.to_status, isInspection)}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {h.changed_by_name ? `${h.changed_by_name} · ` : ""}
-                        {new Date(h.created_at).toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                {statusHistory.length > 4 && (
+                  <button
+                    className="mt-4 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                    onClick={() => setShowFullTimeline(true)}
+                  >
+                    View all {statusHistory.length} activities
+                  </button>
+                )}
+              </>
             )}
           </div>
+
+          <Dialog open={showFullTimeline} onOpenChange={setShowFullTimeline}>
+            <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle>Activity Timeline</DialogTitle>
+                <DialogDescription>{statusHistory.length} activities</DialogDescription>
+              </DialogHeader>
+              <div className="overflow-y-auto flex-1 pr-2">
+                <div className="space-y-0">
+                  {[...statusHistory].reverse().map((h, idx, arr) => (
+                    <div key={h.id} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-blue-600 shrink-0 mt-0.5" />
+                        {idx < arr.length - 1 && (
+                          <div className="w-px flex-1 bg-slate-200 my-1.5" />
+                        )}
+                      </div>
+                      <div className={cn("min-w-0", idx < arr.length - 1 ? "pb-5" : "")}>
+                        <p className="text-sm font-semibold text-foreground leading-tight">
+                          {jobStatusLabel(h.to_status, isInspection)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {h.changed_by_name ? `${h.changed_by_name} · ` : ""}
+                          {new Date(h.created_at).toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 
