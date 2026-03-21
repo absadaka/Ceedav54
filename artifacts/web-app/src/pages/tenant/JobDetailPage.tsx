@@ -755,6 +755,14 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         return false;
       }
     }
+    if (job.status === "on_hold" && targetStatus === "qc") {
+      const hasParts = parts.length > 0;
+      const hasNotes = techNotes.length > 0;
+      if (!hasParts && !hasNotes) {
+        toast.error("Please add at least one service/part or a technician note before moving to Estimation");
+        return false;
+      }
+    }
     return true;
   };
 
