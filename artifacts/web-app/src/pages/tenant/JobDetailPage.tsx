@@ -1559,12 +1559,64 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
             {/* ── Parts / Diagnosis tab ────────────────────────────────── */}
             <TabsContent value="parts" className="mt-0">
+              {isInspection && (
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <button
+                    onClick={() => { setShowAddPart(true); setShowAddManualPart(false); }}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl border-2 px-5 py-4 text-left transition-colors",
+                      showAddPart ? "border-blue-600 bg-blue-50 dark:bg-blue-950/30" : "border-border hover:border-blue-400 bg-background"
+                    )}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                      <Wrench className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Add Service</p>
+                      <p className="text-xs text-muted-foreground">From service catalog</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => { setShowAddManualPart(true); setShowAddPart(false); }}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl border-2 px-5 py-4 text-left transition-colors",
+                      showAddManualPart ? "border-blue-600 bg-blue-50 dark:bg-blue-950/30" : "border-border hover:border-blue-400 bg-background"
+                    )}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center shrink-0">
+                      <Plus className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Add Parts</p>
+                      <p className="text-xs text-muted-foreground">Custom or manual entry</p>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {(showAddPart || showAddManualPart) && isInspection && (
+                <div className="mb-4">
+                  {showAddPart && (
+                    <AddDiagnosisForm jobId={job.id} onAdded={() => {
+                      qc.invalidateQueries({ queryKey: ["job", id] });
+                      setShowAddPart(false);
+                    }} />
+                  )}
+                  {showAddManualPart && (
+                    <AddManualPartForm jobId={job.id} onAdded={() => {
+                      qc.invalidateQueries({ queryKey: ["job", id] });
+                      setShowAddManualPart(false);
+                    }} />
+                  )}
+                </div>
+              )}
+
               <div className="border border-border rounded-lg bg-background overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    {isInspection ? "Diagnosis items" : "Inspection items"}
+                    {isInspection ? "Inspection List" : "Inspection items"}
                   </p>
-                  {(isInspection || job.status === "waiting_parts") && (
+                  {!isInspection && job.status === "waiting_parts" && (
                     <div className="flex gap-1.5">
                       <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
                         onClick={() => { setShowAddPart(p => !p); setShowAddManualPart(false); }}>
@@ -1580,7 +1632,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
                 {parts.length === 0 && !showAddPart && !showAddManualPart ? (
                   <div className="p-8 text-center text-sm text-muted-foreground/50">
-                    {isInspection ? "No diagnosis items added yet" : "No inspection items added yet"}
+                    {isInspection ? "No items added yet — use the buttons above to add services or parts" : "No inspection items added yet"}
                   </div>
                 ) : (
                   <table className="w-full text-sm">
@@ -1620,21 +1672,21 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     </tbody>
                   </table>
                 )}
-                {showAddPart && (
+                {!isInspection && showAddPart && (
                   <div className="px-4 pb-4">
                     <AddDiagnosisForm jobId={job.id} onAdded={() => {
                       qc.invalidateQueries({ queryKey: ["job", id] });
                       setShowAddPart(false);
-                      if (!isInspection) setDirtyParts(true);
+                      setDirtyParts(true);
                     }} />
                   </div>
                 )}
-                {showAddManualPart && (
+                {!isInspection && showAddManualPart && (
                   <div className="px-4 pb-4">
                     <AddManualPartForm jobId={job.id} onAdded={() => {
                       qc.invalidateQueries({ queryKey: ["job", id] });
                       setShowAddManualPart(false);
-                      if (!isInspection) setDirtyParts(true);
+                      setDirtyParts(true);
                     }} />
                   </div>
                 )}
