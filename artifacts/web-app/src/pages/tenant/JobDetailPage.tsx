@@ -1555,16 +1555,26 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           <span className="text-base font-bold leading-none">→</span>
                         </button>
                       )}
-                      {job.status === "qc" && (
-                        <button
-                          onClick={() => moveStatus("in_progress")}
-                          disabled={moveStatusMutation.isPending}
-                          className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-green-600 hover:bg-green-700 transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60"
-                        >
-                          <span className="text-sm font-bold leading-tight text-center px-2">Start the Work</span>
-                          <span className="text-base font-bold leading-none">→</span>
-                        </button>
-                      )}
+                      {job.status === "qc" && (() => {
+                        const qApproved = quotation?.status === "approved";
+                        return (
+                          <button
+                            onClick={() => qApproved && moveStatus("in_progress")}
+                            disabled={moveStatusMutation.isPending || !qApproved}
+                            className={cn(
+                              "shrink-0 w-36 min-h-[88px] rounded-2xl transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60",
+                              qApproved ? "bg-green-600 hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
+                            )}
+                          >
+                            <span className="text-sm font-bold leading-tight text-center px-2">Start the Work</span>
+                            {qApproved ? (
+                              <span className="text-base font-bold leading-none">→</span>
+                            ) : (
+                              <span className="text-[10px] font-normal leading-tight text-center px-1 opacity-80">Quotation approval required</span>
+                            )}
+                          </button>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
