@@ -1496,6 +1496,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           if (job.status === "on_hold") {
                             setActiveTab("parts");
                             setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                          } else if (job.status === "qc") {
+                            setActiveTab("cost");
+                            setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
                           } else {
                             moveToNext();
                           }
@@ -1504,7 +1507,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60"
                       >
                         <span className="text-sm font-bold leading-tight text-center px-2">{action.btn}</span>
-                        <span className="text-base font-bold leading-none">{job.status === "on_hold" ? "↓" : "→"}</span>
+                        <span className="text-base font-bold leading-none">{(job.status === "on_hold" || job.status === "qc") ? "↓" : "→"}</span>
                       </button>
                       {job.status === "on_hold" && (
                         <button
