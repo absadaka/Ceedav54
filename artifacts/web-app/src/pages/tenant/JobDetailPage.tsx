@@ -1322,21 +1322,33 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <p className="text-sm text-muted-foreground leading-relaxed">{action.desc}</p>
                   </div>
                   {job.status !== "delivered" && (
-                    <button
-                      onClick={() => {
-                        if (job.status === "on_hold") {
-                          setActiveTab("parts");
-                          setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-                        } else {
-                          moveToNext();
-                        }
-                      }}
-                      disabled={moveStatusMutation.isPending}
-                      className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60"
-                    >
-                      <span className="text-sm font-bold leading-tight text-center px-2">{action.btn}</span>
-                      <span className="text-base font-bold leading-none">{job.status === "on_hold" ? "↓" : "→"}</span>
-                    </button>
+                    <div className="flex gap-3 shrink-0">
+                      <button
+                        onClick={() => {
+                          if (job.status === "on_hold") {
+                            setActiveTab("parts");
+                            setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                          } else {
+                            moveToNext();
+                          }
+                        }}
+                        disabled={moveStatusMutation.isPending}
+                        className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60"
+                      >
+                        <span className="text-sm font-bold leading-tight text-center px-2">{action.btn}</span>
+                        <span className="text-base font-bold leading-none">{job.status === "on_hold" ? "↓" : "→"}</span>
+                      </button>
+                      {job.status === "on_hold" && (
+                        <button
+                          onClick={() => moveStatus("qc")}
+                          disabled={moveStatusMutation.isPending}
+                          className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-green-600 hover:bg-green-700 transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60"
+                        >
+                          <span className="text-sm font-bold leading-tight text-center px-2">Move to Estimation Cost</span>
+                          <span className="text-base font-bold leading-none">→</span>
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               );
@@ -1512,7 +1524,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             {/* ── Parts / Diagnosis tab ────────────────────────────────── */}
             <TabsContent value="parts" className="mt-0">
               {isInspectionStage && (
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-4">
                   <button
                     onClick={() => { setShowAddPart(true); setShowAddManualPart(false); }}
                     className={cn(
@@ -1541,19 +1553,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <div>
                       <p className="text-sm font-semibold text-foreground">Add Parts</p>
                       <p className="text-xs text-muted-foreground">Custom or manual entry</p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => moveStatus("qc")}
-                    disabled={moveStatusMutation.isPending}
-                    className="flex items-center gap-3 rounded-xl border-2 border-green-300 hover:border-green-500 bg-green-50 dark:bg-green-950/30 px-5 py-4 text-left transition-colors disabled:opacity-60"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
-                      <ArrowRight className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Move to Estimation Cost</p>
-                      <p className="text-xs text-muted-foreground">Send for pricing</p>
                     </div>
                   </button>
                 </div>
