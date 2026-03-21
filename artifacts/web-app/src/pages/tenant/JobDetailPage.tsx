@@ -3,6 +3,7 @@ import {
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
   Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil, ArrowRight,
+  Loader2, DollarSign, Wallet,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -36,6 +37,14 @@ import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+const PAYMENT_METHODS = [
+  { value: "cash",          label: "Cash" },
+  { value: "card",          label: "Card" },
+  { value: "bank_transfer", label: "Bank Transfer" },
+  { value: "cheque",        label: "Cheque" },
+  { value: "online",        label: "Online" },
+];
+
 const PRIORITY_BADGE: Record<string, string> = {
   urgent: "bg-red-100 text-red-700 border-red-300",
   high:   "bg-orange-100 text-orange-700 border-orange-300",
@@ -61,6 +70,10 @@ function fmtMinutes(m: number) {
   const h = Math.floor(m / 60);
   const min = m % 60;
   return h > 0 ? `${h}h ${min}m` : `${min}m`;
+}
+
+function fmtAed(val: string | number | null) {
+  return `AED ${parseFloat(String(val ?? 0)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function fmtElapsed(ms: number) {
@@ -377,6 +390,88 @@ function CatalogDropdown({
   );
 }
 
+/* ─── AddQuoteLineInline ──────────────────────────────────────────────────── */
+function AddQuoteLineInline({ quotationId, onAdded, onCancel }: { quotationId: string; onAdded: () => void; onCancel: () => void }) {
+  const [search, setSearch] = useState("");
+  const [description, setDescription] = useState("");
+  const [qty, setQty] = useState("1");
+  const [unitPrice, setUnitPrice] = useState("0.00");
+  const [showDrop, setShowDrop] = useState(false);
+
+  const { data: catData } = useQuery({
+    queryKey: ["catalog", TENANT],
+    queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
+    staleTime: 60_000,
+  });
+  const allCatalog: any[] = (catData?.items ?? []).filter((i: any) => i.is_active !== false);
+  const filtered = allCatalog.filter(i =>
+    !search || i.name.toLowerCase().includes(search.toLowerCase()) || (i.sku ?? "").toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 8);
+
+  function pickItem(item: any) {
+    setDescription(item.name);
+    setSearch(item.name);
+    setUnitPrice(parseFloat(item.unit_price).toFixed(2));
+    setShowDrop(false);
+  }
+
+  const lineTotal = Math.max(0, parseFloat(qty || "0") * parseFloat(unitPrice || "0"));
+
+  const add = useMutation({
+    mutationFn: () => fetch(`${API}/api/quotations/${quotationId}/lines?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description: description || search, type: "labour", qty, unit_price: unitPrice, discount: "0.00" }),
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      toast.success("Line item added");
+      onAdded();
+    },
+    onError: () => toast.error("Failed to add line"),
+  });
+
+  return (
+    <tr className="border-t border-dashed border-primary/30 bg-primary/5">
+      <td className="px-3 py-2">
+        <div className="relative">
+          <Input
+            className="h-7 text-xs"
+            placeholder="Search catalog or type description…"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setDescription(e.target.value); setShowDrop(true); }}
+            onFocus={() => setShowDrop(true)}
+            onBlur={() => setTimeout(() => setShowDrop(false), 150)}
+          />
+          {showDrop && filtered.length > 0 && (
+            <div className="absolute z-50 top-full left-0 mt-1 w-80 rounded-md border bg-popover shadow-lg overflow-hidden">
+              {filtered.map((item: any) => (
+                <button key={item.id} type="button"
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs hover:bg-accent text-left gap-3"
+                  onMouseDown={() => pickItem(item)}>
+                  <span className="font-medium truncate flex-1">{item.name}</span>
+                  <span className="tabular-nums font-semibold text-foreground shrink-0">AED {parseFloat(item.unit_price).toFixed(2)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </td>
+      <td className="px-3 py-2">
+        <Input className="h-7 text-xs w-16 tabular-nums" type="number" step="0.01" min="0" value={qty} onChange={e => setQty(e.target.value)} />
+      </td>
+      <td className="px-3 py-2 text-right text-xs tabular-nums font-medium">{fmtAed(lineTotal)}</td>
+      <td className="px-3 py-2">
+        <div className="flex gap-1">
+          <Button size="sm" className="h-7 px-2 text-xs" onClick={() => add.mutate()} disabled={!(description || search) || add.isPending}>
+            {add.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Add"}
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onCancel}><X className="w-3 h-3" /></Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 /* ─── AddDiagnosisForm ────────────────────────────────────────────────────── */
 function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
   const [search,   setSearch]   = useState("");
@@ -685,6 +780,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showAddManualPart, setShowAddManualPart] = useState(false);
   const [showAddPhoto,   setShowAddPhoto]   = useState(false);
   const [dirtyParts,     setDirtyParts]     = useState(false);
+  const [showAddQtLine,  setShowAddQtLine]  = useState(false);
+  const [showAddQtDiscount, setShowAddQtDiscount] = useState(false);
+  const [showAddAdvance, setShowAddAdvance] = useState(false);
   const [newNote,        setNewNote]        = useState("");
   const [timerNote,      setTimerNote]      = useState("");
 
@@ -822,7 +920,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       qc.invalidateQueries({ queryKey: ["job", id] });
       qc.invalidateQueries({ queryKey: ["quotations"] });
       toast.success(`Quotation ${data.quotation?.ref} created`);
-      navigate(`/quotations/${data.quotation?.id}`);
     },
     onError: () => toast.error("Failed to create quotation"),
   });
@@ -838,9 +935,46 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       qc.invalidateQueries({ queryKey: ["quotations"] });
       setDirtyParts(false);
       toast.success(`Quotation ${data.quotation?.ref} updated`);
-      navigate(`/quotations/${data.quotation?.id}`);
     },
     onError: () => toast.error("Failed to update quotation"),
+  });
+
+  const addQuoteLineMutation = useMutation({
+    mutationFn: (body: { description: string; type: string; part_number?: string; qty: string; unit_price: string; discount?: string }) =>
+      fetch(`${API}/api/quotations/${quotation?.id}/lines?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...body, discount: body.discount ?? "0.00" }),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Line item added"); },
+    onError: () => toast.error("Failed to add line"),
+  });
+
+  const deleteQuoteLineMutation = useMutation({
+    mutationFn: (lineId: string) =>
+      fetch(`${API}/api/quotations/${quotation?.id}/lines/${lineId}?tenant=${TENANT}`, { method: "DELETE" })
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Line removed"); },
+    onError: () => toast.error("Failed to remove line"),
+  });
+
+  const addAdvancePaymentMutation = useMutation({
+    mutationFn: (body: { amount: string; method: string; reference?: string; note?: string }) =>
+      fetch(`${API}/api/quotations/${quotation?.id}/advance?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Payment recorded"); },
+    onError: () => toast.error("Failed to record payment"),
+  });
+
+  const deleteAdvancePaymentMutation = useMutation({
+    mutationFn: (payId: string) =>
+      fetch(`${API}/api/quotations/${quotation?.id}/advance/${payId}?tenant=${TENANT}`, { method: "DELETE" })
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Payment removed"); },
+    onError: () => toast.error("Failed to remove payment"),
   });
 
 
@@ -987,6 +1121,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
   const { job, statusHistory, assignments, timeLogs, totalMinutes, parts, photos, quotation,
           quotationOutOfSync = false,
+          quoteLineItems = [], quoteAdvancePayments = [], quoteTotalPaid = 0, quoteBalance = 0,
           inspectionParts = [], inspectionTechNote, inspectionRef,
           techNotes = [] } = data as any;
   const isInspection = moduleType === "inspection";
@@ -1479,7 +1614,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {!isInspection && !job.source_inspection_id && (
                 <TabsTrigger value="parts">Inspection ({parts.length})</TabsTrigger>
               )}
-              <TabsTrigger value="time">Time ({fmtMinutes(totalMinutes)})</TabsTrigger>
+              <TabsTrigger value="cost">Cost Estimation</TabsTrigger>
               <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
               <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
             </TabsList>
@@ -1809,110 +1944,229 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               </TabsContent>
             )}
 
-            {/* ── Time tab ─────────────────────────────────────────────── */}
-            <TabsContent value="time" className="mt-0 space-y-3">
-              {/* Timer control card */}
-              <div className={cn(
-                "border rounded-lg p-4",
-                runningLog ? "border-orange-200 bg-orange-50/50" : "border-border bg-background",
-              )}>
-                {runningLog ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                      <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide">Timer running</p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-0.5">Elapsed time</p>
-                        <LiveTimer startedAt={runningLog.started_at} />
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-100"
-                        disabled={stopTimerMutation.isPending}
-                        onClick={() => stopTimerMutation.mutate()}
-                      >
-                        <Square className="w-3.5 h-3.5 fill-current" />
-                        {stopTimerMutation.isPending ? "Stopping…" : "Stop timer"}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Started at {new Date(runningLog.started_at).toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                      <Timer className="w-3.5 h-3.5" />Labor time tracker
-                    </p>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Optional note for this session…"
-                        value={timerNote}
-                        onChange={e => setTimerNote(e.target.value)}
-                        className="h-8 text-sm flex-1"
-                      />
-                      <Button
-                        size="sm"
-                        className="gap-1.5 shrink-0"
-                        disabled={startTimerMutation.isPending}
-                        onClick={() => startTimerMutation.mutate()}
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        {startTimerMutation.isPending ? "Starting…" : "Start timer"}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Total logged: <span className="font-semibold">{fmtMinutes(totalMinutes)}</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Logs table */}
-              <div className="border border-border rounded-lg bg-background overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Time logs</p>
-                  <span className="text-xs font-medium text-muted-foreground">Total: {fmtMinutes(totalMinutes)}</span>
+            {/* ── Cost Estimation tab ──────────────────────────────────── */}
+            <TabsContent value="cost" className="mt-0 space-y-4">
+              {!quotation ? (
+                <div className="border border-border rounded-lg bg-background p-8 text-center space-y-3">
+                  <DollarSign className="w-10 h-10 mx-auto text-muted-foreground/20" />
+                  <p className="text-sm text-muted-foreground">No quotation linked to this job yet.</p>
+                  <Button size="sm" className="gap-1.5" onClick={() => createQuotationMutation.mutate()} disabled={createQuotationMutation.isPending}>
+                    {createQuotationMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                    {createQuotationMutation.isPending ? "Creating…" : "Create quotation"}
+                  </Button>
                 </div>
-                {timeLogs.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-muted-foreground/50">
-                    <Timer className="w-8 h-8 mx-auto mb-2 text-muted-foreground/20" />
-                    No time logs yet. Start the timer above.
+              ) : (
+                <>
+                  {/* Summary card */}
+                  <div className="rounded-lg border border-border bg-background p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Quotation {quotation.ref}</p>
+                      {quotationOutOfSync && (
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-amber-600 border-amber-200 hover:bg-amber-50"
+                          onClick={() => syncQuotationMutation.mutate()} disabled={syncQuotationMutation.isPending}>
+                          {syncQuotationMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlertTriangle className="w-3 h-3" />}
+                          Sync from diagnosis
+                        </Button>
+                      )}
+                    </div>
+                    <dl className="space-y-1.5 text-sm">
+                      <div className="flex justify-between">
+                        <dt className="text-muted-foreground">Subtotal</dt>
+                        <dd className="tabular-nums font-medium">{fmtAed(quotation.subtotal)}</dd>
+                      </div>
+                      {parseFloat(quotation.discount ?? "0") > 0 && (
+                        <div className="flex justify-between text-orange-600">
+                          <dt>Discount</dt>
+                          <dd className="tabular-nums">− {fmtAed(quotation.discount)}</dd>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <dt className="text-muted-foreground">VAT ({quotation.tax_rate ?? 5}%)</dt>
+                        <dd className="tabular-nums">{fmtAed(quotation.tax_amount)}</dd>
+                      </div>
+                      <div className="flex justify-between border-t border-border pt-1.5 font-bold text-base">
+                        <dt>Total</dt>
+                        <dd className="tabular-nums">{fmtAed(quotation.total)}</dd>
+                      </div>
+                      {quoteTotalPaid > 0 && (
+                        <>
+                          <div className="flex justify-between text-green-700">
+                            <dt>Advance paid</dt>
+                            <dd className="tabular-nums">− {fmtAed(quoteTotalPaid)}</dd>
+                          </div>
+                          <div className={cn("flex justify-between border-t border-border pt-1.5 font-semibold", quoteBalance <= 0 ? "text-green-700" : "")}>
+                            <dt>Balance due</dt>
+                            <dd className="tabular-nums">{fmtAed(quoteBalance)}</dd>
+                          </div>
+                        </>
+                      )}
+                    </dl>
                   </div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Started</th>
-                        <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Ended</th>
-                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Duration</th>
-                        <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Note</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {timeLogs.map(l => (
-                        <tr key={l.id} className={cn("border-b border-border last:border-0", !l.ended_at && "bg-orange-50/30")}>
-                          <td className="px-4 py-2.5 text-xs">{fmtDate(l.started_at)}</td>
-                          <td className="px-4 py-2.5 text-xs">
-                            {l.ended_at
-                              ? fmtDate(l.ended_at)
-                              : <span className="text-orange-600 font-medium flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />Running
-                                </span>}
-                          </td>
-                          <td className="px-4 py-2.5 text-right font-medium text-sm">
-                            {l.minutes ? fmtMinutes(l.minutes) : "—"}
-                          </td>
-                          <td className="px-4 py-2.5 text-xs text-muted-foreground hidden sm:table-cell">{l.notes ?? "—"}</td>
-                        </tr>
+
+                  {/* Line items */}
+                  <div className="rounded-lg border border-border bg-background overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Line items ({quoteLineItems.length})</p>
+                      <div className="flex gap-2">
+                        {!showAddQtLine && (
+                          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setShowAddQtLine(true); setShowAddQtDiscount(false); }}>
+                            <Plus className="w-3 h-3" />Add item
+                          </Button>
+                        )}
+                        {!showAddQtDiscount && (
+                          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs text-orange-600 border-orange-200 hover:bg-orange-50"
+                            onClick={() => { setShowAddQtDiscount(true); setShowAddQtLine(false); }}>
+                            <Plus className="w-3 h-3" />Discount
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div className={showAddQtLine ? "overflow-visible" : "overflow-x-auto"}>
+                      <table className="w-full text-sm min-w-[400px]">
+                        <thead>
+                          <tr className="border-b border-border text-left">
+                            <th className="px-4 py-2 text-xs font-medium text-muted-foreground">Description</th>
+                            <th className="px-4 py-2 text-xs font-medium text-muted-foreground w-16">Qty</th>
+                            <th className="px-4 py-2 text-xs font-medium text-muted-foreground text-right w-32">Total</th>
+                            <th className="w-8" />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {quoteLineItems.map((l: any) => (
+                            <tr key={l.id} className="border-b border-border last:border-0 hover:bg-muted/20">
+                              <td className="px-4 py-2.5 text-sm font-medium">{l.description}</td>
+                              <td className="px-4 py-2.5 tabular-nums text-sm">{parseFloat(l.qty)}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums text-sm font-medium">{fmtAed(l.line_total)}</td>
+                              <td className="px-2 py-2.5">
+                                <button onClick={() => deleteQuoteLineMutation.mutate(l.id)}
+                                  className="text-muted-foreground/40 hover:text-destructive transition-colors p-1">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {quoteLineItems.length === 0 && !showAddQtLine && (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground/50">
+                                No line items yet. Click "Add item" or sync from diagnosis.
+                              </td>
+                            </tr>
+                          )}
+                          {showAddQtLine && (
+                            <AddQuoteLineInline
+                              quotationId={quotation.id}
+                              onAdded={() => { qc.invalidateQueries({ queryKey: ["job", id] }); setShowAddQtLine(false); }}
+                              onCancel={() => setShowAddQtLine(false)}
+                            />
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {showAddQtDiscount && (
+                      <div className="px-4 py-3 border-t border-dashed border-orange-300 bg-orange-50/50 flex items-center gap-3 flex-wrap">
+                        <span className="text-xs font-medium text-orange-700 shrink-0">Discount line</span>
+                        <Input className="h-7 text-xs w-40" placeholder="Label" id="qt-disc-label" defaultValue="Discount" />
+                        <div className="relative flex items-center">
+                          <Input className="h-7 text-xs w-20 tabular-nums pr-5" type="number" min="0" max="100" step="1" id="qt-disc-pct" defaultValue="10" />
+                          <span className="absolute right-2 text-xs text-muted-foreground pointer-events-none">%</span>
+                        </div>
+                        <div className="flex gap-1 ml-auto">
+                          <Button size="sm" className="h-7 px-3 text-xs bg-orange-600 hover:bg-orange-700" onClick={() => {
+                            const label = (document.getElementById("qt-disc-label") as HTMLInputElement).value || "Discount";
+                            const pct = parseFloat((document.getElementById("qt-disc-pct") as HTMLInputElement).value || "0");
+                            const sub = parseFloat(quotation.subtotal ?? "0");
+                            const amt = sub * (pct / 100);
+                            if (amt > 0) {
+                              addQuoteLineMutation.mutate({ description: label, type: "labour", qty: "1", unit_price: (-amt).toFixed(2) });
+                              setShowAddQtDiscount(false);
+                            }
+                          }}>Apply</Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setShowAddQtDiscount(false)}><X className="w-3 h-3" /></Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Advance payments */}
+                  <div className="rounded-lg border border-border bg-background overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Advance payments ({quoteAdvancePayments.length})</p>
+                      {!showAddAdvance && (
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setShowAddAdvance(true)}>
+                          <Plus className="w-3 h-3" />Record payment
+                        </Button>
+                      )}
+                    </div>
+                    <div className="px-4 py-3 space-y-2">
+                      {quoteAdvancePayments.length === 0 && !showAddAdvance && (
+                        <p className="text-sm text-muted-foreground/50 py-4 text-center">No advance payments recorded.</p>
+                      )}
+                      {quoteAdvancePayments.map((p: any) => (
+                        <div key={p.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                          <div>
+                            <p className="text-sm font-medium tabular-nums">{fmtAed(p.amount)}</p>
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {PAYMENT_METHODS.find(m => m.value === p.method)?.label ?? p.method}
+                              {p.reference ? ` · ${p.reference}` : ""}
+                              {p.note ? ` — ${p.note}` : ""}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{fmtDate(p.paid_at)}</span>
+                            <button onClick={() => deleteAdvancePaymentMutation.mutate(p.id)}
+                              className="text-muted-foreground/40 hover:text-destructive transition-colors p-1">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+                      {showAddAdvance && (
+                        <div className="mt-3 p-3 border border-dashed border-primary/30 rounded-lg bg-primary/5 space-y-3">
+                          <p className="text-xs font-medium text-muted-foreground">Record advance payment</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Amount (AED) *</Label>
+                              <Input className="h-7 text-xs tabular-nums" type="number" step="0.01" min="0" placeholder="0.00" id="adv-amount" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Method</Label>
+                              <Select defaultValue="cash" onValueChange={v => { (document.getElementById("adv-method-val") as HTMLInputElement).value = v; }}>
+                                <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>{PAYMENT_METHODS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
+                              </Select>
+                              <input type="hidden" id="adv-method-val" defaultValue="cash" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Reference / Receipt #</Label>
+                              <Input className="h-7 text-xs" placeholder="Optional" id="adv-ref" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Note</Label>
+                              <Input className="h-7 text-xs" placeholder="Optional" id="adv-note" />
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowAddAdvance(false)}>Cancel</Button>
+                            <Button size="sm" className="h-7 text-xs" onClick={() => {
+                              const amount = (document.getElementById("adv-amount") as HTMLInputElement).value;
+                              const method = (document.getElementById("adv-method-val") as HTMLInputElement).value || "cash";
+                              const reference = (document.getElementById("adv-ref") as HTMLInputElement).value || undefined;
+                              const note = (document.getElementById("adv-note") as HTMLInputElement).value || undefined;
+                              if (!amount || parseFloat(amount) <= 0) { toast.error("Enter a valid amount"); return; }
+                              addAdvancePaymentMutation.mutate({ amount, method, reference, note });
+                              setShowAddAdvance(false);
+                            }} disabled={addAdvancePaymentMutation.isPending}>
+                              {addAdvancePaymentMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}Record payment
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </TabsContent>
 
             {/* ── Photos tab ───────────────────────────────────────────── */}
