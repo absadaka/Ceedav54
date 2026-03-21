@@ -1627,7 +1627,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {!isInspection && !job.source_inspection_id && (
                 <TabsTrigger value="parts">Inspection ({parts.length})</TabsTrigger>
               )}
-              <TabsTrigger value="cost">Cost Estimation</TabsTrigger>
+              <TabsTrigger value="cost">Quotation</TabsTrigger>
               <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
               <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
             </TabsList>
