@@ -1970,44 +1970,49 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 ];
                 const rejected = status === "rejected";
                 return (
-                  <div className="flex justify-center py-2">
-                    <div className="inline-flex items-center gap-3 rounded-full border border-border bg-muted/30 px-5 py-2">
+                  <div className="flex justify-center py-3">
+                    <div className="inline-flex items-center gap-4 rounded-full border border-border bg-muted/30 px-6 py-2.5">
                       {steps.map((step, i) => {
                         const showRejected = rejected && step.key === "approved";
                         const isClickable = step.actionable && !createQuotationMutation.isPending;
                         return (
                           <div key={step.key} className="flex items-center">
-                            <button
-                              type="button"
-                              disabled={!isClickable}
-                              onClick={() => { if (step.key === "created" && !hasQuotation) createQuotationMutation.mutate(); }}
-                              className={cn(
-                                "flex items-center gap-1.5 rounded-full transition-colors",
-                                isClickable ? "cursor-pointer hover:bg-primary/10 px-2 py-0.5 -mx-1" : "cursor-default"
-                              )}
-                            >
-                              <div className={cn(
-                                "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0",
-                                showRejected ? "bg-red-500 text-white" :
-                                step.done ? "bg-green-500 text-white" :
-                                isClickable ? "bg-blue-500 text-white animate-pulse" :
-                                "bg-muted-foreground/20 text-muted-foreground/50"
-                              )}>
-                                {createQuotationMutation.isPending && step.key === "created" ? "" :
-                                 showRejected ? "✕" : step.done ? "✓" : isClickable ? "+" : ""}
+                            {isClickable ? (
+                              <button
+                                type="button"
+                                onClick={() => createQuotationMutation.mutate()}
+                                disabled={createQuotationMutation.isPending}
+                                className="flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 text-xs font-semibold shadow-sm transition-colors"
+                              >
+                                {createQuotationMutation.isPending ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Plus className="w-3.5 h-3.5" />
+                                )}
+                                {createQuotationMutation.isPending ? "Creating…" : "Create"}
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <div className={cn(
+                                  "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
+                                  showRejected ? "bg-red-500 text-white" :
+                                  step.done ? "bg-green-500 text-white" :
+                                  "bg-muted-foreground/20 text-muted-foreground/50"
+                                )}>
+                                  {showRejected ? "✕" : step.done ? "✓" : ""}
+                                </div>
+                                <span className={cn(
+                                  "text-xs font-medium whitespace-nowrap",
+                                  showRejected ? "text-red-600" :
+                                  step.done ? "text-foreground" : "text-muted-foreground/50"
+                                )}>
+                                  {showRejected ? "Rejected" : step.label}
+                                </span>
                               </div>
-                              <span className={cn(
-                                "text-[11px] font-medium whitespace-nowrap",
-                                showRejected ? "text-red-600" :
-                                step.done ? "text-foreground" :
-                                isClickable ? "text-blue-600 font-semibold" : "text-muted-foreground/50"
-                              )}>
-                                {createQuotationMutation.isPending && step.key === "created" ? "Creating…" : step.label}
-                              </span>
-                            </button>
+                            )}
                             {i < steps.length - 1 && (
                               <div className={cn(
-                                "w-8 h-px ml-3",
+                                "w-10 h-px ml-4",
                                 steps[i + 1]?.done ? "bg-green-400" : "bg-border"
                               )} />
                             )}
@@ -2020,9 +2025,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               })()}
 
               {!quotation ? (
-                <div className="border border-dashed border-border rounded-lg bg-muted/10 p-8 text-center">
+                <div className="border border-dashed border-border rounded-lg bg-muted/10 p-6 text-center">
                   <DollarSign className="w-8 h-8 mx-auto text-muted-foreground/20 mb-2" />
-                  <p className="text-sm text-muted-foreground">Click <span className="font-semibold text-blue-600">Create</span> above to generate a quotation from the diagnosis.</p>
+                  <p className="text-sm text-muted-foreground">Click <span className="font-semibold text-blue-600">+ Create</span> above to generate a quotation from the diagnosis.</p>
                 </div>
               ) : (
                 <>
