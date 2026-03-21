@@ -785,6 +785,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showAddAdvance, setShowAddAdvance] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareChannels, setShareChannels] = useState<{ whatsapp: boolean; sms: boolean; email: boolean }>({ whatsapp: false, sms: false, email: false });
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [newNote,        setNewNote]        = useState("");
   const [timerNote,      setTimerNote]      = useState("");
 
@@ -2013,7 +2014,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                               onClick={() => {
                                 if (step.key === "created" && !hasQuotation) createQuotationMutation.mutate();
                                 if (step.key === "shared" && hasQuotation && !isShared) setShowShareModal(true);
-                                if (step.key === "approved" && isShared && !isApproved && !isRejected) approveQuotationMutation.mutate();
+                                if (step.key === "approved" && isShared && !isApproved && !isRejected) setShowApproveConfirm(true);
                               }}
                               className={cn(
                                 "flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
@@ -2441,6 +2442,27 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               onClick={() => cancelMutation.mutate(cancelNote)}
             >
               {cancelMutation.isPending ? "Cancelling…" : "Cancel job"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Force Approve Confirmation */}
+      <Dialog open={showApproveConfirm} onOpenChange={setShowApproveConfirm}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Force Approve Quotation?</DialogTitle>
+            <DialogDescription>
+              Customer must approve this quotation. Are you sure you want to force approve?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowApproveConfirm(false)}>Cancel</Button>
+            <Button
+              disabled={approveQuotationMutation.isPending}
+              onClick={() => { approveQuotationMutation.mutate(); setShowApproveConfirm(false); }}
+            >
+              {approveQuotationMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin mr-1.5" />Approving…</> : "Yes, Force Approve"}
             </Button>
           </DialogFooter>
         </DialogContent>
