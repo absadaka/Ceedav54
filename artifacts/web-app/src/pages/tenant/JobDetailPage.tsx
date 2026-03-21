@@ -743,6 +743,15 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         return false;
       }
     }
+    if (job.status === "waiting" && targetStatus === "on_hold") {
+      const missing: string[] = [];
+      if (!job.technician_id) missing.push("Assigned Technician");
+      if (!job.bay) missing.push("Bay Number");
+      if (missing.length > 0) {
+        toast.error(`Please fill in ${missing.join(" and ")} before moving to Inspection`);
+        return false;
+      }
+    }
     return true;
   };
 
