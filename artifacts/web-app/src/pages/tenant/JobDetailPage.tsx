@@ -2,7 +2,7 @@ import {
   ArrowLeft, Wrench, User, Car, Clock, AlertTriangle, Plus,
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
-  Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil,
+  Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil, ArrowRight,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -1512,7 +1512,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             {/* ── Parts / Diagnosis tab ────────────────────────────────── */}
             <TabsContent value="parts" className="mt-0">
               {isInspectionStage && (
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-3 gap-3 mb-4">
                   <button
                     onClick={() => { setShowAddPart(true); setShowAddManualPart(false); }}
                     className={cn(
@@ -1541,6 +1541,19 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <div>
                       <p className="text-sm font-semibold text-foreground">Add Parts</p>
                       <p className="text-xs text-muted-foreground">Custom or manual entry</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => moveStatus("qc")}
+                    disabled={moveStatusMutation.isPending}
+                    className="flex items-center gap-3 rounded-xl border-2 border-green-300 hover:border-green-500 bg-green-50 dark:bg-green-950/30 px-5 py-4 text-left transition-colors disabled:opacity-60"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
+                      <ArrowRight className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Move to Estimation Cost</p>
+                      <p className="text-xs text-muted-foreground">Send for pricing</p>
                     </div>
                   </button>
                 </div>
