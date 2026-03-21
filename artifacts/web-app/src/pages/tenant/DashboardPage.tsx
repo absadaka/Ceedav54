@@ -82,12 +82,14 @@ const BOOKING_STATUS: Record<string, { label: string; cls: string }> = {
 };
 
 const JOB_STATUS: Record<string, { label: string; cls: string; dot: string }> = {
-  waiting:       { label: "Waiting",        cls: "bg-muted text-muted-foreground",      dot: "bg-muted-foreground/50" },
-  in_progress:   { label: "In progress",    cls: "bg-amber-50 text-amber-700",          dot: "bg-amber-500" },
-  waiting_parts: { label: "Awaiting parts", cls: "bg-orange-50 text-orange-700",        dot: "bg-orange-500" },
-  on_hold:       { label: "On hold",        cls: "bg-rose-50 text-rose-700",            dot: "bg-rose-500" },
-  qc:            { label: "QC",             cls: "bg-violet-50 text-violet-700",        dot: "bg-violet-500" },
-  completed:     { label: "Completed",      cls: "bg-emerald-50 text-emerald-700",      dot: "bg-emerald-500" },
+  new:           { label: "New",                cls: "bg-slate-100 text-slate-700",         dot: "bg-slate-400" },
+  waiting:       { label: "Checked-in",         cls: "bg-yellow-50 text-yellow-800",        dot: "bg-yellow-500" },
+  on_hold:       { label: "Inspection",         cls: "bg-indigo-50 text-indigo-700",        dot: "bg-indigo-500" },
+  qc:            { label: "Estimation",         cls: "bg-blue-50 text-blue-700",            dot: "bg-blue-500" },
+  in_progress:   { label: "Work Started",       cls: "bg-amber-50 text-amber-700",          dot: "bg-amber-500" },
+  waiting_parts: { label: "Waiting for Parts",  cls: "bg-purple-50 text-purple-700",        dot: "bg-purple-500" },
+  completed:     { label: "Work Done",          cls: "bg-emerald-50 text-emerald-700",      dot: "bg-emerald-500" },
+  delivered:     { label: "Delivered",          cls: "bg-teal-50 text-teal-700",            dot: "bg-teal-500" },
 };
 
 const QUOTE_STATUS: Record<string, { label: string; cls: string }> = {
