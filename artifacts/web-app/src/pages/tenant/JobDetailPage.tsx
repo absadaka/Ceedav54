@@ -1137,20 +1137,20 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 {inlineField === "advisor" && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-52 py-1 text-left">
-                      <div className="px-2 py-1.5">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 bg-background border border-border rounded-lg shadow-lg w-44 py-1 text-left">
+                      <div className="px-2 py-1">
                         <input
                           autoFocus
-                          className="w-full text-sm bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
+                          className="w-full text-xs bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
                           placeholder="Search…"
                           value={inlineValue}
                           onChange={e => setInlineValue(e.target.value)}
                           onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
                         />
                       </div>
-                      <div className="border-t border-border max-h-48 overflow-y-auto">
+                      <div className="border-t border-border max-h-40 overflow-y-auto">
                         <button
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors text-muted-foreground"
+                          className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
                           onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: "" }); }}
                         >
                           — None —
@@ -1160,7 +1160,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           .map(m => (
                           <button
                             key={m.id}
-                            className={cn("w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors", m.id === job.advisor_id ? "font-semibold" : "")}
+                            className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors", m.id === job.advisor_id ? "font-semibold" : "")}
                             onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: m.id }); }}
                           >
                             {m.name}
