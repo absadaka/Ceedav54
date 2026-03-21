@@ -4,7 +4,7 @@ import {
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
   Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil, ArrowRight,
 } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
@@ -983,6 +983,19 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const statusSet    = isInspection ? INSPECTION_STATUSES : JOB_STATUSES;
   const currentLane  = statusSet.find(s => s.key === job.status) ?? JOB_STATUSES.find(s => s.key === job.status);
   const partsTotal  = parts.reduce((sum, p) => sum + parseFloat(p.line_total), 0);
+
+  const { data: catData } = useQuery({
+    queryKey: ["catalog", TENANT],
+    queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
+    staleTime: 60_000,
+    enabled: isEstimationStage,
+  });
+  const catalogSet = useMemo(() => {
+    const items: any[] = catData?.items ?? [];
+    const set = new Set<string>();
+    items.forEach(i => { set.add(i.name.toLowerCase()); if (i.sku) set.add(i.sku.toLowerCase()); });
+    return set;
+  }, [catData]);
   const runningLog  = timeLogs.find(l => !l.ended_at);
 
   const asJobRow: JobRow = {
@@ -1633,6 +1646,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <tbody>
                       {parts.map(p => {
                         const needsPrice = !isInspectionStage && parseFloat(p.unit_price) === 0;
+                        const isCatalogItem = catalogSet.has(p.description.toLowerCase()) || (p.part_number && catalogSet.has(p.part_number.toLowerCase()));
+                        const priceEditable = isEstimationStage && !isCatalogItem;
                         return (
                         <tr key={p.id} className={cn("border-b border-border last:border-0", needsPrice && isEstimationStage ? "bg-amber-50 dark:bg-amber-950/20" : "")}>
                           <td className="px-4 py-2.5 text-sm">{p.description}</td>
@@ -1640,7 +1655,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.qty).toFixed(2)}</td>
                           {!isInspectionStage && (
                             <td className="px-4 py-2.5 text-right text-sm">
-                              {isEstimationStage ? (
+                              {priceEditable ? (
                                 <input
                                   type="number"
                                   min="0"
