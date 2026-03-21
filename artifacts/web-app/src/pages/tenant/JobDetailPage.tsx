@@ -1006,33 +1006,27 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               <div className="flex items-center gap-1.5 mt-1 group/vin">
                 <span className="text-xs text-muted-foreground font-mono">VIN:</span>
                 {inlineField === "vin" ? (
-                  <div className="flex items-center gap-1">
-                    <input
-                      autoFocus
-                      className="text-xs font-mono bg-transparent border-b border-primary outline-none min-w-[10rem] py-0.5"
-                      value={inlineValue}
-                      placeholder="Enter VIN…"
-                      onChange={e => setInlineValue(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === "Enter" && job.vehicle_id) {
-                          e.preventDefault();
-                          patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: inlineValue } });
-                        }
-                        if (e.key === "Escape") setInlineField(null);
-                      }}
-                    />
-                    <button
-                      className="text-xs text-primary font-semibold hover:underline px-1"
-                      onMouseDown={e => {
+                  <input
+                    autoFocus
+                    className="text-xs font-mono bg-transparent outline-none min-w-[10rem] py-0.5"
+                    value={inlineValue}
+                    placeholder="Enter VIN…"
+                    onChange={e => setInlineValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && job.vehicle_id) {
                         e.preventDefault();
-                        if (job.vehicle_id) patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: inlineValue } });
-                      }}
-                    >Save</button>
-                    <button
-                      className="text-xs text-muted-foreground hover:underline px-1"
-                      onMouseDown={e => { e.preventDefault(); setInlineField(null); }}
-                    >Cancel</button>
-                  </div>
+                        patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: inlineValue } });
+                      }
+                      if (e.key === "Escape") setInlineField(null);
+                    }}
+                    onBlur={() => {
+                      if (job.vehicle_id && inlineValue !== (job.vin ?? "")) {
+                        patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: inlineValue } });
+                      } else {
+                        setInlineField(null);
+                      }
+                    }}
+                  />
                 ) : (
                   <button
                     className="text-xs font-mono text-muted-foreground hover:text-foreground flex items-center gap-1"
@@ -1054,24 +1048,25 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               <div className="text-center min-w-[70px] group/mileage">
                 <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Mileage</p>
                 {inlineField === "mileage" ? (
-                  <div className="flex flex-col items-center gap-1">
-                    <input
-                      autoFocus
-                      type="number"
-                      className="text-sm font-semibold bg-transparent border-b border-primary outline-none w-24 text-center"
-                      value={inlineValue}
-                      placeholder="e.g. 45000"
-                      onChange={e => setInlineValue(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === "Enter") { e.preventDefault(); patchJobMutation.mutate({ mileage_in: inlineValue }); }
-                        if (e.key === "Escape") setInlineField(null);
-                      }}
-                    />
-                    <div className="flex gap-1">
-                      <button className="text-[10px] text-primary font-semibold hover:underline" onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ mileage_in: inlineValue }); }}>Save</button>
-                      <button className="text-[10px] text-muted-foreground hover:underline" onMouseDown={e => { e.preventDefault(); setInlineField(null); }}>Cancel</button>
-                    </div>
-                  </div>
+                  <input
+                    autoFocus
+                    type="number"
+                    className="text-sm font-semibold bg-transparent outline-none w-24 text-center"
+                    value={inlineValue}
+                    placeholder="e.g. 45000"
+                    onChange={e => setInlineValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") { e.preventDefault(); patchJobMutation.mutate({ mileage_in: inlineValue }); }
+                      if (e.key === "Escape") setInlineField(null);
+                    }}
+                    onBlur={() => {
+                      if (inlineValue !== (job.mileage_in ?? "")) {
+                        patchJobMutation.mutate({ mileage_in: inlineValue });
+                      } else {
+                        setInlineField(null);
+                      }
+                    }}
+                  />
                 ) : (
                   <button
                     className="text-sm font-semibold text-foreground flex items-center gap-1 mx-auto hover:text-primary"
@@ -1094,23 +1089,24 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               <div className="text-center min-w-[70px] group/bay">
                 <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Bay</p>
                 {inlineField === "bay" ? (
-                  <div className="flex flex-col items-center gap-1">
-                    <input
-                      autoFocus
-                      className="text-sm font-semibold bg-transparent border-b border-primary outline-none w-16 text-center"
-                      value={inlineValue}
-                      placeholder="e.g. A1"
-                      onChange={e => setInlineValue(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === "Enter") { e.preventDefault(); patchJobMutation.mutate({ bay: inlineValue }); }
-                        if (e.key === "Escape") setInlineField(null);
-                      }}
-                    />
-                    <div className="flex gap-1">
-                      <button className="text-[10px] text-primary font-semibold hover:underline" onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ bay: inlineValue }); }}>Save</button>
-                      <button className="text-[10px] text-muted-foreground hover:underline" onMouseDown={e => { e.preventDefault(); setInlineField(null); }}>Cancel</button>
-                    </div>
-                  </div>
+                  <input
+                    autoFocus
+                    className="text-sm font-semibold bg-transparent outline-none w-16 text-center"
+                    value={inlineValue}
+                    placeholder="e.g. A1"
+                    onChange={e => setInlineValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") { e.preventDefault(); patchJobMutation.mutate({ bay: inlineValue }); }
+                      if (e.key === "Escape") setInlineField(null);
+                    }}
+                    onBlur={() => {
+                      if (inlineValue !== (job.bay ?? "")) {
+                        patchJobMutation.mutate({ bay: inlineValue });
+                      } else {
+                        setInlineField(null);
+                      }
+                    }}
+                  />
                 ) : (
                   <button
                     className="text-sm font-semibold text-foreground flex items-center gap-1 mx-auto hover:text-primary"
