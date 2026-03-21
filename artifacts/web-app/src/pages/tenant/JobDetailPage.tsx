@@ -1424,7 +1424,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         <div>
           <Tabs value={activeTab} onValueChange={setActiveTab} ref={tabsRef}>
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
-              <TabsTrigger value="work">Work</TabsTrigger>
+              <TabsTrigger value="work">Customer Concerns</TabsTrigger>
               {isInspection && (
                 <TabsTrigger value="parts">Diagnosis ({parts.length})</TabsTrigger>
               )}
@@ -1449,55 +1449,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
                   {job.customer_concern ?? <span className="text-muted-foreground/50 italic">No customer concern recorded</span>}
                 </p>
-              </div>
-
-              {/* Technician notes log */}
-              <div className="border border-border rounded-lg bg-background p-4 space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Wrench className="w-3.5 h-3.5" />Technician notes
-                </p>
-
-                {/* Existing notes timeline */}
-                {techNotes.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {(techNotes as TechNote[]).map((n) => (
-                      <div key={n.id} className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-medium text-foreground">
-                            {n.created_by_name ?? "Unknown"}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground shrink-0">
-                            {new Date(n.created_at).toLocaleString("en-GB", {
-                              day: "2-digit", month: "short", year: "numeric",
-                              hour: "2-digit", minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{n.note}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground/50 italic">No notes yet.</p>
-                )}
-
-                {/* Add new note */}
-                <div className="space-y-2 pt-1 border-t border-border">
-                  <Textarea
-                    rows={3}
-                    placeholder="Add a new note — findings, work done, recommendations…"
-                    value={newNote}
-                    onChange={e => setNewNote(e.target.value)}
-                    className="text-sm resize-none"
-                  />
-                  <Button
-                    size="sm"
-                    disabled={addNoteMutation.isPending}
-                    onClick={() => { if (newNote.trim()) addNoteMutation.mutate(newNote); }}
-                  >
-                    {addNoteMutation.isPending ? "Saving…" : "Save note"}
-                  </Button>
-                </div>
               </div>
 
               {/* QC review */}
