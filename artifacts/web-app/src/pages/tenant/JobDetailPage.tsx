@@ -1957,64 +1957,75 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               </TabsContent>
             )}
 
-            {/* ── Cost Estimation tab ──────────────────────────────────── */}
+            {/* ── Quotation tab ──────────────────────────────────── */}
             <TabsContent value="cost" className="mt-0 space-y-4">
+              {/* Quotation flow tracker — always visible */}
+              {(() => {
+                const hasQuotation = !!quotation;
+                const status = quotation?.status ?? "";
+                const steps = [
+                  { key: "created",  label: hasQuotation ? "Created"  : "Create",   done: hasQuotation, actionable: !hasQuotation },
+                  { key: "shared",   label: hasQuotation && ["sent","viewed","approved","rejected"].includes(status) ? "Shared" : "Share", done: ["sent","viewed","approved","rejected"].includes(status), actionable: false },
+                  { key: "approved", label: status === "approved" ? "Approved" : status === "rejected" ? "Rejected" : "Approve", done: status === "approved", actionable: false },
+                ];
+                const rejected = status === "rejected";
+                return (
+                  <div className="flex justify-center py-2">
+                    <div className="inline-flex items-center gap-3 rounded-full border border-border bg-muted/30 px-5 py-2">
+                      {steps.map((step, i) => {
+                        const showRejected = rejected && step.key === "approved";
+                        const isClickable = step.actionable && !createQuotationMutation.isPending;
+                        return (
+                          <div key={step.key} className="flex items-center">
+                            <button
+                              type="button"
+                              disabled={!isClickable}
+                              onClick={() => { if (step.key === "created" && !hasQuotation) createQuotationMutation.mutate(); }}
+                              className={cn(
+                                "flex items-center gap-1.5 rounded-full transition-colors",
+                                isClickable ? "cursor-pointer hover:bg-primary/10 px-2 py-0.5 -mx-1" : "cursor-default"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0",
+                                showRejected ? "bg-red-500 text-white" :
+                                step.done ? "bg-green-500 text-white" :
+                                isClickable ? "bg-blue-500 text-white animate-pulse" :
+                                "bg-muted-foreground/20 text-muted-foreground/50"
+                              )}>
+                                {createQuotationMutation.isPending && step.key === "created" ? "" :
+                                 showRejected ? "✕" : step.done ? "✓" : isClickable ? "+" : ""}
+                              </div>
+                              <span className={cn(
+                                "text-[11px] font-medium whitespace-nowrap",
+                                showRejected ? "text-red-600" :
+                                step.done ? "text-foreground" :
+                                isClickable ? "text-blue-600 font-semibold" : "text-muted-foreground/50"
+                              )}>
+                                {createQuotationMutation.isPending && step.key === "created" ? "Creating…" : step.label}
+                              </span>
+                            </button>
+                            {i < steps.length - 1 && (
+                              <div className={cn(
+                                "w-8 h-px ml-3",
+                                steps[i + 1]?.done ? "bg-green-400" : "bg-border"
+                              )} />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {!quotation ? (
-                <div className="border border-border rounded-lg bg-background p-8 text-center space-y-3">
-                  <DollarSign className="w-10 h-10 mx-auto text-muted-foreground/20" />
-                  <p className="text-sm text-muted-foreground">No quotation linked to this job yet.</p>
-                  <Button size="sm" className="gap-1.5" onClick={() => createQuotationMutation.mutate()} disabled={createQuotationMutation.isPending}>
-                    {createQuotationMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                    {createQuotationMutation.isPending ? "Creating…" : "Create quotation"}
-                  </Button>
+                <div className="border border-dashed border-border rounded-lg bg-muted/10 p-8 text-center">
+                  <DollarSign className="w-8 h-8 mx-auto text-muted-foreground/20 mb-2" />
+                  <p className="text-sm text-muted-foreground">Click <span className="font-semibold text-blue-600">Create</span> above to generate a quotation from the diagnosis.</p>
                 </div>
               ) : (
                 <>
-                  {/* Quotation flow tracker */}
-                  {(() => {
-                    const steps = [
-                      { key: "created", label: "Created", done: true },
-                      { key: "shared",  label: "Shared",  done: ["sent", "viewed", "approved", "rejected"].includes(quotation.status) },
-                      { key: "approved",label: "Approved", done: quotation.status === "approved" },
-                    ];
-                    const rejected = quotation.status === "rejected";
-                    return (
-                      <div className="flex justify-center py-2">
-                        <div className="inline-flex items-center gap-3 rounded-full border border-border bg-muted/30 px-5 py-2">
-                          {steps.map((step, i) => {
-                            const showRejected = rejected && step.key === "approved";
-                            return (
-                              <div key={step.key} className="flex items-center">
-                                <div className="flex items-center gap-1.5">
-                                  <div className={cn(
-                                    "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0",
-                                    showRejected ? "bg-red-500 text-white" :
-                                    step.done ? "bg-green-500 text-white" :
-                                    "bg-muted-foreground/20 text-muted-foreground/50"
-                                  )}>
-                                    {showRejected ? "✕" : step.done ? "✓" : ""}
-                                  </div>
-                                  <span className={cn(
-                                    "text-[11px] font-medium whitespace-nowrap",
-                                    showRejected ? "text-red-600" :
-                                    step.done ? "text-foreground" : "text-muted-foreground/50"
-                                  )}>
-                                    {showRejected ? "Rejected" : step.label}
-                                  </span>
-                                </div>
-                                {i < steps.length - 1 && (
-                                  <div className={cn(
-                                    "w-8 h-px ml-3",
-                                    steps[i + 1]?.done ? "bg-green-400" : "bg-border"
-                                  )} />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })()}
 
                   {/* Summary card */}
                   <div className="rounded-lg border border-border bg-background p-4 space-y-2">
