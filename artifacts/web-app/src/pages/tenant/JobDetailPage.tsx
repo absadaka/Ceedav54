@@ -1252,43 +1252,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left column */}
-        <div className="space-y-4">
-          {/* Timeline */}
-          <div className="border border-border rounded-lg bg-background p-4 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Timeline</p>
-            <div className="space-y-1.5 text-xs">
-              {[
-                { label: "Created",   value: job.created_at   },
-                { label: "Started",   value: job.started_at   },
-                { label: "QC",        value: job.qc_at        },
-                { label: "Completed", value: job.completed_at },
-              ].map(({ label, value }) => value && (
-                <div key={label} className="flex justify-between gap-2">
-                  <span className="text-muted-foreground">{label}</span>
-                  <span className="font-medium text-right">{fmtDate(value)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Linked */}
-          {(quotation || job.booking_id) && (
-            <div className="border border-border rounded-lg bg-background p-4 space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Linked</p>
-              {quotation && (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Quotation</span>
-                  <span className="font-mono font-semibold">{quotation.ref}</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Right column — tabs */}
-        <div className="lg:col-span-2">
+      <div className="space-y-5">
+        {/* Full-width tabs */}
+        <div>
           <Tabs defaultValue="work">
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
               <TabsTrigger value="work">Work</TabsTrigger>
@@ -1756,6 +1722,38 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               </div>
             </TabsContent>
           </Tabs>
+        </div>
+
+        {/* Timeline + Linked — full width row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="border border-border rounded-lg bg-background p-4 space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Timeline</p>
+            <div className="space-y-1.5 text-xs">
+              {[
+                { label: "Created",   value: job.created_at   },
+                { label: "Started",   value: job.started_at   },
+                { label: "QC",        value: job.qc_at        },
+                { label: "Completed", value: job.completed_at },
+              ].map(({ label, value }) => value && (
+                <div key={label} className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">{label}</span>
+                  <span className="font-medium text-right">{fmtDate(value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {(quotation || job.booking_id) && (
+            <div className="border border-border rounded-lg bg-background p-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Linked</p>
+              {quotation && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Quotation</span>
+                  <span className="font-mono font-semibold">{quotation.ref}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
