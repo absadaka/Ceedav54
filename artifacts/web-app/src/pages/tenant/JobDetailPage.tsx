@@ -1032,44 +1032,80 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         </div>
       )}
 
-      {/* Next Required Action */}
+      {/* Next Required Action + Activity Timeline */}
       {job.status !== "cancelled" && (
-        <div>
-          {(() => {
-            const NEXT_ACTION: Record<string, { title: string; desc: string; btn: string }> = {
-              new:           { title: "Check In Vehicle",                desc: "Verify vehicle arrival, record mileage and start the job card.",                                              btn: "Start Check-in"       },
-              waiting:       { title: "Begin Vehicle Inspection",        desc: "Vehicle is checked in. Assign a technician and start the multi-point inspection.",                            btn: "Start Inspection"     },
-              on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Technician needs to verify critical safety components and document current state via the multi-point checklist.", btn: "Start Inspection Checklist" },
-              qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Estimation"    },
-              in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status"   },
-              waiting_parts: { title: "Awaiting Parts",                  desc: "Parts have been ordered. Update the status when parts arrive to resume work.",                               btn: "Mark Parts Arrived"   },
-              completed:     { title: "Ready for Delivery",              desc: "Work is complete. Notify the customer and prepare the vehicle for handover.",                                btn: "Mark as Delivered"    },
-              delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: ""                     },
-            };
-            const action = NEXT_ACTION[job.status] ?? { title: "Update Status", desc: "Move this job to the next stage in the workflow.", btn: "Move Status" };
-            return (
-              <div className="lg:col-span-3 rounded-xl border border-border bg-background px-6 py-5 flex items-center justify-between gap-6">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5 mb-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
-                    Next required action
-                  </p>
-                  <h2 className="text-xl font-bold leading-tight text-foreground mb-2">{action.title}</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{action.desc}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Next Required Action */}
+          <div className="lg:col-span-2">
+            {(() => {
+              const NEXT_ACTION: Record<string, { title: string; desc: string; btn: string }> = {
+                new:           { title: "Check In Vehicle",                desc: "Verify vehicle arrival, record mileage and start the job card.",                                              btn: "Start Check-in"       },
+                waiting:       { title: "Begin Vehicle Inspection",        desc: "Vehicle is checked in. Assign a technician and start the multi-point inspection.",                            btn: "Start Inspection"     },
+                on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Technician needs to verify critical safety components and document current state via the multi-point checklist.", btn: "Start Inspection Checklist" },
+                qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Estimation"    },
+                in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status"   },
+                waiting_parts: { title: "Awaiting Parts",                  desc: "Parts have been ordered. Update the status when parts arrive to resume work.",                               btn: "Mark Parts Arrived"   },
+                completed:     { title: "Ready for Delivery",              desc: "Work is complete. Notify the customer and prepare the vehicle for handover.",                                btn: "Mark as Delivered"    },
+                delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: ""                     },
+              };
+              const action = NEXT_ACTION[job.status] ?? { title: "Update Status", desc: "Move this job to the next stage in the workflow.", btn: "Move Status" };
+              return (
+                <div className="h-full rounded-xl border border-border bg-background px-6 py-5 flex items-center justify-between gap-6">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5 mb-3">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
+                      Next required action
+                    </p>
+                    <h2 className="text-xl font-bold leading-tight text-foreground mb-2">{action.title}</h2>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{action.desc}</p>
+                  </div>
+                  {job.status !== "delivered" && (
+                    <button
+                      onClick={() => setStatusOpen(true)}
+                      className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md"
+                    >
+                      <span className="text-sm font-bold leading-tight text-center px-2">{action.btn}</span>
+                      <span className="text-base font-bold leading-none">→</span>
+                    </button>
+                  )}
                 </div>
-                {job.status !== "delivered" && (
-                  <button
-                    onClick={() => setStatusOpen(true)}
-                    className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md"
-                  >
-                    <span className="text-sm font-bold leading-tight text-center px-2">{action.btn}</span>
-                    <span className="text-base font-bold leading-none">→</span>
-                  </button>
-                )}
-              </div>
-            );
-          })()}
+              );
+            })()}
+          </div>
 
+          {/* Activity Timeline */}
+          <div className="rounded-xl border border-border bg-background px-6 py-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-5">
+              Activity Timeline
+            </p>
+            {statusHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground/50 italic">No activity yet.</p>
+            ) : (
+              <div className="space-y-0">
+                {[...statusHistory].reverse().map((h, idx, arr) => (
+                  <div key={h.id} className="flex gap-4">
+                    {/* Dot + line */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-blue-600 shrink-0 mt-0.5" />
+                      {idx < arr.length - 1 && (
+                        <div className="w-px flex-1 bg-slate-200 my-1.5" />
+                      )}
+                    </div>
+                    {/* Content */}
+                    <div className={cn("min-w-0", idx < arr.length - 1 ? "pb-5" : "")}>
+                      <p className="text-sm font-semibold text-foreground leading-tight">
+                        {jobStatusLabel(h.to_status, isInspection)}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {h.changed_by_name ? `${h.changed_by_name} · ` : ""}
+                        {new Date(h.created_at).toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
