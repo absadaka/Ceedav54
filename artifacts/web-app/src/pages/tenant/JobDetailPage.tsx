@@ -1137,7 +1137,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 {inlineField === "advisor" && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 bg-background border border-border rounded-lg shadow-lg w-44 py-1 text-left">
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-44 py-1 text-left">
                       <div className="px-2 py-1">
                         <input
                           autoFocus
