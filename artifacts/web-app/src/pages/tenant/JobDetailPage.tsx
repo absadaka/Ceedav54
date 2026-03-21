@@ -692,6 +692,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [inlineValue,    setInlineValue]    = useState("");
   const inlineSavedRef = useRef(false);
   const [showFullTimeline, setShowFullTimeline] = useState(false);
+  const [activeTab, setActiveTab] = useState("work");
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   const patchJobMutation = useMutation({
     mutationFn: (data: Record<string, string>) =>
@@ -1300,7 +1302,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               const NEXT_ACTION: Record<string, { title: string; desc: string; btn: string }> = {
                 new:           { title: "Check In Vehicle",                desc: "Verify vehicle arrival, record mileage and start the job card.",                                              btn: "Start Check-in"       },
                 waiting:       { title: "Begin Vehicle Inspection",        desc: "Vehicle is checked in. Assign a technician and start the multi-point inspection.",                            btn: "Start Inspection"     },
-                on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Technician needs to verify critical safety components and document current state via the multi-point checklist.", btn: "Start Inspection Checklist" },
+                on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Add required services and parts to the diagnosis list. Prices are hidden — focus on what the vehicle needs.", btn: "Start Inspection Checklist" },
                 qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Estimation"    },
                 in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status"   },
                 waiting_parts: { title: "Awaiting Parts",                  desc: "Parts have been ordered. Update the status when parts arrive to resume work.",                               btn: "Mark Parts Arrived"   },
@@ -1320,12 +1322,19 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   </div>
                   {job.status !== "delivered" && (
                     <button
-                      onClick={moveToNext}
+                      onClick={() => {
+                        if (job.status === "on_hold") {
+                          setActiveTab("parts");
+                          setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                        } else {
+                          moveToNext();
+                        }
+                      }}
                       disabled={moveStatusMutation.isPending}
                       className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60"
                     >
                       <span className="text-sm font-bold leading-tight text-center px-2">{action.btn}</span>
-                      <span className="text-base font-bold leading-none">→</span>
+                      <span className="text-base font-bold leading-none">{job.status === "on_hold" ? "↓" : "→"}</span>
                     </button>
                   )}
                 </div>
@@ -1412,7 +1421,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       <div className="space-y-5">
         {/* Full-width tabs */}
         <div>
-          <Tabs defaultValue="work">
+          <Tabs value={activeTab} onValueChange={setActiveTab} ref={tabsRef}>
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
               <TabsTrigger value="work">Work</TabsTrigger>
               {isInspection && (
