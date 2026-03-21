@@ -1123,34 +1123,52 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
             {/* ADVISOR — inline dropdown */}
             <div className="flex items-stretch">
-              <div className="text-center min-w-[70px] group/advisor">
+              <div className="text-center min-w-[70px] relative">
                 <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Advisor</p>
-                {inlineField === "advisor" ? (
-                  <select
-                    autoFocus
-                    className="text-sm font-semibold bg-background border border-primary rounded outline-none px-1 py-0.5 text-center"
-                    value={inlineValue}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setInlineValue(val);
-                      patchJobMutation.mutate({ advisor_id: val });
-                    }}
-                    onBlur={() => setInlineField(null)}
-                    onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
-                  >
-                    <option value="">— unassigned —</option>
-                    {teamMembers.map(m => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <button
-                    className="text-sm font-semibold text-foreground flex items-center gap-1 mx-auto hover:text-primary"
-                    onClick={() => { setInlineField("advisor"); setInlineValue(job.advisor_id ?? ""); }}
-                  >
-                    {job.advisor_name ? job.advisor_name.split(" ").map((p, i) => i === 0 ? p : p[0] + ".").join(" ") : "—"}
-                    <Pencil className="w-3 h-3 opacity-0 group-hover/advisor:opacity-40 shrink-0" />
-                  </button>
+                <button
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground border border-border rounded-md px-3 py-1 hover:border-foreground/30 transition-colors"
+                  onClick={() => { setInlineField(inlineField === "advisor" ? null : "advisor"); setInlineValue(""); }}
+                >
+                  <span className={cn("truncate max-w-[7rem]", job.advisor_name ? "text-foreground font-semibold" : "")}>
+                    {job.advisor_name ?? "Select advisor"}
+                  </span>
+                  <ChevronRight className="w-3 h-3 rotate-90 shrink-0 text-muted-foreground" />
+                </button>
+                {inlineField === "advisor" && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-52 py-1 text-left">
+                      <div className="px-2 py-1.5">
+                        <input
+                          autoFocus
+                          className="w-full text-sm bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
+                          placeholder="Search…"
+                          value={inlineValue}
+                          onChange={e => setInlineValue(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
+                        />
+                      </div>
+                      <div className="border-t border-border max-h-48 overflow-y-auto">
+                        <button
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors text-muted-foreground"
+                          onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: "" }); }}
+                        >
+                          — None —
+                        </button>
+                        {teamMembers
+                          .filter(m => !inlineValue || m.name.toLowerCase().includes(inlineValue.toLowerCase()))
+                          .map(m => (
+                          <button
+                            key={m.id}
+                            className={cn("w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors", m.id === job.advisor_id ? "font-semibold" : "")}
+                            onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: m.id }); }}
+                          >
+                            {m.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
