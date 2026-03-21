@@ -737,6 +737,27 @@ router.post("/:id/reject", async (req, res) => {
   }
 });
 
+/* ─── POST /quotations/:id/revert-to-sent ─────────────────────────────────── */
+router.post("/:id/revert-to-sent", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const [quotation] = await db
+      .update(quotationsTable)
+      .set({ status: "sent", approved_at: null, rejected_at: null, updated_at: new Date() })
+      .where(and(eq(quotationsTable.id, req.params.id), eq(quotationsTable.tenant_id, tenant.id)))
+      .returning();
+
+    if (!quotation) return res.status(404).json({ error: "Quotation not found" });
+    res.json({ quotation });
+  } catch (e: any) {
+    console.error("POST /quotations/:id/revert-to-sent", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 /* ─── POST /quotations/:id/convert ───────────────────────────────────────── */
 router.post("/:id/convert", async (req, res) => {
   try {
