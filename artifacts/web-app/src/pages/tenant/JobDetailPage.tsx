@@ -1662,7 +1662,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                                   step="0.01"
                                   defaultValue={parseFloat(p.unit_price).toFixed(2)}
                                   className={cn(
-                                    "w-24 text-right text-sm bg-transparent border-none px-2 py-1 outline-none focus:ring-0",
+                                    "w-24 text-right text-sm bg-transparent border border-transparent rounded px-2 py-1 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
                                     needsPrice ? "text-amber-600" : ""
                                   )}
                                   onBlur={e => {
