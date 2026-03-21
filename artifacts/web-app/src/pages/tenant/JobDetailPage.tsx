@@ -726,15 +726,21 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     waiting_parts: "in_progress", completed: "delivered",
   };
 
-  const validateCheckin = (targetStatus: string): boolean => {
-    if (!job || job.status !== "new" || targetStatus !== "waiting") return true;
-    const missing: string[] = [];
-    if (!job.vin) missing.push("VIN");
-    const mileage = job.mileage_in ?? (job as any).vehicle_mileage;
-    if (!mileage) missing.push("Mileage");
-    if (missing.length > 0) {
-      toast.error(`Please fill in ${missing.join(" and ")} before checking in`);
+  const validateTransition = (targetStatus: string): boolean => {
+    if (!job) return false;
+    if (job.status === "new" && targetStatus !== "waiting") {
+      toast.error("You must check in the vehicle first before moving to any other stage");
       return false;
+    }
+    if (job.status === "new" && targetStatus === "waiting") {
+      const missing: string[] = [];
+      if (!job.vin) missing.push("VIN");
+      const mileage = job.mileage_in ?? (job as any).vehicle_mileage;
+      if (!mileage) missing.push("Mileage");
+      if (missing.length > 0) {
+        toast.error(`Please fill in ${missing.join(" and ")} before checking in`);
+        return false;
+      }
     }
     return true;
   };
@@ -762,7 +768,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   });
 
   const moveStatus = (targetStatus: string) => {
-    if (!validateCheckin(targetStatus)) return;
+    if (!validateTransition(targetStatus)) return;
     moveStatusMutation.mutate(targetStatus);
   };
 
