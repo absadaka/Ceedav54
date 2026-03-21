@@ -950,6 +950,18 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to stop timer"),
   });
 
+  const { data: catData } = useQuery({
+    queryKey: ["catalog", TENANT],
+    queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
+    staleTime: 60_000,
+  });
+  const catalogSet = useMemo(() => {
+    const items: any[] = catData?.items ?? [];
+    const set = new Set<string>();
+    items.forEach(i => { set.add(i.name.toLowerCase()); if (i.sku) set.add(i.sku.toLowerCase()); });
+    return set;
+  }, [catData]);
+
   if (isLoading) {
     return (
       <div className="space-y-5 max-w-5xl mx-auto">
@@ -984,18 +996,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const currentLane  = statusSet.find(s => s.key === job.status) ?? JOB_STATUSES.find(s => s.key === job.status);
   const partsTotal  = parts.reduce((sum, p) => sum + parseFloat(p.line_total), 0);
 
-  const { data: catData } = useQuery({
-    queryKey: ["catalog", TENANT],
-    queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
-    staleTime: 60_000,
-    enabled: isEstimationStage,
-  });
-  const catalogSet = useMemo(() => {
-    const items: any[] = catData?.items ?? [];
-    const set = new Set<string>();
-    items.forEach(i => { set.add(i.name.toLowerCase()); if (i.sku) set.add(i.sku.toLowerCase()); });
-    return set;
-  }, [catData]);
   const runningLog  = timeLogs.find(l => !l.ended_at);
 
   const asJobRow: JobRow = {
