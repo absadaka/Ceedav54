@@ -1995,7 +1995,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
             {/* ── Quotation tab ──────────────────────────────────── */}
             <TabsContent value="cost" className="mt-0 space-y-4">
-              {/* Quotation flow tracker — always visible */}
+              {/* Quotation flow tracker with inline actions */}
               {(() => {
                 const hasQuotation = !!quotation;
                 const qStatus = quotation?.status ?? "";
@@ -2003,70 +2003,146 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 const isApproved = qStatus === "approved";
                 const isRejected = qStatus === "rejected";
 
-                const steps = [
-                  { key: "created",  label: hasQuotation ? "Created"  : "Create",   done: hasQuotation, clickable: !hasQuotation },
-                  { key: "shared",   label: isShared ? "Shared" : "Share",          done: isShared,     clickable: (hasQuotation && !isShared) || isApproved || isRejected },
-                  { key: "approved", label: isApproved ? "Approved" : isRejected ? "Rejected" : "Approve", done: isApproved || isRejected, clickable: isShared && !isApproved && !isRejected },
-                ];
-
                 return (
-                  <div className="flex justify-center py-2">
-                    <div className="inline-flex items-center gap-3 rounded-full border border-border bg-muted/30 px-5 py-2">
-                      {steps.map((step, i) => {
-                        const showRejected = isRejected && step.key === "approved";
-                        const isActive = step.clickable && !createQuotationMutation.isPending && !approveQuotationMutation.isPending;
-                        return (
-                          <div key={step.key} className="flex items-center">
-                            <button
-                              type="button"
-                              disabled={!isActive}
-                              onClick={() => {
-                                if (step.key === "created" && !hasQuotation) createQuotationMutation.mutate();
-                                if (step.key === "shared" && hasQuotation && !isShared) setShowShareModal(true);
-                                if (step.key === "shared" && (isApproved || isRejected)) setShowRevertShareModal(true);
-                                if (step.key === "approved" && isShared && !isApproved && !isRejected) setShowApproveConfirm(true);
-                              }}
-                              className={cn(
-                                "flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
-                                isActive && step.done
-                                  ? "cursor-pointer hover:opacity-70"
-                                  : isActive
-                                  ? "cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                                  : "cursor-default"
-                              )}
-                            >
-                              {(createQuotationMutation.isPending && step.key === "created") || (approveQuotationMutation.isPending && step.key === "approved") ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                              ) : (
-                                <div className={cn(
-                                  "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
-                                  showRejected ? "bg-red-500 text-white" :
-                                  step.done ? "bg-green-500 text-white" :
-                                  isActive ? "bg-white/20 text-white" :
-                                  "bg-muted-foreground/20 text-muted-foreground/50"
-                                )}>
-                                  {showRejected ? "✕" : step.done ? "✓" : isActive ? "+" : ""}
-                                </div>
-                              )}
-                              <span className={cn(
-                                "text-[11px] font-medium whitespace-nowrap",
-                                showRejected ? "text-red-600" :
-                                step.done ? "text-foreground" :
-                                isActive ? "text-white font-semibold" : "text-muted-foreground/50"
-                              )}>
-                                {createQuotationMutation.isPending && step.key === "created" ? "Creating…" :
-                                 approveQuotationMutation.isPending && step.key === "approved" ? "Approving…" : step.label}
-                              </span>
-                            </button>
-                            {i < steps.length - 1 && (
-                              <div className={cn(
-                                "w-8 h-px ml-3",
-                                steps[i + 1]?.done ? "bg-green-400" : "bg-border"
-                              )} />
-                            )}
-                          </div>
-                        );
-                      })}
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* ── Step 1: Create ── */}
+                    <div className={cn(
+                      "rounded-xl border p-4 text-center space-y-3",
+                      hasQuotation ? "border-green-200 bg-green-50/50" : "border-blue-200 bg-blue-50/50"
+                    )}>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className={cn(
+                          "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                          hasQuotation ? "bg-green-500 text-white" : "bg-blue-500 text-white"
+                        )}>
+                          {createQuotationMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : hasQuotation ? "✓" : "1"}
+                        </div>
+                        <span className={cn("text-sm font-semibold", hasQuotation ? "text-green-700" : "text-blue-700")}>
+                          {hasQuotation ? "Created" : "Create"}
+                        </span>
+                      </div>
+                      {!hasQuotation && (
+                        <Button
+                          size="sm"
+                          className="w-full gap-1.5"
+                          onClick={() => createQuotationMutation.mutate()}
+                          disabled={createQuotationMutation.isPending}
+                        >
+                          {createQuotationMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                          {createQuotationMutation.isPending ? "Creating…" : "Create Quotation"}
+                        </Button>
+                      )}
+                      {hasQuotation && (
+                        <p className="text-[11px] text-green-600/70">Quotation {quotation.ref}</p>
+                      )}
+                    </div>
+
+                    {/* ── Step 2: Share ── */}
+                    <div className={cn(
+                      "rounded-xl border p-4 text-center space-y-3",
+                      isShared ? "border-green-200 bg-green-50/50" :
+                      hasQuotation ? "border-blue-200 bg-blue-50/50" :
+                      "border-border bg-muted/20 opacity-50"
+                    )}>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className={cn(
+                          "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                          isShared ? "bg-green-500 text-white" :
+                          hasQuotation ? "bg-blue-500 text-white" :
+                          "bg-muted-foreground/20 text-muted-foreground/50"
+                        )}>
+                          {isShared ? "✓" : "2"}
+                        </div>
+                        <span className={cn("text-sm font-semibold",
+                          isShared ? "text-green-700" :
+                          hasQuotation ? "text-blue-700" : "text-muted-foreground/40"
+                        )}>
+                          {isShared ? "Shared" : "Share"}
+                        </span>
+                      </div>
+                      {hasQuotation && !isShared && (
+                        <div className="space-y-1.5">
+                          {job.client_phone && (
+                            <div className="flex gap-1.5">
+                              <Button size="sm" variant="outline" className="flex-1 text-xs h-7 gap-1" onClick={() => { setShareChannels({ whatsapp: true, sms: false, email: false }); shareQuotationMutation.mutate({ whatsapp: true, sms: false, email: false }); }}>
+                                💬 WhatsApp
+                              </Button>
+                              <Button size="sm" variant="outline" className="flex-1 text-xs h-7 gap-1" onClick={() => { setShareChannels({ whatsapp: false, sms: true, email: false }); shareQuotationMutation.mutate({ whatsapp: false, sms: true, email: false }); }}>
+                                📱 SMS
+                              </Button>
+                            </div>
+                          )}
+                          {job.client_email && (
+                            <Button size="sm" variant="outline" className="w-full text-xs h-7 gap-1" onClick={() => { setShareChannels({ whatsapp: false, sms: false, email: true }); shareQuotationMutation.mutate({ whatsapp: false, sms: false, email: true }); }}>
+                              📧 Email
+                            </Button>
+                          )}
+                          {!job.client_phone && !job.client_email && (
+                            <p className="text-[11px] text-muted-foreground">No contact info on file</p>
+                          )}
+                        </div>
+                      )}
+                      {isShared && !(isApproved || isRejected) && (
+                        <div className="space-y-1.5">
+                          <p className="text-[11px] text-green-600/70">Sent to customer</p>
+                          <Button size="sm" variant="outline" className="w-full text-xs h-7 gap-1" onClick={() => setShowShareModal(true)}>
+                            Share Again
+                          </Button>
+                        </div>
+                      )}
+                      {(isApproved || isRejected) && (
+                        <div className="space-y-1.5">
+                          <p className="text-[11px] text-green-600/70">Sent to customer</p>
+                          <Button size="sm" variant="outline" className="w-full text-xs h-7 gap-1" onClick={() => setShowRevertShareModal(true)}>
+                            Revert & Re-share
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Step 3: Approve ── */}
+                    <div className={cn(
+                      "rounded-xl border p-4 text-center space-y-3",
+                      isApproved ? "border-green-200 bg-green-50/50" :
+                      isRejected ? "border-red-200 bg-red-50/50" :
+                      isShared ? "border-blue-200 bg-blue-50/50" :
+                      "border-border bg-muted/20 opacity-50"
+                    )}>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className={cn(
+                          "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                          isApproved ? "bg-green-500 text-white" :
+                          isRejected ? "bg-red-500 text-white" :
+                          isShared ? "bg-blue-500 text-white" :
+                          "bg-muted-foreground/20 text-muted-foreground/50"
+                        )}>
+                          {isRejected ? "✕" : isApproved ? "✓" : "3"}
+                        </div>
+                        <span className={cn("text-sm font-semibold",
+                          isApproved ? "text-green-700" :
+                          isRejected ? "text-red-700" :
+                          isShared ? "text-blue-700" : "text-muted-foreground/40"
+                        )}>
+                          {isApproved ? "Approved" : isRejected ? "Rejected" : "Approve"}
+                        </span>
+                      </div>
+                      {isShared && !isApproved && !isRejected && (
+                        <Button
+                          size="sm"
+                          className="w-full gap-1.5"
+                          onClick={() => setShowApproveConfirm(true)}
+                          disabled={approveQuotationMutation.isPending}
+                        >
+                          {approveQuotationMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                          {approveQuotationMutation.isPending ? "Approving…" : "Force Approve"}
+                        </Button>
+                      )}
+                      {isApproved && (
+                        <p className="text-[11px] text-green-600/70">Customer approved</p>
+                      )}
+                      {isRejected && (
+                        <p className="text-[11px] text-red-600/70">Customer rejected</p>
+                      )}
                     </div>
                   </div>
                 );
@@ -2075,7 +2151,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {!quotation ? (
                 <div className="border border-dashed border-border rounded-lg bg-muted/10 p-6 text-center">
                   <DollarSign className="w-8 h-8 mx-auto text-muted-foreground/20 mb-2" />
-                  <p className="text-sm text-muted-foreground">No quotation yet. Click <span className="font-semibold text-blue-600">+ Create</span> above to get started.</p>
+                  <p className="text-sm text-muted-foreground">Create a quotation above to get started.</p>
                 </div>
               ) : (
                 <>
