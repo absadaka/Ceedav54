@@ -690,6 +690,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
   const [inlineField,    setInlineField]    = useState<string | null>(null);
   const [inlineValue,    setInlineValue]    = useState("");
+  const inlineSavedRef = useRef(false);
 
   const patchJobMutation = useMutation({
     mutationFn: (data: Record<string, string>) =>
@@ -1013,12 +1014,24 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     placeholder="Enter VIN…"
                     onChange={e => setInlineValue(e.target.value)}
                     onKeyDown={e => {
-                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                      if (e.key === "Escape") { setInlineValue(job.vin ?? ""); (e.target as HTMLInputElement).blur(); }
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const trimmed = inlineValue.trim();
+                        if (!job.vehicle_id) { toast.error("No vehicle linked to this job"); setInlineField(null); return; }
+                        if (trimmed !== (job.vin ?? "")) {
+                          inlineSavedRef.current = true;
+                          patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: trimmed } });
+                        } else {
+                          setInlineField(null);
+                        }
+                      }
+                      if (e.key === "Escape") { inlineSavedRef.current = true; setInlineField(null); }
                     }}
                     onBlur={() => {
+                      if (inlineSavedRef.current) { inlineSavedRef.current = false; return; }
                       const trimmed = inlineValue.trim();
-                      if (job.vehicle_id && trimmed !== (job.vin ?? "")) {
+                      if (!job.vehicle_id) { setInlineField(null); return; }
+                      if (trimmed !== (job.vin ?? "")) {
                         patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: trimmed } });
                       } else {
                         setInlineField(null);
