@@ -786,6 +786,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareChannels, setShareChannels] = useState<{ whatsapp: boolean; sms: boolean; email: boolean }>({ whatsapp: false, sms: false, email: false });
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [showRevertShareModal, setShowRevertShareModal] = useState(false);
   const [newNote,        setNewNote]        = useState("");
   const [timerNote,      setTimerNote]      = useState("");
 
@@ -978,6 +979,14 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Payment removed"); },
     onError: () => toast.error("Failed to remove payment"),
+  });
+
+  const revertToSharedMutation = useMutation({
+    mutationFn: () =>
+      fetch(`${API}/api/quotations/${quotation?.id}/revert-to-sent?tenant=${TENANT}`, { method: "POST" })
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Quotation reverted to Shared"); },
+    onError: () => toast.error("Failed to revert quotation"),
   });
 
   const approveQuotationMutation = useMutation({
@@ -1996,7 +2005,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
                 const steps = [
                   { key: "created",  label: hasQuotation ? "Created"  : "Create",   done: hasQuotation, clickable: !hasQuotation },
-                  { key: "shared",   label: isShared ? "Shared" : "Share",          done: isShared,     clickable: hasQuotation && !isShared },
+                  { key: "shared",   label: isShared ? "Shared" : "Share",          done: isShared,     clickable: (hasQuotation && !isShared) || isApproved || isRejected },
                   { key: "approved", label: isApproved ? "Approved" : isRejected ? "Rejected" : "Approve", done: isApproved || isRejected, clickable: isShared && !isApproved && !isRejected },
                 ];
 
@@ -2014,11 +2023,14 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                               onClick={() => {
                                 if (step.key === "created" && !hasQuotation) createQuotationMutation.mutate();
                                 if (step.key === "shared" && hasQuotation && !isShared) setShowShareModal(true);
+                                if (step.key === "shared" && (isApproved || isRejected)) setShowRevertShareModal(true);
                                 if (step.key === "approved" && isShared && !isApproved && !isRejected) setShowApproveConfirm(true);
                               }}
                               className={cn(
                                 "flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
-                                isActive
+                                isActive && step.done
+                                  ? "cursor-pointer hover:bg-muted/60 ring-1 ring-blue-400 ring-offset-1"
+                                  : isActive
                                   ? "cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                                   : "cursor-default"
                               )}
@@ -2464,6 +2476,52 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             >
               {approveQuotationMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin mr-1.5" />Approving…</> : "Yes, Force Approve"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Revert & Re-share Modal */}
+      <Dialog open={showRevertShareModal} onOpenChange={setShowRevertShareModal}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Revert to Shared</DialogTitle>
+            <DialogDescription>
+              This will undo the approval and move the quotation back to "Shared" status. You can then share it again with the customer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Button
+              className="w-full justify-start gap-2"
+              variant="outline"
+              disabled={revertToSharedMutation.isPending}
+              onClick={() => {
+                revertToSharedMutation.mutate(undefined, {
+                  onSuccess: () => setShowRevertShareModal(false),
+                });
+              }}
+            >
+              {revertToSharedMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowLeft className="w-4 h-4" />}
+              Revert to Shared
+            </Button>
+            <Button
+              className="w-full justify-start gap-2"
+              variant="outline"
+              onClick={() => {
+                revertToSharedMutation.mutate(undefined, {
+                  onSuccess: () => {
+                    setShowRevertShareModal(false);
+                    setShowShareModal(true);
+                  },
+                });
+              }}
+              disabled={revertToSharedMutation.isPending}
+            >
+              {revertToSharedMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+              Revert & Share Again
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRevertShareModal(false)}>Cancel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
