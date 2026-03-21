@@ -1979,39 +1979,39 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     ];
                     const rejected = quotation.status === "rejected";
                     return (
-                      <div className="flex items-center gap-0 w-full">
-                        {steps.map((step, i) => {
-                          const isActive = step.done && !steps[i + 1]?.done;
-                          const showRejected = rejected && step.key === "approved";
-                          return (
-                            <div key={step.key} className="flex items-center flex-1 last:flex-initial">
-                              <div className="flex items-center gap-1.5">
-                                <div className={cn(
-                                  "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors",
-                                  showRejected ? "bg-red-100 text-red-600 border border-red-300" :
-                                  step.done ? "bg-green-100 text-green-700 border border-green-300" :
-                                  isActive ? "bg-blue-100 text-blue-700 border border-blue-300" :
-                                  "bg-muted text-muted-foreground/50 border border-border"
-                                )}>
-                                  {showRejected ? "✕" : step.done ? "✓" : i + 1}
+                      <div className="flex justify-center py-2">
+                        <div className="inline-flex items-center gap-3 rounded-full border border-border bg-muted/30 px-5 py-2">
+                          {steps.map((step, i) => {
+                            const showRejected = rejected && step.key === "approved";
+                            return (
+                              <div key={step.key} className="flex items-center">
+                                <div className="flex items-center gap-1.5">
+                                  <div className={cn(
+                                    "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0",
+                                    showRejected ? "bg-red-500 text-white" :
+                                    step.done ? "bg-green-500 text-white" :
+                                    "bg-muted-foreground/20 text-muted-foreground/50"
+                                  )}>
+                                    {showRejected ? "✕" : step.done ? "✓" : ""}
+                                  </div>
+                                  <span className={cn(
+                                    "text-[11px] font-medium whitespace-nowrap",
+                                    showRejected ? "text-red-600" :
+                                    step.done ? "text-foreground" : "text-muted-foreground/50"
+                                  )}>
+                                    {showRejected ? "Rejected" : step.label}
+                                  </span>
                                 </div>
-                                <span className={cn(
-                                  "text-xs font-medium whitespace-nowrap",
-                                  showRejected ? "text-red-600" :
-                                  step.done ? "text-foreground" : "text-muted-foreground/60"
-                                )}>
-                                  {showRejected ? "Rejected" : step.label}
-                                </span>
+                                {i < steps.length - 1 && (
+                                  <div className={cn(
+                                    "w-8 h-px ml-3",
+                                    steps[i + 1]?.done ? "bg-green-400" : "bg-border"
+                                  )} />
+                                )}
                               </div>
-                              {i < steps.length - 1 && (
-                                <div className={cn(
-                                  "flex-1 h-px mx-2",
-                                  steps[i + 1]?.done ? "bg-green-300" : "bg-border"
-                                )} />
-                              )}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
                     );
                   })()}
