@@ -665,7 +665,7 @@ router.post("/:id/status", async (req, res) => {
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
     const [existing] = await db
-      .select({ id: jobsTable.id, status: jobsTable.status })
+      .select({ id: jobsTable.id, status: jobsTable.status, quotation_id: jobsTable.quotation_id })
       .from(jobsTable)
       .where(and(eq(jobsTable.id, req.params.id), eq(jobsTable.tenant_id, tenant.id)))
       .limit(1);
@@ -675,6 +675,17 @@ router.post("/:id/status", async (req, res) => {
 
     if (!VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` });
+    }
+
+    if (status === "in_progress" && existing.status === "qc") {
+      if (existing.quotation_id) {
+        const [q] = await db.select({ status: quotationsTable.status }).from(quotationsTable).where(eq(quotationsTable.id, existing.quotation_id)).limit(1);
+        if (!q || q.status !== "approved") {
+          return res.status(400).json({ error: "Quotation must be approved before starting work" });
+        }
+      } else {
+        return res.status(400).json({ error: "A quotation must be created and approved before starting work" });
+      }
     }
 
     const now = new Date();
