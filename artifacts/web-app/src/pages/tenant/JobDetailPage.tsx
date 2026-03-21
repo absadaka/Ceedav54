@@ -1032,10 +1032,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         </div>
       )}
 
-      {/* Next Required Action + Customer Contact */}
+      {/* Next Required Action */}
       {job.status !== "cancelled" && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          {/* Next Required Action */}
+        <div>
           {(() => {
             const NEXT_ACTION: Record<string, { title: string; desc: string; btn: string }> = {
               new:           { title: "Check In Vehicle",                desc: "Verify vehicle arrival, record mileage and start the job card.",                                              btn: "Start Check-in"       },
@@ -1071,170 +1070,12 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             );
           })()}
 
-          {/* Customer Contact */}
-          <div className="lg:col-span-2 rounded-xl border border-border bg-background p-5 space-y-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Customer contact</p>
-            {job.client_name ? (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-sm font-bold text-orange-600 shrink-0">
-                  {job.client_name.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-sm leading-tight">{job.client_name}</p>
-                  {job.client_phone && <p className="text-xs text-muted-foreground mt-0.5">{job.client_phone}</p>}
-                  {job.client_email && <p className="text-xs text-blue-600 mt-0.5 truncate">{job.client_email}</p>}
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground/50 italic">No customer linked</p>
-            )}
-            {job.client_phone && (
-              <div className="flex gap-2">
-                <a
-                  href={`sms:${job.client_phone}`}
-                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium border border-border rounded-lg py-2 hover:bg-muted transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                  </svg>
-                  SMS
-                </a>
-                <a
-                  href={`tel:${job.client_phone}`}
-                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium border border-border rounded-lg py-2 hover:bg-muted transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 9V7a2 2 0 012-2z" />
-                  </svg>
-                  Call
-                </a>
-              </div>
-            )}
-            {/* Recent activity */}
-            {statusHistory.length > 0 && (
-              <div className="border-t border-border pt-3 space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Activity timeline</p>
-                <div className="space-y-2 max-h-28 overflow-y-auto">
-                  {statusHistory.slice(-3).reverse().map(h => (
-                    <div key={h.id} className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium">{jobStatusLabel(h.to_status, isInspection)}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {new Date(h.created_at).toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}
-                          {h.changed_by_name ? ` · ${h.changed_by_name}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left column */}
         <div className="space-y-4">
-          {/* Customer & vehicle */}
-          <div className="border border-border rounded-lg bg-background p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Customer & vehicle</p>
-            {job.client_name ? (
-              <button
-                onClick={() => job.client_id && navigate(`/customers/${job.client_id}`)}
-                className="flex items-start gap-2 w-full hover:opacity-70 transition-opacity text-left"
-              >
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-bold text-primary shrink-0"
-                  style={isInspection ? { backgroundColor: "#ff53491a", color: "#ff5349" } : undefined}>
-                  {job.client_name.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{job.client_name}</p>
-                  {job.client_phone && <p className="text-xs text-muted-foreground">{job.client_phone}</p>}
-                  {job.client_email && <p className="text-xs text-muted-foreground">{job.client_email}</p>}
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto mt-0.5" />
-              </button>
-            ) : <p className="text-sm text-muted-foreground">No customer linked</p>}
-
-            {job.plate_number && (
-              <button
-                onClick={() => job.vehicle_id && navigate(`/vehicles/${job.vehicle_id}`)}
-                className="flex items-start gap-2 w-full pt-2 border-t border-border hover:opacity-70 transition-opacity text-left"
-              >
-                <Car className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold font-mono">{job.plate_number}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {[job.year, job.make, job.model, job.color].filter(Boolean).join(" · ")}
-                  </p>
-                  {job.vin && <p className="text-[11px] text-muted-foreground font-mono mt-0.5">VIN {job.vin}</p>}
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto mt-0.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Mileage */}
-          <div className="border border-border rounded-lg bg-background p-4 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Mileage</p>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <p className="text-xs text-muted-foreground">In</p>
-                <p className="font-medium">{job.mileage_in ? `${parseInt(job.mileage_in).toLocaleString()} km` : "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Out</p>
-                <p className="font-medium">{job.mileage_out ? `${parseInt(job.mileage_out).toLocaleString()} km` : "—"}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Team */}
-          <div className="border border-border rounded-lg bg-background p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Team</p>
-              <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={() => setAssignOpen(true)}>
-                <UserPlus className="w-3 h-3" />Assign
-              </Button>
-            </div>
-            <div className="space-y-2">
-              <div>
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Advisor</p>
-                <p className="text-sm font-medium">{job.advisor_name ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Lead technician</p>
-                <p className="text-sm font-medium">{job.technician_name ?? <span className="text-muted-foreground/50">Unassigned</span>}</p>
-              </div>
-              {assignments.length > 0 && (
-                <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">All assigned</p>
-                  <div className="space-y-1.5">
-                    {assignments.map(a => (
-                      <div key={a.id} className="flex items-center gap-2 group">
-                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold shrink-0">
-                          {a.technician_name?.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase() ?? "?"}
-                        </div>
-                        <span className="text-xs flex-1 truncate">{a.technician_name}</span>
-                        {a.is_lead === "true" && (
-                          <span className="text-[10px] bg-primary/10 text-primary rounded px-1 shrink-0">lead</span>
-                        )}
-                        <button
-                          onClick={() => releaseAssignMutation.mutate(a.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/40 hover:text-destructive p-0.5"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Timeline */}
           <div className="border border-border rounded-lg bg-background p-4 space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Timeline</p>
