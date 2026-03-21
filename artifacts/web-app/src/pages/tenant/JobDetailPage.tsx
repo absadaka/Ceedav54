@@ -959,6 +959,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           inspectionParts = [], inspectionTechNote, inspectionRef,
           techNotes = [] } = data as any;
   const isInspection = moduleType === "inspection";
+  const isInspectionStage = isInspection || job.status === "on_hold";
   const statusSet    = isInspection ? INSPECTION_STATUSES : JOB_STATUSES;
   const currentLane  = statusSet.find(s => s.key === job.status) ?? JOB_STATUSES.find(s => s.key === job.status);
   const partsTotal  = parts.reduce((sum, p) => sum + parseFloat(p.line_total), 0);
@@ -1559,7 +1560,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
             {/* ── Parts / Diagnosis tab ────────────────────────────────── */}
             <TabsContent value="parts" className="mt-0">
-              {isInspection && (
+              {isInspectionStage && (
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <button
                     onClick={() => { setShowAddPart(true); setShowAddManualPart(false); }}
@@ -1594,7 +1595,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 </div>
               )}
 
-              {(showAddPart || showAddManualPart) && isInspection && (
+              {(showAddPart || showAddManualPart) && isInspectionStage && (
                 <div className="mb-4">
                   {showAddPart && (
                     <AddDiagnosisForm jobId={job.id} onAdded={() => {
@@ -1614,9 +1615,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               <div className="border border-border rounded-lg bg-background overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    {isInspection ? "Inspection List" : "Inspection items"}
+                    {isInspectionStage ? "Inspection List" : "Inspection items"}
                   </p>
-                  {!isInspection && job.status === "waiting_parts" && (
+                  {!isInspectionStage && job.status === "waiting_parts" && (
                     <div className="flex gap-1.5">
                       <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
                         onClick={() => { setShowAddPart(p => !p); setShowAddManualPart(false); }}>
@@ -1632,17 +1633,17 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
                 {parts.length === 0 && !showAddPart && !showAddManualPart ? (
                   <div className="p-8 text-center text-sm text-muted-foreground/50">
-                    {isInspection ? "No items added yet — use the buttons above to add services or parts" : "No inspection items added yet"}
+                    {isInspectionStage ? "No items added yet — use the buttons above to add services or parts" : "No inspection items added yet"}
                   </div>
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border">
                         <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Description</th>
-                        {!isInspection && <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Part #</th>}
+                        {!isInspectionStage && <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Part #</th>}
                         <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Qty</th>
-                        {!isInspection && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Unit</th>}
-                        {!isInspection && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Total</th>}
+                        {!isInspectionStage && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Unit</th>}
+                        {!isInspectionStage && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Total</th>}
                         <th className="px-2 py-2" />
                       </tr>
                     </thead>
@@ -1650,10 +1651,10 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       {parts.map(p => (
                         <tr key={p.id} className="border-b border-border last:border-0">
                           <td className="px-4 py-2.5 text-sm">{p.description}</td>
-                          {!isInspection && <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number ?? "—"}</td>}
+                          {!isInspectionStage && <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number ?? "—"}</td>}
                           <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.qty).toFixed(2)}</td>
-                          {!isInspection && <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.unit_price).toFixed(2)}</td>}
-                          {!isInspection && <td className="px-4 py-2.5 text-right text-sm font-medium">{parseFloat(p.line_total).toFixed(2)}</td>}
+                          {!isInspectionStage && <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.unit_price).toFixed(2)}</td>}
+                          {!isInspectionStage && <td className="px-4 py-2.5 text-right text-sm font-medium">{parseFloat(p.line_total).toFixed(2)}</td>}
                           <td className="px-2 py-2">
                             <button onClick={() => removePartMutation.mutate(p.id)}
                               className="text-muted-foreground/40 hover:text-destructive transition-colors p-1">
@@ -1662,7 +1663,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           </td>
                         </tr>
                       ))}
-                      {!isInspection && parts.length > 0 && (
+                      {!isInspectionStage && parts.length > 0 && (
                         <tr className="bg-muted/30">
                           <td colSpan={4} className="px-4 py-2 text-xs font-semibold text-right">Total</td>
                           <td className="px-4 py-2 text-right text-sm font-bold">{partsTotal.toFixed(2)} AED</td>
