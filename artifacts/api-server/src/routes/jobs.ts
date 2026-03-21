@@ -6,7 +6,7 @@ import {
   quotationsTable, quoteLineItemsTable, bookingsTable,
   jobsTable, jobStatusHistoryTable, jobAssignmentsTable,
   jobTimeLogsTable, jobPartsTable, jobPhotosTable, jobNotesTable,
-  catalogItemsTable,
+  catalogItemsTable, quoteAdvancePaymentsTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -271,7 +271,7 @@ router.get("/:id", async (req, res) => {
     const changedByAlias = alias(usersTable, "changer");
     const asgTechAlias   = alias(usersTable, "asgtech");
 
-    const [statusHistory, assignments, timeLogs, parts, photos, quotation, quoteLines, inspectionParts, inspectionJob, notes] = await Promise.all([
+    const [statusHistory, assignments, timeLogs, parts, photos, quotation, quoteLines, advancePayments, inspectionParts, inspectionJob, notes] = await Promise.all([
       db
         .select({
           id:          jobStatusHistoryTable.id,
@@ -326,7 +326,12 @@ router.get("/:id", async (req, res) => {
 
       // Quotation line items (for sync-status comparison)
       job.quotation_id
-        ? db.select().from(quoteLineItemsTable).where(eq(quoteLineItemsTable.quotation_id, job.quotation_id!))
+        ? db.select().from(quoteLineItemsTable).where(eq(quoteLineItemsTable.quotation_id, job.quotation_id!)).orderBy(quoteLineItemsTable.sort_order)
+        : Promise.resolve([]),
+
+      // Quotation advance payments
+      job.quotation_id
+        ? db.select().from(quoteAdvancePaymentsTable).where(eq(quoteAdvancePaymentsTable.quotation_id, job.quotation_id!)).orderBy(quoteAdvancePaymentsTable.paid_at)
         : Promise.resolve([]),
 
       // Source inspection parts (read-only reference for service jobs)
@@ -377,6 +382,9 @@ router.get("/:id", async (req, res) => {
         partsFP.some((fp, i) => fp !== linesFP[i]);
     }
 
+    const qtTotalPaid = (advancePayments as any[]).reduce((s: number, p: any) => s + parseFloat(p.amount ?? "0"), 0);
+    const qtBalance = quotation[0] ? parseFloat(quotation[0].total ?? "0") - qtTotalPaid : 0;
+
     return res.json({
       job,
       statusHistory,
@@ -387,6 +395,10 @@ router.get("/:id", async (req, res) => {
       photos,
       quotation: quotation[0] ?? null,
       quotationOutOfSync,
+      quoteLineItems: quoteLines,
+      quoteAdvancePayments: advancePayments,
+      quoteTotalPaid: qtTotalPaid,
+      quoteBalance: qtBalance,
       inspectionParts,
       inspectionTechNote: (inspectionJob as any[])[0]?.technician_note ?? null,
       inspectionRef:      (inspectionJob as any[])[0]?.ref ?? null,
