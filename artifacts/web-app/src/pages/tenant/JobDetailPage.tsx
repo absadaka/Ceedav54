@@ -726,6 +726,19 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     waiting_parts: "in_progress", completed: "delivered",
   };
 
+  const validateCheckin = (targetStatus: string): boolean => {
+    if (!job || job.status !== "new" || targetStatus !== "waiting") return true;
+    const missing: string[] = [];
+    if (!job.vin) missing.push("VIN");
+    const mileage = job.mileage_in ?? (job as any).vehicle_mileage;
+    if (!mileage) missing.push("Mileage");
+    if (missing.length > 0) {
+      toast.error(`Please fill in ${missing.join(" and ")} before checking in`);
+      return false;
+    }
+    return true;
+  };
+
   const moveStatusMutation = useMutation({
     mutationFn: async (targetStatus: string) => {
       const userId = (() => { try { const s = localStorage.getItem("ceeda_session"); return s ? JSON.parse(s).userId : undefined; } catch { return undefined; } })();
@@ -748,9 +761,14 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Could not update status"),
   });
 
+  const moveStatus = (targetStatus: string) => {
+    if (!validateCheckin(targetStatus)) return;
+    moveStatusMutation.mutate(targetStatus);
+  };
+
   const moveToNext = () => {
     const next = NEXT_STATUS[job?.status ?? ""];
-    if (next) moveStatusMutation.mutate(next);
+    if (next) moveStatus(next);
   };
 
   const createInvoiceMutation = useMutation({
@@ -1190,7 +1208,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         currentStatus={job.status}
         statusHistory={statusHistory}
         isInspection={isInspection}
-        onStepClick={(key) => moveStatusMutation.mutate(key)}
+        onStepClick={(key) => moveStatus(key)}
       />
 
       {/* Cancellation banner */}
