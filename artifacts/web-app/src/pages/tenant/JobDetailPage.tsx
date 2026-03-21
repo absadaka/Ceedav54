@@ -1177,9 +1177,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
       {/* Next Required Action + Activity Timeline */}
       {job.status !== "cancelled" && (
-        <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Next Required Action */}
-          <div>
+          <div className="lg:col-span-2">
             {(() => {
               const NEXT_ACTION: Record<string, { title: string; desc: string; btn: string }> = {
                 new:           { title: "Check In Vehicle",                desc: "Verify vehicle arrival, record mileage and start the job card.",                                              btn: "Start Check-in"       },
