@@ -1001,9 +1001,12 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 ) : (
                   <button
                     className="text-sm font-semibold text-foreground flex items-center gap-1 mx-auto hover:text-primary"
-                    onClick={() => { setInlineField("mileage"); setInlineValue(job.mileage_in ?? ""); }}
+                    onClick={() => { setInlineField("mileage"); setInlineValue(job.mileage_in ?? (job as any).vehicle_mileage ?? ""); }}
                   >
-                    {job.mileage_in ? `${parseInt(job.mileage_in).toLocaleString()} mi` : "—"}
+                    {(() => {
+                      const val = job.mileage_in ?? (job as any).vehicle_mileage;
+                      return val ? `${parseInt(val).toLocaleString()} mi` : "—";
+                    })()}
                     <Pencil className="w-3 h-3 opacity-0 group-hover/mileage:opacity-40 shrink-0" />
                   </button>
                 )}
