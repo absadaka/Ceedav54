@@ -1519,6 +1519,16 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           <span className="text-base font-bold leading-none">→</span>
                         </button>
                       )}
+                      {job.status === "qc" && (
+                        <button
+                          onClick={() => moveStatus("in_progress")}
+                          disabled={moveStatusMutation.isPending}
+                          className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-green-600 hover:bg-green-700 transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60"
+                        >
+                          <span className="text-sm font-bold leading-tight text-center px-2">Start the Work</span>
+                          <span className="text-base font-bold leading-none">→</span>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
