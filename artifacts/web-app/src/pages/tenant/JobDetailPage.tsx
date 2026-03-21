@@ -783,6 +783,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showAddQtLine,  setShowAddQtLine]  = useState(false);
   const [showAddQtDiscount, setShowAddQtDiscount] = useState(false);
   const [showAddAdvance, setShowAddAdvance] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareChannels, setShareChannels] = useState<{ whatsapp: boolean; sms: boolean; email: boolean }>({ whatsapp: false, sms: false, email: false });
   const [newNote,        setNewNote]        = useState("");
   const [timerNote,      setTimerNote]      = useState("");
 
@@ -975,6 +977,22 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Payment removed"); },
     onError: () => toast.error("Failed to remove payment"),
+  });
+
+  const shareQuotationMutation = useMutation({
+    mutationFn: (channels: { whatsapp: boolean; sms: boolean; email: boolean }) =>
+      fetch(`${API}/api/quotations/${quotation?.id}/send?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channels }),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      toast.success("Quotation shared successfully");
+      setShowShareModal(false);
+      setShareChannels({ whatsapp: false, sms: false, email: false });
+    },
+    onError: () => toast.error("Failed to share quotation"),
   });
 
 
@@ -1986,6 +2004,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                               disabled={!isActive}
                               onClick={() => {
                                 if (step.key === "created" && !hasQuotation) createQuotationMutation.mutate();
+                                if (step.key === "shared" && hasQuotation && !isShared) setShowShareModal(true);
                               }}
                               className={cn(
                                 "flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
@@ -2412,6 +2431,58 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               onClick={() => cancelMutation.mutate(cancelNote)}
             >
               {cancelMutation.isPending ? "Cancelling…" : "Cancel job"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Quotation Modal */}
+      <Dialog open={showShareModal} onOpenChange={(v) => { if (!v) { setShowShareModal(false); setShareChannels({ whatsapp: false, sms: false, email: false }); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Quotation</DialogTitle>
+            <DialogDescription>
+              Choose how you'd like to share the quotation with the customer. Select at least one channel.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {[
+              { key: "whatsapp" as const, label: "WhatsApp", desc: job.client_phone ? `Send to ${job.client_phone}` : "No phone number on file", icon: "💬", disabled: !job.client_phone },
+              { key: "sms" as const,      label: "SMS",      desc: job.client_phone ? `Send to ${job.client_phone}` : "No phone number on file", icon: "📱", disabled: !job.client_phone },
+              { key: "email" as const,    label: "Email",    desc: job.client_email ? `Send to ${job.client_email}` : "No email on file",         icon: "📧", disabled: !job.client_email },
+            ].map(ch => (
+              <button
+                key={ch.key}
+                type="button"
+                disabled={ch.disabled}
+                onClick={() => setShareChannels(prev => ({ ...prev, [ch.key]: !prev[ch.key] }))}
+                className={cn(
+                  "w-full flex items-center gap-3 rounded-lg border-2 px-4 py-3 text-left transition-all",
+                  ch.disabled
+                    ? "border-border bg-muted/30 opacity-50 cursor-not-allowed"
+                    : shareChannels[ch.key]
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-border hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer"
+                )}
+              >
+                <span className="text-xl">{ch.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">{ch.label}</span>
+                    {shareChannels[ch.key] && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                  </div>
+                  <span className="text-xs text-muted-foreground">{ch.desc}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setShowShareModal(false); setShareChannels({ whatsapp: false, sms: false, email: false }); }}>Cancel</Button>
+            <Button
+              disabled={!shareChannels.whatsapp && !shareChannels.sms && !shareChannels.email || shareQuotationMutation.isPending}
+              onClick={() => shareQuotationMutation.mutate(shareChannels)}
+            >
+              {shareQuotationMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin mr-1.5" />Sharing…</> : "Share Quotation"}
             </Button>
           </DialogFooter>
         </DialogContent>
