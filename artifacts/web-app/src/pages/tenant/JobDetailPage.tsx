@@ -28,7 +28,7 @@ import { cn }       from "@/lib/utils";
 import { statusClass, statusLabel } from "@/lib/status";
 import { toast }    from "sonner";
 import JobDrawer, { type JobRow } from "@/components/JobDrawer";
-import StatusTransitionModal, { JOB_STATUSES, INSPECTION_STATUSES } from "@/components/StatusTransitionModal";
+import { JOB_STATUSES, INSPECTION_STATUSES } from "@/components/StatusTransitionModal";
 
 import { getSession } from "@/hooks/useAuth";
 
@@ -678,8 +678,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const qc = useQueryClient();
 
   const [editOpen,       setEditOpen]       = useState(false);
-  const [statusOpen,     setStatusOpen]     = useState(false);
-  const [statusTarget,   setStatusTarget]   = useState<string | undefined>(undefined);
   const [cancelOpen,     setCancelOpen]     = useState(false);
   const [cancelNote,     setCancelNote]     = useState("");
   const [assignOpen,     setAssignOpen]     = useState(false);
@@ -721,6 +719,39 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     staleTime: 60_000,
   });
   const teamMembers: Array<{ id: string; name: string; role: string }> = teamData?.data ?? [];
+
+  const NEXT_STATUS: Record<string, string> = {
+    new: "waiting", waiting: "on_hold", on_hold: "qc",
+    qc: "in_progress", in_progress: "completed",
+    waiting_parts: "in_progress", completed: "delivered",
+  };
+
+  const moveStatusMutation = useMutation({
+    mutationFn: async (targetStatus: string) => {
+      const userId = (() => { try { const s = localStorage.getItem("ceeda_session"); return s ? JSON.parse(s).userId : undefined; } catch { return undefined; } })();
+      const r = await fetch(`${API}/api/jobs/${id}/status?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: targetStatus, changed_by: userId }),
+      });
+      if (!r.ok) throw new Error("Status transition failed");
+      return { targetStatus, data: await r.json() };
+    },
+    onSuccess: ({ targetStatus }) => {
+      qc.invalidateQueries({ queryKey: ["jobs"] });
+      qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
+      qc.invalidateQueries({ queryKey: ["inspections-kanban"] });
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      const label = [...JOB_STATUSES, ...INSPECTION_STATUSES].find(s => s.key === targetStatus)?.label ?? targetStatus;
+      toast.success(`Moved to ${label}`);
+    },
+    onError: () => toast.error("Could not update status"),
+  });
+
+  const moveToNext = () => {
+    const next = NEXT_STATUS[job?.status ?? ""];
+    if (next) moveStatusMutation.mutate(next);
+  };
 
   const createInvoiceMutation = useMutation({
     mutationFn: () => fetch(`${API}/api/invoices/from-job/${id}?tenant=${TENANT}`, {
@@ -1159,7 +1190,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         currentStatus={job.status}
         statusHistory={statusHistory}
         isInspection={isInspection}
-        onStepClick={(key) => { setStatusTarget(key); setStatusOpen(true); }}
+        onStepClick={(key) => moveStatusMutation.mutate(key)}
       />
 
       {/* Cancellation banner */}
@@ -1204,8 +1235,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   </div>
                   {job.status !== "delivered" && (
                     <button
-                      onClick={() => setStatusOpen(true)}
-                      className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md"
+                      onClick={moveToNext}
+                      disabled={moveStatusMutation.isPending}
+                      className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60"
                     >
                       <span className="text-sm font-bold leading-tight text-center px-2">{action.btn}</span>
                       <span className="text-base font-bold leading-none">→</span>
@@ -1346,7 +1378,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     {job.qc_note ?? <span className="text-muted-foreground/50 italic">No QC note yet</span>}
                   </p>
                   {job.status !== "qc" && job.status !== "completed" && job.status !== "delivered" && job.status !== "cancelled" && (
-                    <Button size="sm" variant="outline" className="text-blue-700 border-blue-300" onClick={() => setStatusOpen(true)}>
+                    <Button size="sm" variant="outline" className="text-blue-700 border-blue-300" disabled={moveStatusMutation.isPending} onClick={() => moveStatusMutation.mutate("qc")}>
                       Send to QC
                     </Button>
                   )}
@@ -1374,7 +1406,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   </div>
                   <div className="flex gap-2 mt-2 flex-wrap">
                     {job.status === "completed" && (
-                      <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => setStatusOpen(true)}>
+                      <Button size="sm" className="bg-teal-600 hover:bg-teal-700" disabled={moveStatusMutation.isPending} onClick={() => moveStatusMutation.mutate("delivered")}>
                         Mark as delivered
                       </Button>
                     )}
@@ -1759,27 +1791,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
       {/* ── Modals ─────────────────────────────────────────────────────── */}
       <JobDrawer open={editOpen} onOpenChange={setEditOpen} job={asJobRow} />
-
-      <StatusTransitionModal
-        open={statusOpen}
-        onOpenChange={(v) => { setStatusOpen(v); if (!v) setStatusTarget(undefined); }}
-        jobId={job.id}
-        jobRef={job.ref}
-        currentStatus={job.status}
-        moduleType={moduleType}
-        vehicleVin={job.vin}
-        vehicleId={job.vehicle_id}
-        vehicleMileage={job.mileage_in}
-        initialTarget={statusTarget}
-        onSuccess={(newStatus, data) => {
-          if (newStatus === "move_to_service_job") {
-            const d = data as { job?: { id?: string; ref?: string } };
-            if (d?.job?.id) navigate(`/jobs/${d.job.id}`);
-          } else {
-            qc.invalidateQueries({ queryKey: ["job", id] });
-          }
-        }}
-      />
 
       <AssignTechDialog jobId={job.id} open={assignOpen} onClose={() => setAssignOpen(false)} />
 
