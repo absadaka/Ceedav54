@@ -1692,6 +1692,49 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   </div>
                 )}
               </div>
+
+              {isInspectionStage && (
+                <div className="border border-border rounded-lg bg-background overflow-hidden mt-4">
+                  <div className="px-4 py-3 border-b border-border bg-muted/30">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Technician Notes</p>
+                  </div>
+                  {techNotes.length > 0 && (
+                    <div className="px-4 pt-3 space-y-2">
+                      {(techNotes as TechNote[]).map((n) => (
+                        <div key={n.id} className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-medium text-foreground">
+                              {n.created_by_name ?? "Technician"}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(n.created_at).toLocaleString("en-AE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{n.note}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="px-4 py-3 space-y-2">
+                    <Textarea
+                      rows={2}
+                      placeholder="Add a note about the inspection findings…"
+                      value={newNote}
+                      onChange={e => setNewNote(e.target.value)}
+                      className="text-sm resize-none"
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        disabled={addNoteMutation.isPending || !newNote.trim()}
+                        onClick={() => { if (newNote.trim()) addNoteMutation.mutate(newNote); }}
+                      >
+                        {addNoteMutation.isPending ? "Saving…" : "Add Note"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             {/* ── Inspection tab (service jobs linked to an inspection) ── */}
