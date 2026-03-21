@@ -1967,75 +1967,65 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 const isApproved = qStatus === "approved";
                 const isRejected = qStatus === "rejected";
 
-                const stages = [
-                  { key: "create",  doneLabel: "Created",  actionLabel: "Create Quotation", done: hasQuotation,  icon: Plus,           pending: createQuotationMutation.isPending },
-                  { key: "share",   doneLabel: "Shared",   actionLabel: "Share with Customer", done: isShared,  icon: ArrowRight,   pending: false },
-                  { key: "approve", doneLabel: isRejected ? "Rejected" : "Approved", actionLabel: "Awaiting Approval", done: isApproved || isRejected, icon: CheckCircle2, pending: false },
+                const steps = [
+                  { key: "created",  label: hasQuotation ? "Created"  : "Create",   done: hasQuotation, clickable: !hasQuotation },
+                  { key: "shared",   label: isShared ? "Shared" : "Share",          done: isShared,     clickable: hasQuotation && !isShared },
+                  { key: "approved", label: isApproved ? "Approved" : isRejected ? "Rejected" : "Approve", done: isApproved || isRejected, clickable: false },
                 ];
 
                 return (
-                  <div className="grid grid-cols-3 gap-3">
-                    {stages.map((stage, i) => (
-                      <button
-                        key={stage.key}
-                        type="button"
-                        disabled={
-                          stage.done ||
-                          (stage.key === "create" && stage.pending) ||
-                          (stage.key === "share" && !hasQuotation) ||
-                          (stage.key === "approve" && !isShared)
-                        }
-                        onClick={() => {
-                          if (stage.key === "create" && !hasQuotation) createQuotationMutation.mutate();
-                        }}
-                        className={cn(
-                          "relative flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 transition-all text-center",
-                          stage.done
-                            ? isRejected && stage.key === "approve"
-                              ? "border-red-300 bg-red-50"
-                              : "border-green-300 bg-green-50"
-                            : !stage.done && (
-                                (stage.key === "create" && !hasQuotation) ||
-                                (stage.key === "share" && hasQuotation && !isShared) ||
-                                (stage.key === "approve" && isShared && !isApproved && !isRejected)
-                              )
-                              ? "border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 cursor-pointer shadow-sm"
-                              : "border-border bg-muted/20 opacity-50 cursor-not-allowed"
-                        )}
-                      >
-                        <div className="flex items-center gap-1 text-muted-foreground/40 text-[10px] font-bold uppercase tracking-wider">
-                          Step {i + 1}
-                        </div>
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                          stage.done
-                            ? isRejected && stage.key === "approve"
-                              ? "bg-red-500 text-white"
-                              : "bg-green-500 text-white"
-                            : (stage.key === "create" && !hasQuotation) ||
-                              (stage.key === "share" && hasQuotation && !isShared) ||
-                              (stage.key === "approve" && isShared && !isApproved && !isRejected)
-                              ? "bg-blue-500 text-white"
-                              : "bg-muted text-muted-foreground/30"
-                        )}>
-                          {stage.pending ? <Loader2 className="w-4 h-4 animate-spin" /> :
-                           stage.done ? (isRejected && stage.key === "approve" ? <X className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />) :
-                           <stage.icon className="w-4 h-4" />}
-                        </div>
-                        <span className={cn(
-                          "text-sm font-semibold leading-tight",
-                          stage.done
-                            ? isRejected && stage.key === "approve" ? "text-red-700" : "text-green-700"
-                            : (stage.key === "create" && !hasQuotation) ||
-                              (stage.key === "share" && hasQuotation && !isShared) ||
-                              (stage.key === "approve" && isShared && !isApproved && !isRejected)
-                              ? "text-blue-700"
-                              : "text-muted-foreground/40"
-                        )}>
-                          {stage.pending ? "Creating…" : stage.done ? stage.doneLabel : stage.actionLabel}
-                        </span>
-                      </button>
-                    ))}
+                  <div className="flex justify-center py-2">
+                    <div className="inline-flex items-center gap-3 rounded-full border border-border bg-muted/30 px-5 py-2">
+                      {steps.map((step, i) => {
+                        const showRejected = isRejected && step.key === "approved";
+                        const isActive = step.clickable && !createQuotationMutation.isPending;
+                        return (
+                          <div key={step.key} className="flex items-center">
+                            <button
+                              type="button"
+                              disabled={!isActive}
+                              onClick={() => {
+                                if (step.key === "created" && !hasQuotation) createQuotationMutation.mutate();
+                              }}
+                              className={cn(
+                                "flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
+                                isActive
+                                  ? "cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                                  : "cursor-default"
+                              )}
+                            >
+                              {createQuotationMutation.isPending && step.key === "created" ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                              ) : (
+                                <div className={cn(
+                                  "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
+                                  isActive ? "bg-white/20 text-white" :
+                                  showRejected ? "bg-red-500 text-white" :
+                                  step.done ? "bg-green-500 text-white" :
+                                  "bg-muted-foreground/20 text-muted-foreground/50"
+                                )}>
+                                  {showRejected ? "✕" : step.done ? "✓" : isActive ? "+" : ""}
+                                </div>
+                              )}
+                              <span className={cn(
+                                "text-[11px] font-medium whitespace-nowrap",
+                                isActive ? "text-white font-semibold" :
+                                showRejected ? "text-red-600" :
+                                step.done ? "text-foreground" : "text-muted-foreground/50"
+                              )}>
+                                {createQuotationMutation.isPending && step.key === "created" ? "Creating…" : step.label}
+                              </span>
+                            </button>
+                            {i < steps.length - 1 && (
+                              <div className={cn(
+                                "w-8 h-px ml-3",
+                                steps[i + 1]?.done ? "bg-green-400" : "bg-border"
+                              )} />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })()}
@@ -2043,7 +2033,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {!quotation ? (
                 <div className="border border-dashed border-border rounded-lg bg-muted/10 p-6 text-center">
                   <DollarSign className="w-8 h-8 mx-auto text-muted-foreground/20 mb-2" />
-                  <p className="text-sm text-muted-foreground">No quotation yet. Click <span className="font-semibold text-blue-600">Create Quotation</span> above to get started.</p>
+                  <p className="text-sm text-muted-foreground">No quotation yet. Click <span className="font-semibold text-blue-600">+ Create</span> above to get started.</p>
                 </div>
               ) : (
                 <>
