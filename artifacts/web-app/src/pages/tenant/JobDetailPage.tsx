@@ -1970,6 +1970,52 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 </div>
               ) : (
                 <>
+                  {/* Quotation flow tracker */}
+                  {(() => {
+                    const steps = [
+                      { key: "created", label: "Created", done: true },
+                      { key: "shared",  label: "Shared",  done: ["sent", "viewed", "approved", "rejected"].includes(quotation.status) },
+                      { key: "approved",label: "Approved", done: quotation.status === "approved" },
+                    ];
+                    const rejected = quotation.status === "rejected";
+                    return (
+                      <div className="flex items-center gap-0 w-full">
+                        {steps.map((step, i) => {
+                          const isActive = step.done && !steps[i + 1]?.done;
+                          const showRejected = rejected && step.key === "approved";
+                          return (
+                            <div key={step.key} className="flex items-center flex-1 last:flex-initial">
+                              <div className="flex items-center gap-1.5">
+                                <div className={cn(
+                                  "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors",
+                                  showRejected ? "bg-red-100 text-red-600 border border-red-300" :
+                                  step.done ? "bg-green-100 text-green-700 border border-green-300" :
+                                  isActive ? "bg-blue-100 text-blue-700 border border-blue-300" :
+                                  "bg-muted text-muted-foreground/50 border border-border"
+                                )}>
+                                  {showRejected ? "✕" : step.done ? "✓" : i + 1}
+                                </div>
+                                <span className={cn(
+                                  "text-xs font-medium whitespace-nowrap",
+                                  showRejected ? "text-red-600" :
+                                  step.done ? "text-foreground" : "text-muted-foreground/60"
+                                )}>
+                                  {showRejected ? "Rejected" : step.label}
+                                </span>
+                              </div>
+                              {i < steps.length - 1 && (
+                                <div className={cn(
+                                  "flex-1 h-px mx-2",
+                                  steps[i + 1]?.done ? "bg-green-300" : "bg-border"
+                                )} />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+
                   {/* Summary card */}
                   <div className="rounded-lg border border-border bg-background p-4 space-y-2">
                     <div className="flex items-center justify-between">
