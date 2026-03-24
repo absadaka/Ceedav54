@@ -1526,7 +1526,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <p className="text-sm text-muted-foreground leading-relaxed">{action.desc}</p>
                   </div>
                   {job.status !== "delivered" && (
-                    <div className="flex gap-3 shrink-0">
+                    <div className="flex flex-col gap-2 shrink-0 w-40">
                       <button
                         onClick={() => {
                           if (job.status === "on_hold") {
@@ -1540,19 +1540,19 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           }
                         }}
                         disabled={moveStatusMutation.isPending}
-                        className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60"
+                        className="w-full h-10 rounded-xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60"
                       >
-                        <span className="text-sm font-bold leading-tight text-center px-2">{action.btn}</span>
-                        <span className="text-base font-bold leading-none">{(job.status === "on_hold" || job.status === "qc") ? "↓" : "→"}</span>
+                        <span className="text-xs font-bold">{action.btn}</span>
+                        <span className="text-sm font-bold">{(job.status === "on_hold" || job.status === "qc") ? "↓" : "→"}</span>
                       </button>
                       {job.status === "on_hold" && (
                         <button
                           onClick={() => moveStatus("qc")}
                           disabled={moveStatusMutation.isPending}
-                          className="shrink-0 w-36 min-h-[88px] rounded-2xl bg-green-600 hover:bg-green-700 transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60"
+                          className="w-full h-10 rounded-xl bg-green-600 hover:bg-green-700 transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60"
                         >
-                          <span className="text-sm font-bold leading-tight text-center px-2">Move to Estimation Cost</span>
-                          <span className="text-base font-bold leading-none">→</span>
+                          <span className="text-xs font-bold">Move to Estimation</span>
+                          <span className="text-sm font-bold">→</span>
                         </button>
                       )}
                       {job.status === "qc" && (() => {
@@ -1562,15 +1562,15 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                             onClick={() => qApproved && moveStatus("in_progress")}
                             disabled={moveStatusMutation.isPending || !qApproved}
                             className={cn(
-                              "shrink-0 w-36 min-h-[88px] rounded-2xl transition-colors text-white flex flex-col items-center justify-center gap-1 shadow-md disabled:opacity-60",
+                              "w-full h-10 rounded-xl transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60",
                               qApproved ? "bg-green-600 hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
                             )}
                           >
-                            <span className="text-sm font-bold leading-tight text-center px-2">Start the Work</span>
+                            <span className="text-xs font-bold">Start the Work</span>
                             {qApproved ? (
-                              <span className="text-base font-bold leading-none">→</span>
+                              <span className="text-sm font-bold">→</span>
                             ) : (
-                              <span className="text-[10px] font-normal leading-tight text-center px-1 opacity-80">Quotation approval required</span>
+                              <span className="text-[9px] font-normal opacity-80">· Approval needed</span>
                             )}
                           </button>
                         );
