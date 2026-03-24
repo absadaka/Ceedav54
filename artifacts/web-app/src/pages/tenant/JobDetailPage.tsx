@@ -1499,6 +1499,28 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           <span className="text-xs font-bold">{qApproved ? "Start the Work" : "Create Quotation"}</span>
                         </button>
                       );
+                    })() : job.status === "in_progress" ? (() => {
+                      const hasReport = reportNotes.length > 0;
+                      return (
+                        <button
+                          onClick={() => {
+                            if (hasReport) {
+                              moveStatus("completed");
+                            } else {
+                              setActiveTab("report");
+                              setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                            }
+                          }}
+                          disabled={moveStatusMutation.isPending}
+                          className={cn(
+                            "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                            hasReport ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
+                          )}
+                        >
+                          {hasReport ? <Receipt className="w-4 h-4" /> : <Hammer className="w-4 h-4" />}
+                          <span className="text-xs font-bold">{hasReport ? "Create Invoice" : "Update Work Status"}</span>
+                        </button>
+                      );
                     })() : (
                       <button
                         onClick={() => moveToNext()}
