@@ -1193,6 +1193,10 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     mileage_in: job.mileage_in,
   };
 
+  const needsVin = job.status === "new" && !job.vin;
+  const needsMileage = job.status === "new" && !(job.mileage_in ?? (job as any).vehicle_mileage);
+  const needsAssignment = job.status === "waiting" && !job.technician_id && !job.advisor_id;
+
   return (
     <div className="space-y-4 max-w-5xl">
       {/* Breadcrumb */}
@@ -1236,8 +1240,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 {job.color && <><span className="text-border">•</span><span>{job.color}</span></>}
                 {job.plate_number && <><span className="text-border">•</span><span className="font-mono font-semibold text-foreground">{job.plate_number}</span></>}
               </div>
-              <div className="flex items-center gap-1.5 mt-1 group/vin">
-                <span className="text-xs text-muted-foreground font-mono">VIN:</span>
+              <div className={cn("flex items-center gap-1.5 mt-1 group/vin", needsVin && "rounded-md px-1.5 py-0.5 -mx-1.5 bg-red-50 ring-1 ring-red-300")}>
+                <span className={cn("text-xs font-mono", needsVin ? "text-red-600 font-semibold" : "text-muted-foreground")}>VIN:</span>
                 {inlineField === "vin" ? (
                   <input
                     autoFocus
@@ -1288,8 +1292,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
             {/* MILEAGE — inline editable */}
             <div className="flex items-stretch">
-              <div className="text-center min-w-[70px] group/mileage">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Mileage</p>
+              <div className={cn("text-center min-w-[70px] group/mileage", needsMileage && "rounded-lg px-2 py-1 -mx-1 bg-red-50 ring-1 ring-red-300")}>
+                <p className={cn("text-[9px] font-bold uppercase tracking-widest mb-1", needsMileage ? "text-red-600" : "text-muted-foreground")}>Mileage{needsMileage ? " *" : ""}</p>
                 {inlineField === "mileage" ? (
                   <input
                     autoFocus
@@ -1396,7 +1400,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       <div className="border-t border-border max-h-40 overflow-y-auto">
                         <button
                           className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
-                          onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: "" }); }}
+                          onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: null }); }}
                         >
                           — None —
                         </button>
@@ -1703,13 +1707,13 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
               {/* Technician & Advisor assignment */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="border border-border rounded-lg bg-background p-4 space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                    <Wrench className="w-3.5 h-3.5" />Technician
+                <div className={cn("border rounded-lg bg-background p-4 space-y-2", needsAssignment ? "border-red-300 bg-red-50/50" : "border-border")}>
+                  <p className={cn("text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5", needsAssignment ? "text-red-600" : "text-muted-foreground")}>
+                    <Wrench className="w-3.5 h-3.5" />Technician{needsAssignment ? " *" : ""}
                   </p>
                   <div className="relative">
                     <button
-                      className="w-full flex items-center justify-between gap-2 text-sm border border-border rounded-lg px-3 py-2 hover:border-foreground/30 transition-colors"
+                      className={cn("w-full flex items-center justify-between gap-2 text-sm border rounded-lg px-3 py-2 hover:border-foreground/30 transition-colors", needsAssignment ? "border-red-300" : "border-border")}
                       onClick={() => { setInlineField(inlineField === "tab_technician" ? null : "tab_technician"); setInlineValue(""); }}
                     >
                       <span className={cn("truncate", job.technician_name ? "text-foreground font-semibold" : "text-muted-foreground")}>
@@ -1734,7 +1738,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           <div className="border-t border-border max-h-40 overflow-y-auto">
                             <button
                               className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
-                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ technician_id: "" }); setInlineField(null); }}
+                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ technician_id: null }); setInlineField(null); }}
                             >
                               — None —
                             </button>
@@ -1756,13 +1760,13 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   </div>
                 </div>
 
-                <div className="border border-border rounded-lg bg-background p-4 space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5" />Advisor
+                <div className={cn("border rounded-lg bg-background p-4 space-y-2", needsAssignment ? "border-red-300 bg-red-50/50" : "border-border")}>
+                  <p className={cn("text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5", needsAssignment ? "text-red-600" : "text-muted-foreground")}>
+                    <User className="w-3.5 h-3.5" />Advisor{needsAssignment ? " *" : ""}
                   </p>
                   <div className="relative">
                     <button
-                      className="w-full flex items-center justify-between gap-2 text-sm border border-border rounded-lg px-3 py-2 hover:border-foreground/30 transition-colors"
+                      className={cn("w-full flex items-center justify-between gap-2 text-sm border rounded-lg px-3 py-2 hover:border-foreground/30 transition-colors", needsAssignment ? "border-red-300" : "border-border")}
                       onClick={() => { setInlineField(inlineField === "tab_advisor" ? null : "tab_advisor"); setInlineValue(""); }}
                     >
                       <span className={cn("truncate", job.advisor_name ? "text-foreground font-semibold" : "text-muted-foreground")}>
@@ -1787,7 +1791,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           <div className="border-t border-border max-h-40 overflow-y-auto">
                             <button
                               className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
-                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: "" }); setInlineField(null); }}
+                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: null }); setInlineField(null); }}
                             >
                               — None —
                             </button>
@@ -1809,8 +1813,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   </div>
                 </div>
               </div>
-              {!job.technician_id && !job.advisor_id && (
-                <p className="text-xs text-amber-600 flex items-center gap-1.5">
+              {needsAssignment && (
+                <p className="text-xs text-red-600 font-medium flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Assign a technician or advisor to move to the inspection stage
                 </p>

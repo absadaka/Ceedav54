@@ -541,8 +541,8 @@ router.put("/:id", async (req, res) => {
     const [job] = await db
       .update(jobsTable)
       .set({
-        advisor_id:       advisor_id       ?? undefined,
-        technician_id:    technician_id    ?? undefined,
+        advisor_id:       advisor_id === "" ? null : advisor_id ?? undefined,
+        technician_id:    technician_id === "" ? null : technician_id ?? undefined,
         priority:         priority         ?? undefined,
         bay:              bay              ?? undefined,
         customer_concern: customer_concern ?? undefined,
