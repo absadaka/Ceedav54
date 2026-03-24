@@ -1271,49 +1271,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 {job.color && <><span className="text-border">•</span><span>{job.color}</span></>}
                 {job.plate_number && <><span className="text-border">•</span><span className="font-mono font-semibold text-foreground">{job.plate_number}</span></>}
               </div>
-              <div className={cn("flex items-center gap-1.5 mt-1 group/vin", needsVin && "rounded-md px-1.5 py-0.5 -mx-1.5 bg-red-50 ring-1 ring-red-300")}>
-                <span className={cn("text-xs font-mono", needsVin ? "text-red-600 font-semibold" : "text-muted-foreground")}>VIN:</span>
-                {inlineField === "vin" ? (
-                  <input
-                    autoFocus
-                    className="text-xs font-mono bg-transparent outline-none min-w-[10rem] py-0.5"
-                    value={inlineValue}
-                    placeholder="Enter VIN…"
-                    onChange={e => setInlineValue(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        const trimmed = inlineValue.trim();
-                        if (!job.vehicle_id) { toast.error("No vehicle linked to this job"); setInlineField(null); return; }
-                        if (trimmed !== (job.vin ?? "")) {
-                          inlineSavedRef.current = true;
-                          patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: trimmed } });
-                        } else {
-                          setInlineField(null);
-                        }
-                      }
-                      if (e.key === "Escape") { inlineSavedRef.current = true; setInlineField(null); }
-                    }}
-                    onBlur={() => {
-                      if (inlineSavedRef.current) { inlineSavedRef.current = false; return; }
-                      const trimmed = inlineValue.trim();
-                      if (!job.vehicle_id) { setInlineField(null); return; }
-                      if (trimmed !== (job.vin ?? "")) {
-                        patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: trimmed } });
-                      } else {
-                        setInlineField(null);
-                      }
-                    }}
-                  />
-                ) : (
-                  <button
-                    className="text-xs font-mono text-muted-foreground hover:text-foreground flex items-center gap-1"
-                    onClick={() => { setInlineField("vin"); setInlineValue(job.vin ?? ""); }}
-                  >
-                    {job.vin ?? "—"}
-                    <Pencil className="w-3 h-3 opacity-0 group-hover/vin:opacity-40" />
-                  </button>
-                )}
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-xs font-mono text-muted-foreground">VIN:</span>
+                <span className="text-xs font-mono text-muted-foreground">{job.vin ?? "—"}</span>
               </div>
             </div>
           </div>
@@ -1321,135 +1281,33 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           {/* Info strip */}
           <div className="flex items-center gap-0 lg:gap-0 border-t lg:border-t-0 lg:border-l border-border pt-4 lg:pt-0 lg:pl-6 flex-wrap gap-y-3">
 
-            {/* MILEAGE — inline editable */}
+            {/* MILEAGE — read-only */}
             <div className="flex items-stretch">
-              <div className={cn("text-center min-w-[70px] group/mileage", needsMileage && "rounded-lg px-2 py-1 -mx-1 bg-red-50 ring-1 ring-red-300")}>
-                <p className={cn("text-[9px] font-bold uppercase tracking-widest mb-1", needsMileage ? "text-red-600" : "text-muted-foreground")}>Mileage{needsMileage ? " *" : ""}</p>
-                {inlineField === "mileage" ? (
-                  <input
-                    autoFocus
-                    type="number"
-                    className="text-sm font-semibold bg-transparent outline-none w-24 text-center"
-                    value={inlineValue}
-                    placeholder="e.g. 45000"
-                    onChange={e => setInlineValue(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                      if (e.key === "Escape") { setInlineValue(job.mileage_in ?? ""); (e.target as HTMLInputElement).blur(); }
-                    }}
-                    onBlur={() => {
-                      const val = inlineValue.trim();
-                      if (val !== (job.mileage_in ?? "")) {
-                        patchJobMutation.mutate({ mileage_in: val });
-                      } else {
-                        setInlineField(null);
-                      }
-                    }}
-                  />
-                ) : (
-                  <button
-                    className="text-sm font-semibold text-foreground flex items-center gap-1 mx-auto hover:text-primary"
-                    onClick={() => { setInlineField("mileage"); setInlineValue(job.mileage_in ?? (job as any).vehicle_mileage ?? ""); }}
-                  >
-                    {(() => {
-                      const val = job.mileage_in ?? (job as any).vehicle_mileage;
-                      return val ? `${parseInt(val).toLocaleString()} mi` : "—";
-                    })()}
-                    <Pencil className="w-3 h-3 opacity-0 group-hover/mileage:opacity-40 shrink-0" />
-                  </button>
-                )}
+              <div className="text-center min-w-[70px]">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Mileage</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {(() => { const val = job.mileage_in ?? (job as any).vehicle_mileage; return val ? `${parseInt(val).toLocaleString()} mi` : "—"; })()}
+                </p>
               </div>
             </div>
 
             <div className="w-px bg-border mx-4 hidden sm:block" />
 
-            {/* BAY — inline editable */}
+            {/* BAY — read-only */}
             <div className="flex items-stretch">
-              <div className="text-center min-w-[70px] group/bay">
+              <div className="text-center min-w-[70px]">
                 <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Bay</p>
-                {inlineField === "bay" ? (
-                  <input
-                    autoFocus
-                    className="text-sm font-semibold bg-transparent outline-none w-16 text-center"
-                    value={inlineValue}
-                    placeholder="e.g. A1"
-                    onChange={e => setInlineValue(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                      if (e.key === "Escape") { setInlineValue(job.bay ?? ""); (e.target as HTMLInputElement).blur(); }
-                    }}
-                    onBlur={() => {
-                      const val = inlineValue.trim();
-                      if (val !== (job.bay ?? "")) {
-                        patchJobMutation.mutate({ bay: val });
-                      } else {
-                        setInlineField(null);
-                      }
-                    }}
-                  />
-                ) : (
-                  <button
-                    className="text-sm font-semibold text-foreground flex items-center gap-1 mx-auto hover:text-primary"
-                    onClick={() => { setInlineField("bay"); setInlineValue(job.bay ?? ""); }}
-                  >
-                    {job.bay ?? "—"}
-                    <Pencil className="w-3 h-3 opacity-0 group-hover/bay:opacity-40 shrink-0" />
-                  </button>
-                )}
+                <p className="text-sm font-semibold text-foreground">{job.bay ?? "—"}</p>
               </div>
             </div>
 
             <div className="w-px bg-border mx-4 hidden sm:block" />
 
-            {/* ADVISOR — inline dropdown */}
+            {/* ADVISOR — read-only */}
             <div className="flex items-stretch">
-              <div className="text-center min-w-[70px] relative">
+              <div className="text-center min-w-[70px]">
                 <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Advisor</p>
-                <button
-                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground border border-border rounded-md px-3 py-1 hover:border-foreground/30 transition-colors"
-                  onClick={() => { setInlineField(inlineField === "advisor" ? null : "advisor"); setInlineValue(""); }}
-                >
-                  <span className={cn("truncate max-w-[7rem]", job.advisor_name ? "text-foreground font-semibold" : "")}>
-                    {job.advisor_name ?? "Select advisor"}
-                  </span>
-                  <ChevronRight className="w-3 h-3 rotate-90 shrink-0 text-muted-foreground" />
-                </button>
-                {inlineField === "advisor" && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-44 py-1 text-left">
-                      <div className="px-2 py-1">
-                        <input
-                          autoFocus
-                          className="w-full text-xs bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
-                          placeholder="Search…"
-                          value={inlineValue}
-                          onChange={e => setInlineValue(e.target.value)}
-                          onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
-                        />
-                      </div>
-                      <div className="border-t border-border max-h-40 overflow-y-auto">
-                        <button
-                          className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
-                          onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: null }); }}
-                        >
-                          — None —
-                        </button>
-                        {teamMembers
-                          .filter(m => !inlineValue || m.name.toLowerCase().includes(inlineValue.toLowerCase()))
-                          .map(m => (
-                          <button
-                            key={m.id}
-                            className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors", m.id === job.advisor_id ? "font-semibold" : "")}
-                            onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: m.id }); }}
-                          >
-                            {m.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
+                <p className={cn("text-sm", job.advisor_name ? "font-semibold text-foreground" : "text-muted-foreground")}>{job.advisor_name ?? "—"}</p>
               </div>
             </div>
 
@@ -1798,8 +1656,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 )}
               </div>
 
-              {/* VIN / Mileage / Bay */}
-              <div className="grid grid-cols-3 gap-3">
+              {/* VIN / Mileage / Bay / Advisor */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsVin && "border-red-300 bg-red-50/50")}>
                   <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsVin ? "text-red-600" : "text-muted-foreground")}>VIN{needsVin ? " *" : ""}</p>
                   {inlineField === "tab_vin" ? (
@@ -1901,114 +1759,106 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     </button>
                   )}
                 </div>
+
+                <div className="border border-border rounded-lg bg-background p-3 space-y-1.5 relative">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Advisor</p>
+                  <button
+                    className="w-full text-left text-sm flex items-center justify-between gap-1 group/tabadv hover:text-primary"
+                    onClick={() => { setInlineField(inlineField === "tab_advisor" ? null : "tab_advisor"); setInlineValue(""); }}
+                  >
+                    <span className={job.advisor_name ? "text-foreground font-semibold truncate" : "text-muted-foreground/50 italic"}>{job.advisor_name || "Not set"}</span>
+                    <ChevronRight className="w-3 h-3 rotate-90 shrink-0 text-muted-foreground" />
+                  </button>
+                  {inlineField === "tab_advisor" && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
+                      <div className="absolute top-full left-0 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-full py-1">
+                        <div className="px-2 py-1">
+                          <input
+                            autoFocus
+                            className="w-full text-xs bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
+                            placeholder="Search…"
+                            value={inlineValue}
+                            onChange={e => setInlineValue(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
+                          />
+                        </div>
+                        <div className="border-t border-border max-h-40 overflow-y-auto">
+                          <button
+                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
+                            onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: null }); setInlineField(null); }}
+                          >
+                            — None —
+                          </button>
+                          {teamMembers
+                            .filter(m => !inlineValue || m.name.toLowerCase().includes(inlineValue.toLowerCase()))
+                            .map(m => (
+                            <button
+                              key={m.id}
+                              className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors", m.id === job.advisor_id ? "font-semibold" : "")}
+                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: m.id }); setInlineField(null); }}
+                            >
+                              {m.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
-              {/* Technician & Advisor assignment */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className={cn("border rounded-lg bg-background p-4 space-y-2", needsAssignment ? "border-red-300 bg-red-50/50" : "border-border")}>
-                  <p className={cn("text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5", needsAssignment ? "text-red-600" : "text-muted-foreground")}>
-                    <Wrench className="w-3.5 h-3.5" />Technician{needsAssignment ? " *" : ""}
-                  </p>
-                  <div className="relative">
-                    <button
-                      className={cn("w-full flex items-center justify-between gap-2 text-sm border rounded-lg px-3 py-2 hover:border-foreground/30 transition-colors", needsAssignment ? "border-red-300" : "border-border")}
-                      onClick={() => { setInlineField(inlineField === "tab_technician" ? null : "tab_technician"); setInlineValue(""); }}
-                    >
-                      <span className={cn("truncate", job.technician_name ? "text-foreground font-semibold" : "text-muted-foreground")}>
-                        {job.technician_name ?? "Select technician"}
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 rotate-90 shrink-0 text-muted-foreground" />
-                    </button>
-                    {inlineField === "tab_technician" && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
-                        <div className="absolute top-full left-0 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-full py-1">
-                          <div className="px-2 py-1">
-                            <input
-                              autoFocus
-                              className="w-full text-xs bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
-                              placeholder="Search…"
-                              value={inlineValue}
-                              onChange={e => setInlineValue(e.target.value)}
-                              onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
-                            />
-                          </div>
-                          <div className="border-t border-border max-h-40 overflow-y-auto">
-                            <button
-                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
-                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ technician_id: null }); setInlineField(null); }}
-                            >
-                              — None —
-                            </button>
-                            {teamMembers
-                              .filter(m => !inlineValue || m.name.toLowerCase().includes(inlineValue.toLowerCase()))
-                              .map(m => (
-                              <button
-                                key={m.id}
-                                className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors", m.id === job.technician_id ? "font-semibold" : "")}
-                                onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ technician_id: m.id }); setInlineField(null); }}
-                              >
-                                {m.name}
-                              </button>
-                            ))}
-                          </div>
+              {/* Technician assignment */}
+              <div className={cn("border rounded-lg bg-background p-4 space-y-2", needsAssignment ? "border-red-300 bg-red-50/50" : "border-border")}>
+                <p className={cn("text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5", needsAssignment ? "text-red-600" : "text-muted-foreground")}>
+                  <Wrench className="w-3.5 h-3.5" />Technician{needsAssignment ? " *" : ""}
+                </p>
+                <div className="relative">
+                  <button
+                    className={cn("w-full flex items-center justify-between gap-2 text-sm border rounded-lg px-3 py-2 hover:border-foreground/30 transition-colors", needsAssignment ? "border-red-300" : "border-border")}
+                    onClick={() => { setInlineField(inlineField === "tab_technician" ? null : "tab_technician"); setInlineValue(""); }}
+                  >
+                    <span className={cn("truncate", job.technician_name ? "text-foreground font-semibold" : "text-muted-foreground")}>
+                      {job.technician_name ?? "Select technician"}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 rotate-90 shrink-0 text-muted-foreground" />
+                  </button>
+                  {inlineField === "tab_technician" && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
+                      <div className="absolute top-full left-0 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-full py-1">
+                        <div className="px-2 py-1">
+                          <input
+                            autoFocus
+                            className="w-full text-xs bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
+                            placeholder="Search…"
+                            value={inlineValue}
+                            onChange={e => setInlineValue(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
+                          />
                         </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className={cn("border rounded-lg bg-background p-4 space-y-2", needsAssignment ? "border-red-300 bg-red-50/50" : "border-border")}>
-                  <p className={cn("text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5", needsAssignment ? "text-red-600" : "text-muted-foreground")}>
-                    <User className="w-3.5 h-3.5" />Advisor{needsAssignment ? " *" : ""}
-                  </p>
-                  <div className="relative">
-                    <button
-                      className={cn("w-full flex items-center justify-between gap-2 text-sm border rounded-lg px-3 py-2 hover:border-foreground/30 transition-colors", needsAssignment ? "border-red-300" : "border-border")}
-                      onClick={() => { setInlineField(inlineField === "tab_advisor" ? null : "tab_advisor"); setInlineValue(""); }}
-                    >
-                      <span className={cn("truncate", job.advisor_name ? "text-foreground font-semibold" : "text-muted-foreground")}>
-                        {job.advisor_name ?? "Select advisor"}
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 rotate-90 shrink-0 text-muted-foreground" />
-                    </button>
-                    {inlineField === "tab_advisor" && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
-                        <div className="absolute top-full left-0 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-full py-1">
-                          <div className="px-2 py-1">
-                            <input
-                              autoFocus
-                              className="w-full text-xs bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
-                              placeholder="Search…"
-                              value={inlineValue}
-                              onChange={e => setInlineValue(e.target.value)}
-                              onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
-                            />
-                          </div>
-                          <div className="border-t border-border max-h-40 overflow-y-auto">
+                        <div className="border-t border-border max-h-40 overflow-y-auto">
+                          <button
+                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
+                            onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ technician_id: null }); setInlineField(null); }}
+                          >
+                            — None —
+                          </button>
+                          {teamMembers
+                            .filter(m => !inlineValue || m.name.toLowerCase().includes(inlineValue.toLowerCase()))
+                            .map(m => (
                             <button
-                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
-                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: null }); setInlineField(null); }}
+                              key={m.id}
+                              className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors", m.id === job.technician_id ? "font-semibold" : "")}
+                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ technician_id: m.id }); setInlineField(null); }}
                             >
-                              — None —
+                              {m.name}
                             </button>
-                            {teamMembers
-                              .filter(m => !inlineValue || m.name.toLowerCase().includes(inlineValue.toLowerCase()))
-                              .map(m => (
-                              <button
-                                key={m.id}
-                                className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors", m.id === job.advisor_id ? "font-semibold" : "")}
-                                onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: m.id }); setInlineField(null); }}
-                              >
-                                {m.name}
-                              </button>
-                            ))}
-                          </div>
+                          ))}
                         </div>
-                      </>
-                    )}
-                  </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
               {needsAssignment && (
