@@ -832,7 +832,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const NEXT_STATUS: Record<string, string> = {
     new: "waiting", waiting: "on_hold", on_hold: "qc",
     qc: "in_progress", in_progress: "completed",
-    completed: "delivered",
+    completed: "invoiced", invoiced: "delivered",
   };
 
   const validateTransition = (targetStatus: string): boolean => {
@@ -1547,7 +1547,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Add required services and parts to the diagnosis list. Prices are hidden — focus on what the vehicle needs.", btn: "Start Inspection" },
                 qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Quotation"    },
                 in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status"   },
-                completed:     { title: "Ready for Delivery",              desc: "Work is complete. Notify the customer and prepare the vehicle for handover.",                                btn: "Mark as Delivered"    },
+                completed:     { title: "Ready for Invoicing",             desc: "Work is complete. Prepare and send the invoice to the customer.",                                             btn: "Mark as Invoiced"    },
+                invoiced:      { title: "Invoiced — Ready for Delivery",  desc: "Invoice has been issued. Collect payment and prepare the vehicle for handover.",                             btn: "Mark as Delivered"    },
                 delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: ""                     },
               };
               const action = NEXT_ACTION[job.status] ?? { title: "Update Status", desc: "Move this job to the next stage in the workflow.", btn: "Move Status" };
