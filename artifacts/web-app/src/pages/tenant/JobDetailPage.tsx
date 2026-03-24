@@ -832,7 +832,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const NEXT_STATUS: Record<string, string> = {
     new: "waiting", waiting: "on_hold", on_hold: "qc",
     qc: "in_progress", in_progress: "completed",
-    waiting_parts: "in_progress", completed: "delivered",
+    completed: "delivered",
   };
 
   const validateTransition = (targetStatus: string): boolean => {
@@ -1547,7 +1547,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Add required services and parts to the diagnosis list. Prices are hidden — focus on what the vehicle needs.", btn: "Start Inspection" },
                 qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Quotation"    },
                 in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status"   },
-                waiting_parts: { title: "Awaiting Parts",                  desc: "Parts have been ordered. Update the status when parts arrive to resume work.",                               btn: "Mark Parts Arrived"   },
                 completed:     { title: "Ready for Delivery",              desc: "Work is complete. Notify the customer and prepare the vehicle for handover.",                                btn: "Mark as Delivered"    },
                 delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: ""                     },
               };
@@ -1955,18 +1954,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {isInspectionStage ? "Inspection List" : "Inspection items"}
                   </p>
-                  {!isInspectionStage && job.status === "waiting_parts" && (
-                    <div className="flex gap-1.5">
-                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                        onClick={() => { setShowAddPart(p => !p); setShowAddManualPart(false); }}>
-                        <Plus className="w-3 h-3" />{showAddPart ? "Cancel" : "Add service"}
-                      </Button>
-                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                        onClick={() => { setShowAddManualPart(p => !p); setShowAddPart(false); }}>
-                        <Plus className="w-3 h-3" />{showAddManualPart ? "Cancel" : "Add parts"}
-                      </Button>
-                    </div>
-                  )}
                 </div>
 
                 {parts.length === 0 && !showAddPart && !showAddManualPart ? (
