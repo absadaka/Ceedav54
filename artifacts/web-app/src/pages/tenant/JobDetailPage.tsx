@@ -1460,16 +1460,31 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         <Calculator className="w-4 h-4" />
                         <span className="text-xs font-bold">Move to Estimation</span>
                       </button>
-                    ) : (
+                    ) : job.status === "qc" ? (() => {
+                      const qApproved = quotation?.status === "approved";
+                      return (
+                        <button
+                          onClick={() => {
+                            if (qApproved) {
+                              moveStatus("in_progress");
+                            } else {
+                              setActiveTab("cost");
+                              setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                            }
+                          }}
+                          disabled={moveStatusMutation.isPending}
+                          className={cn(
+                            "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                            qApproved ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
+                          )}
+                        >
+                          {qApproved ? <Hammer className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
+                          <span className="text-xs font-bold">{qApproved ? "Start the Work" : "Create Quotation"}</span>
+                        </button>
+                      );
+                    })() : (
                       <button
-                        onClick={() => {
-                          if (job.status === "qc") {
-                            setActiveTab("cost");
-                            setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-                          } else {
-                            moveToNext();
-                          }
-                        }}
+                        onClick={() => moveToNext()}
                         disabled={moveStatusMutation.isPending}
                         className={cn(
                           "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
@@ -1480,25 +1495,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         <span className="text-xs font-bold">{action.btn}</span>
                       </button>
                     )}
-                    {job.status === "qc" && (() => {
-                      const qApproved = quotation?.status === "approved";
-                      return (
-                        <button
-                          onClick={() => qApproved && moveStatus("in_progress")}
-                          disabled={moveStatusMutation.isPending || !qApproved}
-                          className={cn(
-                            "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                            qApproved ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 cursor-not-allowed"
-                          )}
-                        >
-                          <Hammer className="w-4 h-4" />
-                          <span className="text-xs font-bold">Start the Work</span>
-                          {!qApproved && (
-                            <span className="text-[9px] font-normal opacity-80">· Approval needed</span>
-                          )}
-                        </button>
-                      );
-                    })()}
                   </div>
                 )}
               </div>
