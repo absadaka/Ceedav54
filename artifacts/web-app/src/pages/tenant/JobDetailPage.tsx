@@ -1517,8 +1517,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                             hasReport ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
                           )}
                         >
-                          {hasReport ? <Receipt className="w-4 h-4" /> : <Hammer className="w-4 h-4" />}
-                          <span className="text-xs font-bold">{hasReport ? "Create Invoice" : "Update Work Status"}</span>
+                          {hasReport ? <CheckCircle className="w-4 h-4" /> : <Hammer className="w-4 h-4" />}
+                          <span className="text-xs font-bold">{hasReport ? "Work Completed" : "Update Work Status"}</span>
                         </button>
                       );
                     })() : (
