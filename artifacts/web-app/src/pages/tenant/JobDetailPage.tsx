@@ -1429,7 +1429,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 case "waiting": return !!(job.technician_id || job.advisor_id);
                 case "on_hold": return parts.length > 0 || techNotes.length > 0;
                 case "qc": return !!quotation;
-                case "in_progress": return true;
+                case "in_progress": return reportNotes.length > 0;
                 case "completed": return reportNotes.length > 0;
                 case "invoiced": return true;
                 default: return true;
