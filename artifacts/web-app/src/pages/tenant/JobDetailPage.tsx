@@ -1798,6 +1798,111 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 )}
               </div>
 
+              {/* VIN / Mileage / Bay */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsVin && "border-red-300 bg-red-50/50")}>
+                  <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsVin ? "text-red-600" : "text-muted-foreground")}>VIN{needsVin ? " *" : ""}</p>
+                  {inlineField === "tab_vin" ? (
+                    <input
+                      autoFocus
+                      className="w-full text-sm font-mono bg-transparent outline-none border-b border-primary pb-0.5"
+                      value={inlineValue}
+                      placeholder="Enter VIN…"
+                      onChange={e => setInlineValue(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        if (e.key === "Escape") { setInlineField(null); }
+                      }}
+                      onBlur={() => {
+                        const trimmed = inlineValue.trim();
+                        if (trimmed !== (job.vin ?? "")) {
+                          patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: trimmed } });
+                        } else {
+                          setInlineField(null);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <button
+                      className="w-full text-left text-sm font-mono flex items-center gap-1 group/tabvin hover:text-primary"
+                      onClick={() => { setInlineField("tab_vin"); setInlineValue(job.vin ?? ""); }}
+                    >
+                      <span className={job.vin ? "text-foreground" : "text-muted-foreground/50 italic"}>{job.vin || "Not set"}</span>
+                      <Pencil className="w-3 h-3 opacity-0 group-hover/tabvin:opacity-40 shrink-0" />
+                    </button>
+                  )}
+                </div>
+
+                <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsMileage && "border-red-300 bg-red-50/50")}>
+                  <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsMileage ? "text-red-600" : "text-muted-foreground")}>Mileage{needsMileage ? " *" : ""}</p>
+                  {inlineField === "tab_mileage" ? (
+                    <input
+                      autoFocus
+                      type="number"
+                      className="w-full text-sm font-semibold bg-transparent outline-none border-b border-primary pb-0.5"
+                      value={inlineValue}
+                      placeholder="e.g. 45000"
+                      onChange={e => setInlineValue(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        if (e.key === "Escape") { setInlineField(null); }
+                      }}
+                      onBlur={() => {
+                        const val = inlineValue.trim();
+                        if (val !== (job.mileage_in ?? "")) {
+                          patchJobMutation.mutate({ mileage_in: val });
+                        } else {
+                          setInlineField(null);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <button
+                      className="w-full text-left text-sm font-semibold flex items-center gap-1 group/tabmil hover:text-primary"
+                      onClick={() => { setInlineField("tab_mileage"); setInlineValue(job.mileage_in ?? (job as any).vehicle_mileage ?? ""); }}
+                    >
+                      <span className={job.mileage_in ? "text-foreground" : "text-muted-foreground/50 italic"}>
+                        {(() => { const v = job.mileage_in ?? (job as any).vehicle_mileage; return v ? `${parseInt(v).toLocaleString()} mi` : "Not set"; })()}
+                      </span>
+                      <Pencil className="w-3 h-3 opacity-0 group-hover/tabmil:opacity-40 shrink-0" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="border border-border rounded-lg bg-background p-3 space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Bay</p>
+                  {inlineField === "tab_bay" ? (
+                    <input
+                      autoFocus
+                      className="w-full text-sm font-semibold bg-transparent outline-none border-b border-primary pb-0.5"
+                      value={inlineValue}
+                      placeholder="e.g. A1"
+                      onChange={e => setInlineValue(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        if (e.key === "Escape") { setInlineField(null); }
+                      }}
+                      onBlur={() => {
+                        const val = inlineValue.trim();
+                        if (val !== (job.bay ?? "")) {
+                          patchJobMutation.mutate({ bay: val });
+                        } else {
+                          setInlineField(null);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <button
+                      className="w-full text-left text-sm font-semibold flex items-center gap-1 group/tabbay hover:text-primary"
+                      onClick={() => { setInlineField("tab_bay"); setInlineValue(job.bay ?? ""); }}
+                    >
+                      <span className={job.bay ? "text-foreground" : "text-muted-foreground/50 italic"}>{job.bay || "Not set"}</span>
+                      <Pencil className="w-3 h-3 opacity-0 group-hover/tabbay:opacity-40 shrink-0" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Technician & Advisor assignment */}
               <div className="grid grid-cols-2 gap-3">
                 <div className={cn("border rounded-lg bg-background p-4 space-y-2", needsAssignment ? "border-red-300 bg-red-50/50" : "border-border")}>
