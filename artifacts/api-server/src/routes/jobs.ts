@@ -7,6 +7,7 @@ import {
   jobsTable, jobStatusHistoryTable, jobAssignmentsTable,
   jobTimeLogsTable, jobPartsTable, jobPhotosTable, jobNotesTable,
   catalogItemsTable, quoteAdvancePaymentsTable,
+  invoicesTable, paymentsTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -405,6 +406,29 @@ router.get("/:id", async (req, res) => {
       inspectionRef:      (inspectionJob as any[])[0]?.ref ?? null,
       techNotes: ((notes as any[]) ?? []).filter((n: any) => n.type !== "report"),
       reportNotes: ((notes as any[]) ?? []).filter((n: any) => n.type === "report"),
+      invoices: await (async () => {
+        const invRows = await db
+          .select({
+            id:          invoicesTable.id,
+            ref:         invoicesTable.ref,
+            status:      invoicesTable.status,
+            subtotal:    invoicesTable.subtotal,
+            discount:    invoicesTable.discount,
+            tax_rate:    invoicesTable.tax_rate,
+            tax_amount:  invoicesTable.tax_amount,
+            total:       invoicesTable.total,
+            paid_amount: invoicesTable.paid_amount,
+            notes:       invoicesTable.notes,
+            due_at:      invoicesTable.due_at,
+            sent_at:     invoicesTable.sent_at,
+            paid_at:     invoicesTable.paid_at,
+            created_at:  invoicesTable.created_at,
+          })
+          .from(invoicesTable)
+          .where(and(eq(invoicesTable.job_id, req.params.id), eq(invoicesTable.tenant_id, tenant.id)))
+          .orderBy(desc(invoicesTable.created_at));
+        return invRows;
+      })(),
     });
   } catch (err) {
     console.error("GET /jobs/:id", err);
