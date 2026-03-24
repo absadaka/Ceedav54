@@ -87,7 +87,7 @@ function fmtElapsed(ms: number) {
 
 /* ─── interfaces ─────────────────────────────────────────────────────────── */
 interface JobDetail {
-  id: string; ref: string; seq: number; type: string | null; status: string; work_status: string; priority: string;
+  id: string; ref: string; seq: number; type: string | null; status: string; priority: string;
   bay: string | null; started_at: string | null; completed_at: string | null; qc_at: string | null;
   mileage_in: string | null; mileage_out: string | null; scheduled_date: string | null;
   customer_concern: string | null; technician_note: string | null;
@@ -1689,7 +1689,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 <TabsTrigger value="parts">Inspection ({parts.length})</TabsTrigger>
               )}
               <TabsTrigger value="cost">Quotation</TabsTrigger>
-              <TabsTrigger value="work_status">Work Status</TabsTrigger>
               <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
               <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
             </TabsList>
@@ -2519,53 +2518,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   </div>
                 </>
               )}
-            </TabsContent>
-
-            {/* ── Work Status tab ─────────────────────────────────────── */}
-            <TabsContent value="work_status" className="mt-0 space-y-4">
-              {(() => {
-                const WORK_STATUSES = [
-                  { value: "not_started", label: "Not Started", color: "bg-gray-400", ring: "ring-gray-300", bg: "bg-gray-50" },
-                  { value: "diagnosing", label: "Diagnosing", color: "bg-blue-500", ring: "ring-blue-300", bg: "bg-blue-50" },
-                  { value: "in_progress", label: "In Progress", color: "bg-orange-500", ring: "ring-orange-300", bg: "bg-orange-50" },
-                  { value: "paused", label: "Paused", color: "bg-yellow-500", ring: "ring-yellow-300", bg: "bg-yellow-50" },
-                  { value: "waiting_parts", label: "Waiting Parts", color: "bg-purple-500", ring: "ring-purple-300", bg: "bg-purple-50" },
-                  { value: "waiting_approval", label: "Waiting Approval", color: "bg-cyan-500", ring: "ring-cyan-300", bg: "bg-cyan-50" },
-                  { value: "completed", label: "Completed", color: "bg-green-500", ring: "ring-green-300", bg: "bg-green-50" },
-                ];
-                const current = WORK_STATUSES.find(s => s.value === job.work_status) ?? WORK_STATUSES[0];
-                return (
-                  <>
-                    <div className={cn("rounded-xl border-2 p-5 flex items-center gap-4", current.ring, current.bg)}>
-                      <div className={cn("w-4 h-4 rounded-full shrink-0", current.color)} />
-                      <div>
-                        <p className="text-lg font-bold text-foreground">{current.label}</p>
-                        <p className="text-xs text-muted-foreground">Current work status</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {WORK_STATUSES.map(opt => (
-                        <button
-                          key={opt.value}
-                          onClick={() => patchJobMutation.mutate({ work_status: opt.value })}
-                          disabled={patchJobMutation.isPending}
-                          className={cn(
-                            "rounded-xl border-2 p-3 flex items-center gap-2.5 transition-all text-left",
-                            opt.value === job.work_status
-                              ? cn(opt.ring, opt.bg, "shadow-sm")
-                              : "border-border hover:border-foreground/20 hover:bg-muted/50"
-                          )}
-                        >
-                          <div className={cn("w-3 h-3 rounded-full shrink-0", opt.color)} />
-                          <span className={cn("text-sm font-medium", opt.value === job.work_status ? "font-bold" : "")}>
-                            {opt.label}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                );
-              })()}
             </TabsContent>
 
             {/* ── Photos tab ───────────────────────────────────────────── */}

@@ -19,10 +19,6 @@ export const jobPriorityEnum = pgEnum("job_priority", [
   "low", "normal", "high", "urgent",
 ]);
 
-export const workStatusEnum = pgEnum("work_status", [
-  "not_started", "diagnosing", "in_progress", "paused", "waiting_parts", "waiting_approval", "completed",
-]);
-
 /* ─────────────────────────────────────────────────────────────────────────
    QUOTATIONS
 ───────────────────────────────────────────────────────────────────────── */
@@ -132,7 +128,6 @@ export const jobsTable = pgTable("jobs", {
   // primary technician (quick assignment — use job_assignments for multi-tech)
   technician_id:   uuid("technician_id").references(() => usersTable.id, { onDelete: "set null" }),
   status:          jobStatusEnum("status").notNull().default("waiting"),
-  work_status:     workStatusEnum("work_status").notNull().default("not_started"),
   priority:        jobPriorityEnum("priority").notNull().default("normal"),
   bay:             text("bay"),
   started_at:      timestamp("started_at",    { withTimezone: true }),
