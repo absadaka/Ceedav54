@@ -7,7 +7,7 @@ import {
   jobsTable, jobStatusHistoryTable, jobAssignmentsTable,
   jobTimeLogsTable, jobPartsTable, jobPhotosTable, jobNotesTable,
   catalogItemsTable, quoteAdvancePaymentsTable,
-  invoicesTable, paymentsTable,
+  invoicesTable, invoiceLineItemsTable, paymentsTable,
 } from "@workspace/db";
 
 const router = Router();
@@ -427,7 +427,21 @@ router.get("/:id", async (req, res) => {
           .from(invoicesTable)
           .where(and(eq(invoicesTable.job_id, req.params.id), eq(invoicesTable.tenant_id, tenant.id)))
           .orderBy(desc(invoicesTable.created_at));
-        return invRows;
+
+        const enriched = await Promise.all(invRows.map(async (inv) => {
+          const lineItems = await db
+            .select()
+            .from(invoiceLineItemsTable)
+            .where(eq(invoiceLineItemsTable.invoice_id, inv.id))
+            .orderBy(invoiceLineItemsTable.sort_order);
+          const pmts = await db
+            .select()
+            .from(paymentsTable)
+            .where(eq(paymentsTable.invoice_id, inv.id))
+            .orderBy(desc(paymentsTable.paid_at));
+          return { ...inv, lineItems, payments: pmts };
+        }));
+        return enriched;
       })(),
     });
   } catch (err) {
