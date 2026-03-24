@@ -1036,6 +1036,16 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     staleTime: 10_000,
   });
 
+  const jobStatus = (data as any)?.job?.status;
+  useEffect(() => {
+    if (!jobStatus) return;
+    const allowed: string[] = ["work", "history"];
+    if (!["new", "waiting"].includes(jobStatus)) allowed.push("parts", "inspection");
+    if (!["new", "waiting", "on_hold"].includes(jobStatus)) allowed.push("cost");
+    if (!["new", "waiting", "on_hold", "qc"].includes(jobStatus)) allowed.push("report");
+    if (["invoiced", "delivered"].includes(jobStatus)) allowed.push("invoices");
+    if (!allowed.includes(activeTab)) setActiveTab("work");
+  }, [jobStatus]);
 
   const cancelMutation = useMutation({
     mutationFn: (note: string) =>
@@ -1695,22 +1705,37 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         {/* Full-width tabs */}
         <div>
           <Tabs value={activeTab} onValueChange={setActiveTab} ref={tabsRef}>
-            <TabsList className="mb-4 flex-wrap h-auto gap-1">
-              <TabsTrigger value="work">Customer Concerns</TabsTrigger>
-              {isInspection && (
-                <TabsTrigger value="parts">Diagnosis ({parts.length})</TabsTrigger>
-              )}
-              {!isInspection && job.source_inspection_id && (
-                <TabsTrigger value="inspection">Inspection ({inspectionParts.length})</TabsTrigger>
-              )}
-              {!isInspection && !job.source_inspection_id && (
-                <TabsTrigger value="parts">Inspection ({parts.length})</TabsTrigger>
-              )}
-              <TabsTrigger value="cost">Quotation</TabsTrigger>
-              <TabsTrigger value="report">Job Report ({reportNotes.length})</TabsTrigger>
-              <TabsTrigger value="invoices">Invoices ({(invoices as any[]).length})</TabsTrigger>
-              <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
-            </TabsList>
+            {(() => {
+              const s = job.status;
+              const showInspection = !["new", "waiting"].includes(s);
+              const showQuotation  = !["new", "waiting", "on_hold"].includes(s);
+              const showReport     = !["new", "waiting", "on_hold", "qc"].includes(s);
+              const showInvoices   = ["invoiced", "delivered"].includes(s);
+              return (
+                <TabsList className="mb-4 flex-wrap h-auto gap-1">
+                  <TabsTrigger value="work">Customer Concerns</TabsTrigger>
+                  {showInspection && isInspection && (
+                    <TabsTrigger value="parts">Diagnosis ({parts.length})</TabsTrigger>
+                  )}
+                  {showInspection && !isInspection && job.source_inspection_id && (
+                    <TabsTrigger value="inspection">Inspection ({inspectionParts.length})</TabsTrigger>
+                  )}
+                  {showInspection && !isInspection && !job.source_inspection_id && (
+                    <TabsTrigger value="parts">Inspection ({parts.length})</TabsTrigger>
+                  )}
+                  {showQuotation && (
+                    <TabsTrigger value="cost">Quotation</TabsTrigger>
+                  )}
+                  {showReport && (
+                    <TabsTrigger value="report">Job Report ({reportNotes.length})</TabsTrigger>
+                  )}
+                  {showInvoices && (
+                    <TabsTrigger value="invoices">Invoices ({(invoices as any[]).length})</TabsTrigger>
+                  )}
+                  <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
+                </TabsList>
+              );
+            })()}
 
             {/* ── Work tab ─────────────────────────────────────────────── */}
             <TabsContent value="work" className="space-y-4 mt-0">
