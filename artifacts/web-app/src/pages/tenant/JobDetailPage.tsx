@@ -1463,7 +1463,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       disabled={moveStatusMutation.isPending}
                       className={cn(
                         "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                        isReady ? "border-blue-600 text-blue-600 hover:bg-blue-50" : "border-gray-300 text-gray-400"
+                        isReady ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700" : "border-gray-300 text-gray-400"
                       )}
                     >
                       {action.icon}
@@ -1475,7 +1475,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         disabled={moveStatusMutation.isPending}
                         className={cn(
                           "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                          (parts.length > 0 || techNotes.length > 0) ? "border-green-600 text-green-600 hover:bg-green-50" : "border-gray-300 text-gray-400"
+                          (parts.length > 0 || techNotes.length > 0) ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:border-green-700" : "border-gray-300 text-gray-400"
                         )}
                       >
                         <Calculator className="w-4 h-4" />
@@ -1490,7 +1490,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           disabled={moveStatusMutation.isPending || !qApproved}
                           className={cn(
                             "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                            qApproved ? "border-green-600 text-green-600 hover:bg-green-50" : "border-gray-300 text-gray-400 cursor-not-allowed"
+                            qApproved ? "border-green-600 bg-green-600 text-white hover:bg-green-700 hover:border-green-700" : "border-gray-300 text-gray-400 cursor-not-allowed"
                           )}
                         >
                           <Hammer className="w-4 h-4" />
