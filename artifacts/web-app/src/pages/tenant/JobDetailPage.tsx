@@ -1407,127 +1407,82 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         </div>
       )}
 
-      {/* Next Required Action + Activity Timeline */}
+      {/* Next Required Action — full width */}
       {job.status !== "cancelled" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Next Required Action */}
-          <div className="lg:col-span-2">
-            {(() => {
-              const NEXT_ACTION: Record<string, { title: string; desc: string; btn: string }> = {
-                new:           { title: "Check In Vehicle",                desc: "Verify vehicle arrival, record mileage and start the job card.",                                              btn: "Start Check-in"       },
-                waiting:       { title: "Begin Vehicle Inspection",        desc: "Vehicle is checked in. Assign a technician and start the multi-point inspection.",                            btn: "Start Inspection"     },
-                on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Add required services and parts to the diagnosis list. Prices are hidden — focus on what the vehicle needs.", btn: "Start Inspection" },
-                qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Quotation"    },
-                in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status"   },
-                completed:     { title: "Ready for Invoicing",             desc: "Work is complete. Prepare and send the invoice to the customer.",                                             btn: "Mark as Invoiced"    },
-                invoiced:      { title: "Invoiced — Ready for Delivery",  desc: "Invoice has been issued. Collect payment and prepare the vehicle for handover.",                             btn: "Mark as Delivered"    },
-                delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: ""                     },
-              };
-              const action = NEXT_ACTION[job.status] ?? { title: "Update Status", desc: "Move this job to the next stage in the workflow.", btn: "Move Status" };
-              return (
-                <div className="h-full rounded-xl border border-border bg-background px-6 py-5 flex items-center justify-between gap-6">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5 mb-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
-                      Next required action
-                    </p>
-                    <h2 className="text-xl font-bold leading-tight text-foreground mb-2">{action.title}</h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{action.desc}</p>
-                  </div>
-                  {job.status !== "delivered" && (
-                    <div className="flex flex-col gap-2 shrink-0 w-40">
+        <div className="space-y-4">
+          {(() => {
+            const NEXT_ACTION: Record<string, { title: string; desc: string; btn: string }> = {
+              new:           { title: "Check In Vehicle",                desc: "Verify vehicle arrival, record mileage and start the job card.",                                              btn: "Start Check-in"       },
+              waiting:       { title: "Begin Vehicle Inspection",        desc: "Vehicle is checked in. Assign a technician and start the multi-point inspection.",                            btn: "Start Inspection"     },
+              on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Add required services and parts to the diagnosis list. Prices are hidden — focus on what the vehicle needs.", btn: "Start Inspection" },
+              qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Quotation"    },
+              in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status"   },
+              completed:     { title: "Ready for Invoicing",             desc: "Work is complete. Prepare and send the invoice to the customer.",                                             btn: "Mark as Invoiced"    },
+              invoiced:      { title: "Invoiced — Ready for Delivery",  desc: "Invoice has been issued. Collect payment and prepare the vehicle for handover.",                             btn: "Mark as Delivered"    },
+              delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: ""                     },
+            };
+            const action = NEXT_ACTION[job.status] ?? { title: "Update Status", desc: "Move this job to the next stage in the workflow.", btn: "Move Status" };
+            return (
+              <div className="rounded-xl border border-border bg-background px-6 py-5 flex items-center justify-between gap-6">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5 mb-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
+                    Next required action
+                  </p>
+                  <h2 className="text-xl font-bold leading-tight text-foreground mb-2">{action.title}</h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{action.desc}</p>
+                </div>
+                {job.status !== "delivered" && (
+                  <div className="flex flex-col gap-2 shrink-0 w-40">
+                    <button
+                      onClick={() => {
+                        if (job.status === "on_hold") {
+                          setActiveTab("parts");
+                          setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                        } else if (job.status === "qc") {
+                          setActiveTab("cost");
+                          setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                        } else {
+                          moveToNext();
+                        }
+                      }}
+                      disabled={moveStatusMutation.isPending}
+                      className="w-full h-10 rounded-xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60"
+                    >
+                      <span className="text-xs font-bold">{action.btn}</span>
+                    </button>
+                    {job.status === "on_hold" && (
                       <button
-                        onClick={() => {
-                          if (job.status === "on_hold") {
-                            setActiveTab("parts");
-                            setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-                          } else if (job.status === "qc") {
-                            setActiveTab("cost");
-                            setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-                          } else {
-                            moveToNext();
-                          }
-                        }}
+                        onClick={() => moveStatus("qc")}
                         disabled={moveStatusMutation.isPending}
-                        className="w-full h-10 rounded-xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60"
+                        className="w-full h-10 rounded-xl bg-green-600 hover:bg-green-700 transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60"
                       >
-                        <span className="text-xs font-bold">{action.btn}</span>
+                        <span className="text-xs font-bold">Move to Estimation</span>
                       </button>
-                      {job.status === "on_hold" && (
+                    )}
+                    {job.status === "qc" && (() => {
+                      const qApproved = quotation?.status === "approved";
+                      return (
                         <button
-                          onClick={() => moveStatus("qc")}
-                          disabled={moveStatusMutation.isPending}
-                          className="w-full h-10 rounded-xl bg-green-600 hover:bg-green-700 transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60"
+                          onClick={() => qApproved && moveStatus("in_progress")}
+                          disabled={moveStatusMutation.isPending || !qApproved}
+                          className={cn(
+                            "w-full h-10 rounded-xl transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60",
+                            qApproved ? "bg-green-600 hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
+                          )}
                         >
-                          <span className="text-xs font-bold">Move to Estimation</span>
+                          <span className="text-xs font-bold">Start the Work</span>
+                          {!qApproved && (
+                            <span className="text-[9px] font-normal opacity-80">· Approval needed</span>
+                          )}
                         </button>
-                      )}
-                      {job.status === "qc" && (() => {
-                        const qApproved = quotation?.status === "approved";
-                        return (
-                          <button
-                            onClick={() => qApproved && moveStatus("in_progress")}
-                            disabled={moveStatusMutation.isPending || !qApproved}
-                            className={cn(
-                              "w-full h-10 rounded-xl transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60",
-                              qApproved ? "bg-green-600 hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
-                            )}
-                          >
-                            <span className="text-xs font-bold">Start the Work</span>
-                            {!qApproved && (
-                              <span className="text-[9px] font-normal opacity-80">· Approval needed</span>
-                            )}
-                          </button>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Activity Timeline */}
-          <div className="rounded-xl border border-border bg-background px-6 py-5">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-5">
-              Activity Timeline
-            </p>
-            {statusHistory.length === 0 ? (
-              <p className="text-sm text-muted-foreground/50 italic">No activity yet.</p>
-            ) : (
-              <>
-                <div className="space-y-0">
-                  {[...statusHistory].reverse().slice(0, 3).map((h, idx, arr) => (
-                    <div key={h.id} className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="w-3 h-3 rounded-full bg-blue-600 shrink-0 mt-0.5" />
-                        {idx < arr.length - 1 && (
-                          <div className="w-px flex-1 bg-slate-200 my-1.5" />
-                        )}
-                      </div>
-                      <div className={cn("min-w-0", idx < arr.length - 1 ? "pb-5" : "")}>
-                        <p className="text-sm font-semibold text-foreground leading-tight">
-                          {jobStatusLabel(h.to_status, isInspection)}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {h.changed_by_name ? `${h.changed_by_name} · ` : ""}
-                          {new Date(h.created_at).toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {statusHistory.length > 3 && (
-                  <button
-                    className="mt-4 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
-                    onClick={() => setShowFullTimeline(true)}
-                  >
-                    View all {statusHistory.length} activities
-                  </button>
+                      );
+                    })()}
+                  </div>
                 )}
-              </>
-            )}
-          </div>
+              </div>
+            );
+          })()}
 
           <Dialog open={showFullTimeline} onOpenChange={setShowFullTimeline}>
             <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
@@ -2857,23 +2812,49 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           </Tabs>
         </div>
 
-        {/* Timeline + Linked — full width row */}
+        {/* Activity Timeline + Linked — full width row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="border border-border rounded-lg bg-background p-4 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Timeline</p>
-            <div className="space-y-1.5 text-xs">
-              {[
-                { label: "Created",   value: job.created_at   },
-                { label: "Started",   value: job.started_at   },
-                { label: "QC",        value: job.qc_at        },
-                { label: "Completed", value: job.completed_at },
-              ].map(({ label, value }) => value && (
-                <div key={label} className="flex justify-between gap-2">
-                  <span className="text-muted-foreground">{label}</span>
-                  <span className="font-medium text-right">{fmtDate(value)}</span>
+          <div className="border border-border rounded-lg bg-background p-4 space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Activity Timeline</p>
+            {statusHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground/50 italic">No activity yet.</p>
+            ) : (
+              <>
+                <div className="space-y-0">
+                  {[...statusHistory].reverse().slice(0, 5).map((h, idx, arr) => (
+                    <div key={h.id} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0 mt-1" />
+                        {idx < arr.length - 1 && (
+                          <div className="w-px flex-1 bg-slate-200 my-1" />
+                        )}
+                      </div>
+                      <div className={cn("min-w-0 flex-1", idx < arr.length - 1 ? "pb-3" : "")}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-foreground leading-tight">
+                            {jobStatusLabel(h.to_status, isInspection)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground shrink-0">
+                            {fmtDate(h.created_at)}
+                          </p>
+                        </div>
+                        {h.changed_by_name && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{h.changed_by_name}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+                {statusHistory.length > 5 && (
+                  <button
+                    className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                    onClick={() => setShowFullTimeline(true)}
+                  >
+                    View all {statusHistory.length} activities
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           {(quotation || job.booking_id) && (
