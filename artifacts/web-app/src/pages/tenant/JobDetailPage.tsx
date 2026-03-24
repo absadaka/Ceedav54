@@ -1150,6 +1150,17 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to save report entry"),
   });
 
+  const deleteReportNoteMutation = useMutation({
+    mutationFn: (noteId: string) =>
+      fetch(`${API}/api/jobs/${id}/notes/${noteId}?tenant=${TENANT}`, { method: "DELETE" })
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      toast.success("Report entry deleted");
+    },
+    onError: () => toast.error("Failed to delete report entry"),
+  });
+
   const startTimerMutation = useMutation({
     mutationFn: () =>
       fetch(`${API}/api/jobs/${id}/time?tenant=${TENANT}`, {
@@ -2546,14 +2557,23 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 {(reportNotes as TechNote[]).length > 0 && (
                   <div className="px-4 pt-3 space-y-2">
                     {(reportNotes as TechNote[]).map((n) => (
-                      <div key={n.id} className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                      <div key={n.id} className="rounded-md border border-border bg-muted/30 p-3 space-y-1 group/report">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-medium text-foreground">
                             {n.created_by_name ?? "Unknown"}
                           </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {new Date(n.created_at).toLocaleString("en-AE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(n.created_at).toLocaleString("en-AE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                            <button
+                              className="opacity-0 group-hover/report:opacity-100 transition-opacity text-muted-foreground hover:text-red-500 p-0.5 rounded"
+                              disabled={deleteReportNoteMutation.isPending}
+                              onClick={() => deleteReportNoteMutation.mutate(n.id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{n.note}</p>
                       </div>
