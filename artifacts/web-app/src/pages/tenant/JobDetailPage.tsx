@@ -907,9 +907,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       body: JSON.stringify({}),
     }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
     onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
       qc.invalidateQueries({ queryKey: ["invoices"] });
       toast.success(`Invoice ${data.invoice?.ref} created`);
-      navigate(`/invoices/${data.invoice?.id}`);
     },
     onError: () => toast.error("Failed to create invoice"),
   });
@@ -2629,12 +2629,12 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
             {/* ── Invoices tab ────────────────────────────────────────── */}
             <TabsContent value="invoices" className="mt-0 space-y-4">
-              <div className="border border-border rounded-lg bg-background overflow-hidden">
-                <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                    <Receipt className="w-3.5 h-3.5" />Invoices
-                  </p>
-                  {(invoices as any[]).length === 0 && (
+              {(invoices as any[]).length === 0 ? (
+                <div className="border border-border rounded-lg bg-background overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                      <Receipt className="w-3.5 h-3.5" />Invoices
+                    </p>
                     <Button
                       size="sm"
                       className="h-7 text-xs gap-1"
@@ -2644,82 +2644,139 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       <Plus className="w-3 h-3" />
                       {createInvoiceMutation.isPending ? "Creating…" : "Create Invoice"}
                     </Button>
-                  )}
-                </div>
-
-                {(invoices as any[]).length === 0 ? (
+                  </div>
                   <div className="px-4 py-8 text-center">
                     <Receipt className="w-8 h-8 mx-auto text-muted-foreground/20 mb-2" />
                     <p className="text-sm text-muted-foreground/50 italic">No invoices yet</p>
                     <p className="text-xs text-muted-foreground/40 mt-1">Create an invoice from this job's quotation or parts list</p>
                   </div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {(invoices as any[]).map((inv: any) => {
-                      const total = parseFloat(inv.total ?? "0");
-                      const paid  = parseFloat(inv.paid_amount ?? "0");
-                      const balance = total - paid;
-                      const statusColor: Record<string, string> = {
-                        draft:   "bg-slate-100 text-slate-700",
-                        sent:    "bg-blue-100 text-blue-700",
-                        partial: "bg-amber-100 text-amber-700",
-                        paid:    "bg-green-100 text-green-700",
-                        overdue: "bg-red-100 text-red-700",
-                        void:    "bg-gray-100 text-gray-500",
-                      };
-                      return (
-                        <div key={inv.id} className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-muted/20 transition-colors">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
-                              <Receipt className="w-4 h-4 text-emerald-600" />
+                </div>
+              ) : (
+                (invoices as any[]).map((inv: any) => {
+                  const subtotal = parseFloat(inv.subtotal ?? "0");
+                  const discount = parseFloat(inv.discount ?? "0");
+                  const taxAmount = parseFloat(inv.tax_amount ?? "0");
+                  const total = parseFloat(inv.total ?? "0");
+                  const paid  = parseFloat(inv.paid_amount ?? "0");
+                  const balance = total - paid;
+                  const taxRate = parseFloat(inv.tax_rate ?? "5");
+                  const lines: any[] = inv.lineItems ?? [];
+                  const pmts: any[] = inv.payments ?? [];
+                  const statusColor: Record<string, string> = {
+                    draft:   "bg-slate-100 text-slate-700",
+                    sent:    "bg-blue-100 text-blue-700",
+                    partial: "bg-amber-100 text-amber-700",
+                    paid:    "bg-green-100 text-green-700",
+                    overdue: "bg-red-100 text-red-700",
+                    void:    "bg-gray-100 text-gray-500",
+                  };
+                  return (
+                    <div key={inv.id} className="border border-border rounded-lg bg-background overflow-hidden">
+                      <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Receipt className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span className="text-sm font-bold text-foreground">{inv.ref}</span>
+                          <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-full uppercase", statusColor[inv.status] ?? "bg-gray-100 text-gray-600")}>
+                            {inv.status}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          {new Date(inv.created_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short", year: "numeric" })}
+                          {inv.due_at && <> · Due {new Date(inv.due_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short" })}</>}
+                        </p>
+                      </div>
+
+                      {lines.length > 0 && (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-border bg-muted/20 text-muted-foreground">
+                                <th className="text-left px-4 py-2 font-medium">#</th>
+                                <th className="text-left px-4 py-2 font-medium">Description</th>
+                                <th className="text-left px-4 py-2 font-medium">Type</th>
+                                <th className="text-right px-4 py-2 font-medium">Qty</th>
+                                <th className="text-right px-4 py-2 font-medium">Unit Price</th>
+                                <th className="text-right px-4 py-2 font-medium">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                              {lines.map((line: any, idx: number) => (
+                                <tr key={line.id} className="hover:bg-muted/10">
+                                  <td className="px-4 py-2 text-muted-foreground">{idx + 1}</td>
+                                  <td className="px-4 py-2 text-foreground font-medium">{line.description}</td>
+                                  <td className="px-4 py-2 text-muted-foreground capitalize">{line.type}</td>
+                                  <td className="px-4 py-2 text-right text-muted-foreground">{parseFloat(line.qty).toFixed(0)}</td>
+                                  <td className="px-4 py-2 text-right text-muted-foreground">{parseFloat(line.unit_price).toFixed(2)}</td>
+                                  <td className="px-4 py-2 text-right font-medium text-foreground">{parseFloat(line.line_total).toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      <div className="border-t border-border px-4 py-3">
+                        <div className="flex justify-end">
+                          <div className="w-56 space-y-1 text-xs">
+                            <div className="flex justify-between text-muted-foreground">
+                              <span>Subtotal</span>
+                              <span>{subtotal.toFixed(2)}</span>
                             </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-foreground">{inv.ref}</span>
-                                <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-full uppercase", statusColor[inv.status] ?? "bg-gray-100 text-gray-600")}>
-                                  {inv.status}
-                                </span>
+                            {discount > 0 && (
+                              <div className="flex justify-between text-muted-foreground">
+                                <span>Discount</span>
+                                <span>-{discount.toFixed(2)}</span>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                Created {new Date(inv.created_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short", year: "numeric" })}
-                                {inv.due_at && <> · Due {new Date(inv.due_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short" })}</>}
-                              </p>
+                            )}
+                            <div className="flex justify-between text-muted-foreground">
+                              <span>VAT ({taxRate}%)</span>
+                              <span>{taxAmount.toFixed(2)}</span>
                             </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-sm font-bold text-foreground">AED {total.toFixed(2)}</p>
+                            <div className="flex justify-between font-bold text-sm text-foreground border-t border-border pt-1">
+                              <span>Total</span>
+                              <span>AED {total.toFixed(2)}</span>
+                            </div>
                             {paid > 0 && (
-                              <p className="text-[10px] text-muted-foreground">
-                                Paid: AED {paid.toFixed(2)}
-                                {balance > 0 && <span className="text-amber-600 ml-1">Bal: AED {balance.toFixed(2)}</span>}
-                              </p>
+                              <>
+                                <div className="flex justify-between text-green-600">
+                                  <span>Paid</span>
+                                  <span>-{paid.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-amber-600">
+                                  <span>Balance Due</span>
+                                  <span>AED {balance.toFixed(2)}</span>
+                                </div>
+                              </>
                             )}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      </div>
 
-                {(invoices as any[]).length > 0 && (
-                  <div className="px-4 py-3 border-t border-border bg-muted/20 flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">
-                      {(invoices as any[]).length} invoice{(invoices as any[]).length !== 1 ? "s" : ""}
-                      {" · "}Total: AED {(invoices as any[]).reduce((s: number, inv: any) => s + parseFloat(inv.total ?? "0"), 0).toFixed(2)}
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      disabled={createInvoiceMutation.isPending}
-                      onClick={() => createInvoiceMutation.mutate()}
-                    >
-                      <Plus className="w-3 h-3" />
-                      {createInvoiceMutation.isPending ? "Creating…" : "New Invoice"}
-                    </Button>
-                  </div>
-                )}
-              </div>
+                      {pmts.length > 0 && (
+                        <div className="border-t border-border">
+                          <div className="px-4 py-2 bg-muted/20">
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Payments</p>
+                          </div>
+                          <div className="divide-y divide-border">
+                            {pmts.map((pmt: any) => (
+                              <div key={pmt.id} className="px-4 py-2 flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2">
+                                  <span className="capitalize text-muted-foreground">{pmt.method?.replace("_", " ")}</span>
+                                  {pmt.reference && <span className="text-muted-foreground/60">#{pmt.reference}</span>}
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-medium text-green-600">AED {parseFloat(pmt.amount).toFixed(2)}</span>
+                                  <span className="ml-2 text-muted-foreground/60">{new Date(pmt.paid_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short" })}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </TabsContent>
 
             {/* ── History tab ─────────────────────────────────────────── */}
