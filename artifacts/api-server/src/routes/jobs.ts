@@ -83,6 +83,7 @@ router.get("/", async (req, res) => {
           seq:            jobsTable.seq,
           type:           jobsTable.type,
           status:         jobsTable.status,
+          work_status:    jobsTable.work_status,
           priority:       jobsTable.priority,
           bay:            jobsTable.bay,
           started_at:     jobsTable.started_at,
@@ -155,6 +156,7 @@ router.get("/kanban", async (req, res) => {
         ref:          jobsTable.ref,
         type:         jobsTable.type,
         status:       jobsTable.status,
+        work_status:  jobsTable.work_status,
         priority:     jobsTable.priority,
         bay:          jobsTable.bay,
         started_at:   jobsTable.started_at,
@@ -218,6 +220,7 @@ router.get("/:id", async (req, res) => {
         seq:             jobsTable.seq,
         type:            jobsTable.type,
         status:          jobsTable.status,
+        work_status:     jobsTable.work_status,
         priority:        jobsTable.priority,
         bay:             jobsTable.bay,
         started_at:      jobsTable.started_at,
@@ -533,7 +536,7 @@ router.put("/:id", async (req, res) => {
     if (!existing) return res.status(404).json({ error: "Job not found" });
 
     const {
-      advisor_id, technician_id, priority, bay,
+      advisor_id, technician_id, priority, bay, work_status,
       customer_concern, technician_note, qc_note, internal_note,
       mileage_in, mileage_out,
     } = req.body as Record<string, string>;
@@ -543,6 +546,7 @@ router.put("/:id", async (req, res) => {
       .set({
         advisor_id:       advisor_id === "" ? null : advisor_id ?? undefined,
         technician_id:    technician_id === "" ? null : technician_id ?? undefined,
+        work_status:      work_status      ?? undefined,
         priority:         priority         ?? undefined,
         bay:              bay              ?? undefined,
         customer_concern: customer_concern ?? undefined,

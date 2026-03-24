@@ -87,7 +87,7 @@ function fmtElapsed(ms: number) {
 
 /* ─── interfaces ─────────────────────────────────────────────────────────── */
 interface JobDetail {
-  id: string; ref: string; seq: number; type: string | null; status: string; priority: string;
+  id: string; ref: string; seq: number; type: string | null; status: string; work_status: string; priority: string;
   bay: string | null; started_at: string | null; completed_at: string | null; qc_at: string | null;
   mileage_in: string | null; mileage_out: string | null; scheduled_date: string | null;
   customer_concern: string | null; technician_note: string | null;
@@ -1431,6 +1431,55 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 <p className="text-sm font-semibold text-blue-600 leading-snug">
                   {jobStatusLabel(job.status, isInspection)}
                 </p>
+              </div>
+            </div>
+
+            <div className="w-px bg-border mx-4 hidden sm:block" />
+
+            {/* WORK STATUS — inline dropdown */}
+            <div className="flex items-stretch">
+              <div className="text-center min-w-[70px] relative">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Work Status</p>
+                <button
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground border border-border rounded-md px-3 py-1 hover:border-foreground/30 transition-colors"
+                  onClick={() => { setInlineField(inlineField === "work_status" ? null : "work_status"); }}
+                >
+                  <span className={cn("truncate max-w-[8rem]", job.work_status !== "not_started" ? "text-foreground font-semibold" : "")}>
+                    {(() => {
+                      const WORK_STATUS_LABELS: Record<string, string> = {
+                        not_started: "Not Started", diagnosing: "Diagnosing", in_progress: "In Progress",
+                        paused: "Paused", waiting_parts: "Waiting Parts", waiting_approval: "Waiting Approval", completed: "Completed",
+                      };
+                      return WORK_STATUS_LABELS[job.work_status] ?? job.work_status;
+                    })()}
+                  </span>
+                  <ChevronRight className="w-3 h-3 rotate-90 shrink-0 text-muted-foreground" />
+                </button>
+                {inlineField === "work_status" && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-44 py-1 text-left">
+                      {[
+                        { value: "not_started", label: "Not Started", color: "bg-gray-400" },
+                        { value: "diagnosing", label: "Diagnosing", color: "bg-blue-500" },
+                        { value: "in_progress", label: "In Progress", color: "bg-orange-500" },
+                        { value: "paused", label: "Paused", color: "bg-yellow-500" },
+                        { value: "waiting_parts", label: "Waiting Parts", color: "bg-purple-500" },
+                        { value: "waiting_approval", label: "Waiting Approval", color: "bg-cyan-500" },
+                        { value: "completed", label: "Completed", color: "bg-green-500" },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors flex items-center gap-2", opt.value === job.work_status ? "font-semibold" : "")}
+                          onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ work_status: opt.value }); setInlineField(null); }}
+                        >
+                          <span className={cn("w-2 h-2 rounded-full shrink-0", opt.color)} />
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
