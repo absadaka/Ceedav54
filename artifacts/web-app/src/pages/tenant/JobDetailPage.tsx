@@ -1422,11 +1422,25 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: "",                      icon: <CheckCircle2 className="w-4 h-4" /> },
             };
             const action = NEXT_ACTION[job.status] ?? { title: "Update Status", desc: "Move this job to the next stage in the workflow.", btn: "Move Status", icon: <ArrowRight className="w-4 h-4" /> };
+
+            const isReady = (() => {
+              switch (job.status) {
+                case "new": return !!(job.vin && (job.mileage_in ?? (job as any).vehicle_mileage));
+                case "waiting": return !!(job.technician_id || job.advisor_id);
+                case "on_hold": return parts.length > 0 || techNotes.length > 0;
+                case "qc": return !!quotation;
+                case "in_progress": return true;
+                case "completed": return reportNotes.length > 0;
+                case "invoiced": return true;
+                default: return true;
+              }
+            })();
+
             return (
               <div className="rounded-xl border border-border bg-background px-6 py-5 flex items-center justify-between gap-6">
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5 mb-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
+                    <span className={cn("w-1.5 h-1.5 rounded-full inline-block", isReady ? "bg-blue-600" : "bg-gray-300")} />
                     Next required action
                   </p>
                   <h2 className="text-xl font-bold leading-tight text-foreground mb-2">{action.title}</h2>
@@ -1447,7 +1461,10 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         }
                       }}
                       disabled={moveStatusMutation.isPending}
-                      className="w-full h-10 rounded-xl border-2 border-blue-600 text-blue-600 bg-transparent hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                      className={cn(
+                        "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                        isReady ? "border-blue-600 text-blue-600 hover:bg-blue-50" : "border-gray-300 text-gray-400"
+                      )}
                     >
                       {action.icon}
                       <span className="text-xs font-bold">{action.btn}</span>
@@ -1456,7 +1473,10 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       <button
                         onClick={() => moveStatus("qc")}
                         disabled={moveStatusMutation.isPending}
-                        className="w-full h-10 rounded-xl border-2 border-green-600 text-green-600 bg-transparent hover:bg-green-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                        className={cn(
+                          "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                          (parts.length > 0 || techNotes.length > 0) ? "border-green-600 text-green-600 hover:bg-green-50" : "border-gray-300 text-gray-400"
+                        )}
                       >
                         <Calculator className="w-4 h-4" />
                         <span className="text-xs font-bold">Move to Estimation</span>
