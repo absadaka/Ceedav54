@@ -1039,12 +1039,15 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const jobStatus = (data as any)?.job?.status;
   useEffect(() => {
     if (!jobStatus) return;
-    const allowed: string[] = ["work", "history"];
-    if (!["new", "waiting"].includes(jobStatus)) allowed.push("parts", "inspection");
-    if (!["new", "waiting", "on_hold"].includes(jobStatus)) allowed.push("cost");
-    if (!["new", "waiting", "on_hold", "qc"].includes(jobStatus)) allowed.push("report");
-    if (["invoiced", "delivered"].includes(jobStatus)) allowed.push("invoices");
-    if (!allowed.includes(activeTab)) setActiveTab("work");
+    const statusTabMap: Record<string, string> = {
+      new: "work", waiting: "work",
+      on_hold: "parts", qc: "cost",
+      in_progress: "report",
+      completed: "invoices", invoiced: "invoices",
+      delivered: "work",
+    };
+    const target = statusTabMap[jobStatus] ?? "work";
+    setActiveTab(target);
   }, [jobStatus]);
 
   const cancelMutation = useMutation({
