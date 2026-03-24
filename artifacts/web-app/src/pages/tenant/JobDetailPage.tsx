@@ -1543,7 +1543,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         className="w-full h-10 rounded-xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60"
                       >
                         <span className="text-xs font-bold">{action.btn}</span>
-                        <span className="text-sm font-bold">{(job.status === "on_hold" || job.status === "qc") ? "↓" : "→"}</span>
                       </button>
                       {job.status === "on_hold" && (
                         <button
@@ -1552,7 +1551,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           className="w-full h-10 rounded-xl bg-green-600 hover:bg-green-700 transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60"
                         >
                           <span className="text-xs font-bold">Move to Estimation</span>
-                          <span className="text-sm font-bold">→</span>
                         </button>
                       )}
                       {job.status === "qc" && (() => {
@@ -1567,9 +1565,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                             )}
                           >
                             <span className="text-xs font-bold">Start the Work</span>
-                            {qApproved ? (
-                              <span className="text-sm font-bold">→</span>
-                            ) : (
+                            {!qApproved && (
                               <span className="text-[9px] font-normal opacity-80">· Approval needed</span>
                             )}
                           </button>
