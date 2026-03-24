@@ -851,11 +851,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       }
     }
     if (job.status === "waiting" && targetStatus === "on_hold") {
-      const missing: string[] = [];
-      if (!job.technician_id) missing.push("Assigned Technician");
-      if (!job.bay) missing.push("Bay Number");
-      if (missing.length > 0) {
-        toast.error(`Please fill in ${missing.join(" and ")} before moving to Inspection`);
+      if (!job.technician_id && !job.advisor_id) {
+        toast.error("Please assign a Technician or an Advisor before moving to Inspection");
         return false;
       }
     }
@@ -1703,6 +1700,121 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   {job.customer_concern ?? <span className="text-muted-foreground/50 italic">No customer concern recorded</span>}
                 </p>
               </div>
+
+              {/* Technician & Advisor assignment */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="border border-border rounded-lg bg-background p-4 space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <Wrench className="w-3.5 h-3.5" />Technician
+                  </p>
+                  <div className="relative">
+                    <button
+                      className="w-full flex items-center justify-between gap-2 text-sm border border-border rounded-lg px-3 py-2 hover:border-foreground/30 transition-colors"
+                      onClick={() => { setInlineField(inlineField === "tab_technician" ? null : "tab_technician"); setInlineValue(""); }}
+                    >
+                      <span className={cn("truncate", job.technician_name ? "text-foreground font-semibold" : "text-muted-foreground")}>
+                        {job.technician_name ?? "Select technician"}
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 rotate-90 shrink-0 text-muted-foreground" />
+                    </button>
+                    {inlineField === "tab_technician" && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
+                        <div className="absolute top-full left-0 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-full py-1">
+                          <div className="px-2 py-1">
+                            <input
+                              autoFocus
+                              className="w-full text-xs bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
+                              placeholder="Search…"
+                              value={inlineValue}
+                              onChange={e => setInlineValue(e.target.value)}
+                              onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
+                            />
+                          </div>
+                          <div className="border-t border-border max-h-40 overflow-y-auto">
+                            <button
+                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
+                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ technician_id: "" }); setInlineField(null); }}
+                            >
+                              — None —
+                            </button>
+                            {teamMembers
+                              .filter(m => !inlineValue || m.name.toLowerCase().includes(inlineValue.toLowerCase()))
+                              .map(m => (
+                              <button
+                                key={m.id}
+                                className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors", m.id === job.technician_id ? "font-semibold" : "")}
+                                onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ technician_id: m.id }); setInlineField(null); }}
+                              >
+                                {m.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border border-border rounded-lg bg-background p-4 space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5" />Advisor
+                  </p>
+                  <div className="relative">
+                    <button
+                      className="w-full flex items-center justify-between gap-2 text-sm border border-border rounded-lg px-3 py-2 hover:border-foreground/30 transition-colors"
+                      onClick={() => { setInlineField(inlineField === "tab_advisor" ? null : "tab_advisor"); setInlineValue(""); }}
+                    >
+                      <span className={cn("truncate", job.advisor_name ? "text-foreground font-semibold" : "text-muted-foreground")}>
+                        {job.advisor_name ?? "Select advisor"}
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 rotate-90 shrink-0 text-muted-foreground" />
+                    </button>
+                    {inlineField === "tab_advisor" && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
+                        <div className="absolute top-full left-0 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-full py-1">
+                          <div className="px-2 py-1">
+                            <input
+                              autoFocus
+                              className="w-full text-xs bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
+                              placeholder="Search…"
+                              value={inlineValue}
+                              onChange={e => setInlineValue(e.target.value)}
+                              onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
+                            />
+                          </div>
+                          <div className="border-t border-border max-h-40 overflow-y-auto">
+                            <button
+                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
+                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: "" }); setInlineField(null); }}
+                            >
+                              — None —
+                            </button>
+                            {teamMembers
+                              .filter(m => !inlineValue || m.name.toLowerCase().includes(inlineValue.toLowerCase()))
+                              .map(m => (
+                              <button
+                                key={m.id}
+                                className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors", m.id === job.advisor_id ? "font-semibold" : "")}
+                                onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: m.id }); setInlineField(null); }}
+                              >
+                                {m.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {!job.technician_id && !job.advisor_id && (
+                <p className="text-xs text-amber-600 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Assign a technician or advisor to move to the inspection stage
+                </p>
+              )}
 
               {/* QC review */}
               {!isInspection && (job.status === "qc" || job.status === "completed" || job.status === "delivered" || job.qc_note) && (
