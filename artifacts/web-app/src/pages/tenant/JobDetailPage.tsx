@@ -1752,6 +1752,52 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 </p>
               </div>
 
+              {/* Add more details */}
+              <div className="border border-border rounded-lg bg-background overflow-hidden">
+                <button
+                  className="w-full px-4 py-3 flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:bg-muted/30 transition-colors"
+                  onClick={() => setInlineField(inlineField === "more_details" ? null : "more_details")}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Plus className="w-3.5 h-3.5" />Add more details
+                  </span>
+                  <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", inlineField === "more_details" && "rotate-90")} />
+                </button>
+                {inlineField === "more_details" && (
+                  <div className="px-4 pb-4 space-y-2 border-t border-border pt-3">
+                    {job.internal_note && (
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground bg-muted/30 rounded-md p-3">{job.internal_note}</p>
+                    )}
+                    <Textarea
+                      rows={3}
+                      placeholder="Add additional details, observations, or notes…"
+                      value={inlineValue}
+                      onChange={e => setInlineValue(e.target.value)}
+                      className="text-sm resize-none"
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        disabled={patchJobMutation.isPending || !inlineValue.trim()}
+                        onClick={() => {
+                          const updated = job.internal_note
+                            ? `${job.internal_note}\n${inlineValue.trim()}`
+                            : inlineValue.trim();
+                          patchJobMutation.mutate({ internal_note: updated }, {
+                            onSuccess: () => {
+                              setInlineValue("");
+                              toast.success("Details saved");
+                            },
+                          });
+                        }}
+                      >
+                        {patchJobMutation.isPending ? "Saving…" : "Save Details"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Technician & Advisor assignment */}
               <div className="grid grid-cols-2 gap-3">
                 <div className={cn("border rounded-lg bg-background p-4 space-y-2", needsAssignment ? "border-red-300 bg-red-50/50" : "border-border")}>
