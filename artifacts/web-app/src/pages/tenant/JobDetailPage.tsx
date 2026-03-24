@@ -3,7 +3,7 @@ import {
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
   Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil, ArrowRight,
-  Loader2, DollarSign, Wallet, CircleX,
+  Loader2, DollarSign, Wallet, CircleX, ClipboardCheck, Eye, Calculator, Hammer, Send, Truck,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -1411,17 +1411,17 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       {job.status !== "cancelled" && (
         <div className="space-y-4">
           {(() => {
-            const NEXT_ACTION: Record<string, { title: string; desc: string; btn: string }> = {
-              new:           { title: "Check In Vehicle",                desc: "Verify vehicle arrival, record mileage and start the job card.",                                              btn: "Start Check-in"       },
-              waiting:       { title: "Begin Vehicle Inspection",        desc: "Vehicle is checked in. Assign a technician and start the multi-point inspection.",                            btn: "Start Inspection"     },
-              on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Add required services and parts to the diagnosis list. Prices are hidden — focus on what the vehicle needs.", btn: "Start Inspection" },
-              qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Quotation"    },
-              in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status"   },
-              completed:     { title: "Ready for Invoicing",             desc: "Work is complete. Prepare and send the invoice to the customer.",                                             btn: "Mark as Invoiced"    },
-              invoiced:      { title: "Invoiced — Ready for Delivery",  desc: "Invoice has been issued. Collect payment and prepare the vehicle for handover.",                             btn: "Mark as Delivered"    },
-              delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: ""                     },
+            const NEXT_ACTION: Record<string, { title: string; desc: string; btn: string; icon: React.ReactNode }> = {
+              new:           { title: "Check In Vehicle",                desc: "Verify vehicle arrival, record mileage and start the job card.",                                              btn: "Start Check-in",       icon: <ClipboardCheck className="w-4 h-4" /> },
+              waiting:       { title: "Begin Vehicle Inspection",        desc: "Vehicle is checked in. Assign a technician and start the multi-point inspection.",                            btn: "Start Inspection",     icon: <Eye className="w-4 h-4" /> },
+              on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Add required services and parts to the diagnosis list. Prices are hidden — focus on what the vehicle needs.", btn: "Start Inspection",     icon: <Eye className="w-4 h-4" /> },
+              qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Quotation",     icon: <Calculator className="w-4 h-4" /> },
+              in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status",   icon: <Hammer className="w-4 h-4" /> },
+              completed:     { title: "Ready for Invoicing",             desc: "Work is complete. Prepare and send the invoice to the customer.",                                             btn: "Mark as Invoiced",     icon: <Send className="w-4 h-4" /> },
+              invoiced:      { title: "Invoiced — Ready for Delivery",  desc: "Invoice has been issued. Collect payment and prepare the vehicle for handover.",                             btn: "Mark as Delivered",     icon: <Truck className="w-4 h-4" /> },
+              delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: "",                      icon: <CheckCircle2 className="w-4 h-4" /> },
             };
-            const action = NEXT_ACTION[job.status] ?? { title: "Update Status", desc: "Move this job to the next stage in the workflow.", btn: "Move Status" };
+            const action = NEXT_ACTION[job.status] ?? { title: "Update Status", desc: "Move this job to the next stage in the workflow.", btn: "Move Status", icon: <ArrowRight className="w-4 h-4" /> };
             return (
               <div className="rounded-xl border border-border bg-background px-6 py-5 flex items-center justify-between gap-6">
                 <div className="flex-1 min-w-0">
@@ -1433,7 +1433,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   <p className="text-sm text-muted-foreground leading-relaxed">{action.desc}</p>
                 </div>
                 {job.status !== "delivered" && (
-                  <div className="flex flex-col gap-2 shrink-0 w-40">
+                  <div className="flex flex-col gap-2 shrink-0 w-44">
                     <button
                       onClick={() => {
                         if (job.status === "on_hold") {
@@ -1447,16 +1447,18 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         }
                       }}
                       disabled={moveStatusMutation.isPending}
-                      className="w-full h-10 rounded-xl bg-[#2B35D8] hover:bg-[#2229b8] transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60"
+                      className="w-full h-10 rounded-xl border-2 border-blue-600 text-blue-600 bg-transparent hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
+                      {action.icon}
                       <span className="text-xs font-bold">{action.btn}</span>
                     </button>
                     {job.status === "on_hold" && (
                       <button
                         onClick={() => moveStatus("qc")}
                         disabled={moveStatusMutation.isPending}
-                        className="w-full h-10 rounded-xl bg-green-600 hover:bg-green-700 transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60"
+                        className="w-full h-10 rounded-xl border-2 border-green-600 text-green-600 bg-transparent hover:bg-green-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                       >
+                        <Calculator className="w-4 h-4" />
                         <span className="text-xs font-bold">Move to Estimation</span>
                       </button>
                     )}
@@ -1467,10 +1469,11 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           onClick={() => qApproved && moveStatus("in_progress")}
                           disabled={moveStatusMutation.isPending || !qApproved}
                           className={cn(
-                            "w-full h-10 rounded-xl transition-colors text-white flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-60",
-                            qApproved ? "bg-green-600 hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
+                            "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                            qApproved ? "border-green-600 text-green-600 hover:bg-green-50" : "border-gray-300 text-gray-400 cursor-not-allowed"
                           )}
                         >
+                          <Hammer className="w-4 h-4" />
                           <span className="text-xs font-bold">Start the Work</span>
                           {!qApproved && (
                             <span className="text-[9px] font-normal opacity-80">· Approval needed</span>
