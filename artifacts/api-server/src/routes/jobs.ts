@@ -483,6 +483,29 @@ router.post("/:id/notes", async (req, res) => {
   }
 });
 
+/* ─── DELETE /jobs/:id/notes/:noteId ──────────────────────────────────────── */
+router.delete("/:id/notes/:noteId", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const [deleted] = await db.delete(jobNotesTable)
+      .where(and(
+        eq(jobNotesTable.id, req.params.noteId),
+        eq(jobNotesTable.job_id, req.params.id),
+        eq(jobNotesTable.tenant_id, tenant.id),
+      ))
+      .returning();
+
+    if (!deleted) return res.status(404).json({ error: "Note not found" });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("DELETE /jobs/:id/notes/:noteId", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 /* ─── POST /jobs ─────────────────────────────────────────────────────────── */
 
 router.post("/", async (req, res) => {
