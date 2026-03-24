@@ -315,6 +315,15 @@ router.post("/from-job/:jobId", async (req, res) => {
       .limit(1);
     if (!job) return res.status(404).json({ error: "Job not found" });
 
+    if (job.quotation_id) {
+      const [existing] = await db.select().from(quotationsTable)
+        .where(and(eq(quotationsTable.id, job.quotation_id), eq(quotationsTable.tenant_id, tenant.id)))
+        .limit(1);
+      if (existing) {
+        return res.status(200).json({ quotation: existing, reused: true });
+      }
+    }
+
     const [{ seq }] = await db
       .select({ seq: sql<number>`cast(coalesce(max(seq), 0) + 1 as int)` })
       .from(quotationsTable)
