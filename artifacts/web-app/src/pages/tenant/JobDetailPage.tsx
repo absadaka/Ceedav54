@@ -1708,7 +1708,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               )}
               <TabsTrigger value="cost">Quotation</TabsTrigger>
               <TabsTrigger value="report">Job Report ({reportNotes.length})</TabsTrigger>
-              <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
               <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
             </TabsList>
 
@@ -2578,7 +2577,15 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     onChange={e => setNewReportNote(e.target.value)}
                     className="text-sm resize-none"
                   />
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                      onClick={() => setShowAddPhoto(p => !p)}
+                    >
+                      <Upload className="w-3.5 h-3.5" />{showAddPhoto ? "Cancel Photo" : "Add Photo"}
+                    </Button>
                     <Button
                       size="sm"
                       disabled={addReportNoteMutation.isPending || !newReportNote.trim()}
@@ -2588,56 +2595,47 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     </Button>
                   </div>
                 </div>
+
+                {showAddPhoto && (
+                  <div className="px-4 py-3 border-t border-border">
+                    <AddPhotoForm jobId={job.id} onAdded={() => {
+                      qc.invalidateQueries({ queryKey: ["job", id] });
+                      setShowAddPhoto(false);
+                    }} />
+                  </div>
+                )}
               </div>
-            </TabsContent>
 
-            {/* ── Photos tab ───────────────────────────────────────────── */}
-            <TabsContent value="photos" className="mt-0 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">{photos.length} photo{photos.length !== 1 ? "s" : ""} attached</p>
-                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setShowAddPhoto(p => !p)}>
-                  <Upload className="w-3 h-3" />{showAddPhoto ? "Cancel" : "Add photo"}
-                </Button>
-              </div>
-
-              {showAddPhoto && (
-                <AddPhotoForm jobId={job.id} onAdded={() => {
-                  qc.invalidateQueries({ queryKey: ["job", id] });
-                  setShowAddPhoto(false);
-                }} />
-              )}
-
-              {photos.length === 0 ? (
-                <div className="border border-dashed border-border rounded-lg p-12 text-center">
-                  <Camera className="w-10 h-10 mx-auto mb-3 text-muted-foreground/20" />
-                  <p className="text-sm text-muted-foreground/60 font-medium">No photos yet</p>
-                  <p className="text-xs text-muted-foreground/40 mt-1">Add photos via URL above or from the mobile technician app</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {photos.map(p => (
-                    <div key={p.id} className="relative group rounded-lg overflow-hidden border border-border aspect-square bg-muted">
-                      <img src={p.url} alt={p.caption ?? "Job photo"} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 p-2">
-                        <span className="text-[10px] text-white font-medium capitalize">{p.photo_type}</span>
-                        {p.caption && <p className="text-[10px] text-white/80 line-clamp-1">{p.caption}</p>}
-                      </div>
-                      <button
-                        onClick={() => removePhotoMutation.mutate(p.id)}
-                        className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity
-                                   bg-black/50 hover:bg-red-600 rounded p-1 text-white"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+              {photos.length > 0 && (
+                <div className="border border-border rounded-lg bg-background overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border bg-muted/30">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5" />Photos ({photos.length})
+                    </p>
+                  </div>
+                  <div className="p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {photos.map(p => (
+                        <div key={p.id} className="relative group rounded-lg overflow-hidden border border-border aspect-square bg-muted">
+                          <img src={p.url} alt={p.caption ?? "Job photo"} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 p-2">
+                            <span className="text-[10px] text-white font-medium capitalize">{p.photo_type}</span>
+                            {p.caption && <p className="text-[10px] text-white/80 line-clamp-1">{p.caption}</p>}
+                          </div>
+                          <button
+                            onClick={() => removePhotoMutation.mutate(p.id)}
+                            className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity
+                                       bg-black/50 hover:bg-red-600 rounded p-1 text-white"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
-
-              <div className="p-3 border border-dashed border-border rounded-lg bg-muted/20 text-xs text-muted-foreground text-center">
-                Native camera upload available in the mobile technician app
-              </div>
             </TabsContent>
 
             {/* ── History tab ─────────────────────────────────────────── */}
