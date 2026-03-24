@@ -1192,7 +1192,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           quotationOutOfSync = false,
           quoteLineItems = [], quoteAdvancePayments = [], quoteTotalPaid = 0, quoteBalance = 0,
           inspectionParts = [], inspectionTechNote, inspectionRef,
-          techNotes = [], reportNotes = [] } = data as any;
+          techNotes = [], reportNotes = [], invoices = [] } = data as any;
   const isInspection = moduleType === "inspection";
   const isInspectionStage = isInspection || job.status === "on_hold";
   const isEstimationStage = job.status === "qc";
@@ -1708,6 +1708,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               )}
               <TabsTrigger value="cost">Quotation</TabsTrigger>
               <TabsTrigger value="report">Job Report ({reportNotes.length})</TabsTrigger>
+              <TabsTrigger value="invoices">Invoices ({(invoices as any[]).length})</TabsTrigger>
               <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
             </TabsList>
 
@@ -2624,6 +2625,101 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   </div>
                 </div>
               )}
+            </TabsContent>
+
+            {/* ── Invoices tab ────────────────────────────────────────── */}
+            <TabsContent value="invoices" className="mt-0 space-y-4">
+              <div className="border border-border rounded-lg bg-background overflow-hidden">
+                <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <Receipt className="w-3.5 h-3.5" />Invoices
+                  </p>
+                  {(invoices as any[]).length === 0 && (
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs gap-1"
+                      disabled={createInvoiceMutation.isPending}
+                      onClick={() => createInvoiceMutation.mutate()}
+                    >
+                      <Plus className="w-3 h-3" />
+                      {createInvoiceMutation.isPending ? "Creating…" : "Create Invoice"}
+                    </Button>
+                  )}
+                </div>
+
+                {(invoices as any[]).length === 0 ? (
+                  <div className="px-4 py-8 text-center">
+                    <Receipt className="w-8 h-8 mx-auto text-muted-foreground/20 mb-2" />
+                    <p className="text-sm text-muted-foreground/50 italic">No invoices yet</p>
+                    <p className="text-xs text-muted-foreground/40 mt-1">Create an invoice from this job's quotation or parts list</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {(invoices as any[]).map((inv: any) => {
+                      const total = parseFloat(inv.total ?? "0");
+                      const paid  = parseFloat(inv.paid_amount ?? "0");
+                      const balance = total - paid;
+                      const statusColor: Record<string, string> = {
+                        draft:   "bg-slate-100 text-slate-700",
+                        sent:    "bg-blue-100 text-blue-700",
+                        partial: "bg-amber-100 text-amber-700",
+                        paid:    "bg-green-100 text-green-700",
+                        overdue: "bg-red-100 text-red-700",
+                        void:    "bg-gray-100 text-gray-500",
+                      };
+                      return (
+                        <div key={inv.id} className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-muted/20 transition-colors">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+                              <Receipt className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-foreground">{inv.ref}</span>
+                                <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-full uppercase", statusColor[inv.status] ?? "bg-gray-100 text-gray-600")}>
+                                  {inv.status}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Created {new Date(inv.created_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short", year: "numeric" })}
+                                {inv.due_at && <> · Due {new Date(inv.due_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short" })}</>}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-bold text-foreground">AED {total.toFixed(2)}</p>
+                            {paid > 0 && (
+                              <p className="text-[10px] text-muted-foreground">
+                                Paid: AED {paid.toFixed(2)}
+                                {balance > 0 && <span className="text-amber-600 ml-1">Bal: AED {balance.toFixed(2)}</span>}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {(invoices as any[]).length > 0 && (
+                  <div className="px-4 py-3 border-t border-border bg-muted/20 flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      {(invoices as any[]).length} invoice{(invoices as any[]).length !== 1 ? "s" : ""}
+                      {" · "}Total: AED {(invoices as any[]).reduce((s: number, inv: any) => s + parseFloat(inv.total ?? "0"), 0).toFixed(2)}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      disabled={createInvoiceMutation.isPending}
+                      onClick={() => createInvoiceMutation.mutate()}
+                    >
+                      <Plus className="w-3 h-3" />
+                      {createInvoiceMutation.isPending ? "Creating…" : "New Invoice"}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             {/* ── History tab ─────────────────────────────────────────── */}
