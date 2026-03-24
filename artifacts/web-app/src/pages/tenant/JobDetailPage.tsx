@@ -927,6 +927,19 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to create invoice"),
   });
 
+  const sendInvoiceMutation = useMutation({
+    mutationFn: (invoiceId: string) => fetch(`${API}/api/invoices/${invoiceId}/send?tenant=${TENANT}`, {
+      method: "POST",
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      moveStatus("invoiced");
+      toast.success("Invoice sent to customer");
+    },
+    onError: () => toast.error("Failed to send invoice"),
+  });
+
   const createQuotationMutation = useMutation({
     mutationFn: () => fetch(`${API}/api/quotations/from-job/${id}?tenant=${TENANT}`, {
       method: "POST",
@@ -1519,6 +1532,34 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         >
                           {hasReport ? <CheckCircle2 className="w-4 h-4" /> : <Hammer className="w-4 h-4" />}
                           <span className="text-xs font-bold">{hasReport ? "Work Completed" : "Update Work Status"}</span>
+                        </button>
+                      );
+                    })() : job.status === "completed" ? (() => {
+                      const inv = (invoices as any[])[0];
+                      const hasInvoice = !!inv;
+                      const isSent = hasInvoice && inv.status !== "draft";
+                      return (
+                        <button
+                          onClick={() => {
+                            if (isSent) return;
+                            if (hasInvoice) {
+                              sendInvoiceMutation.mutate(inv.id);
+                            } else {
+                              createInvoiceMutation.mutate();
+                            }
+                          }}
+                          disabled={isSent || createInvoiceMutation.isPending || sendInvoiceMutation.isPending}
+                          className={cn(
+                            "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                            isSent
+                              ? "border-green-500 bg-green-500 text-white cursor-default"
+                              : "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
+                          )}
+                        >
+                          {isSent ? <CheckCircle2 className="w-4 h-4" /> : hasInvoice ? <Send className="w-4 h-4" /> : <Receipt className="w-4 h-4" />}
+                          <span className="text-xs font-bold">
+                            {createInvoiceMutation.isPending ? "Creating…" : sendInvoiceMutation.isPending ? "Sending…" : isSent ? "Invoice Shared" : hasInvoice ? "Send Invoice" : "Create Invoice"}
+                          </span>
                         </button>
                       );
                     })() : (
