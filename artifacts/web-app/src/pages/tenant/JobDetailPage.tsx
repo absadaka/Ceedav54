@@ -790,6 +790,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [rejectReason, setRejectReason] = useState("");
   const [showRevertShareModal, setShowRevertShareModal] = useState(false);
   const [newNote,        setNewNote]        = useState("");
+  const [newReportNote,  setNewReportNote]  = useState("");
   const [timerNote,      setTimerNote]      = useState("");
 
   const [inlineField,    setInlineField]    = useState<string | null>(null);
@@ -1106,6 +1107,23 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to save note"),
   });
 
+  const addReportNoteMutation = useMutation({
+    mutationFn: (note: string) => {
+      const session = getSession();
+      return fetch(`${API}/api/jobs/${id}/notes?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note, type: "report", created_by: session?.userId ?? null }),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      setNewReportNote("");
+      toast.success("Report entry saved");
+    },
+    onError: () => toast.error("Failed to save report entry"),
+  });
+
   const startTimerMutation = useMutation({
     mutationFn: () =>
       fetch(`${API}/api/jobs/${id}/time?tenant=${TENANT}`, {
@@ -1174,7 +1192,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           quotationOutOfSync = false,
           quoteLineItems = [], quoteAdvancePayments = [], quoteTotalPaid = 0, quoteBalance = 0,
           inspectionParts = [], inspectionTechNote, inspectionRef,
-          techNotes = [] } = data as any;
+          techNotes = [], reportNotes = [] } = data as any;
   const isInspection = moduleType === "inspection";
   const isInspectionStage = isInspection || job.status === "on_hold";
   const isEstimationStage = job.status === "qc";
@@ -1689,6 +1707,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 <TabsTrigger value="parts">Inspection ({parts.length})</TabsTrigger>
               )}
               <TabsTrigger value="cost">Quotation</TabsTrigger>
+              <TabsTrigger value="report">Job Report ({reportNotes.length})</TabsTrigger>
               <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
               <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
             </TabsList>
@@ -2518,6 +2537,58 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   </div>
                 </>
               )}
+            </TabsContent>
+
+            {/* ── Job Report tab ──────────────────────────────────────── */}
+            <TabsContent value="report" className="mt-0 space-y-4">
+              <div className="border border-border rounded-lg bg-background overflow-hidden">
+                <div className="px-4 py-3 border-b border-border bg-muted/30">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />Job Report
+                  </p>
+                </div>
+                {(reportNotes as TechNote[]).length > 0 && (
+                  <div className="px-4 pt-3 space-y-2">
+                    {(reportNotes as TechNote[]).map((n) => (
+                      <div key={n.id} className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium text-foreground">
+                            {n.created_by_name ?? "Unknown"}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(n.created_at).toLocaleString("en-AE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{n.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(reportNotes as TechNote[]).length === 0 && (
+                  <div className="px-4 py-6 text-center">
+                    <FileText className="w-8 h-8 mx-auto text-muted-foreground/20 mb-2" />
+                    <p className="text-sm text-muted-foreground/50 italic">No report entries yet</p>
+                  </div>
+                )}
+                <div className="px-4 py-3 space-y-2 border-t border-border">
+                  <Textarea
+                    rows={3}
+                    placeholder="Add a report, comment, or observation…"
+                    value={newReportNote}
+                    onChange={e => setNewReportNote(e.target.value)}
+                    className="text-sm resize-none"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      disabled={addReportNoteMutation.isPending || !newReportNote.trim()}
+                      onClick={() => { if (newReportNote.trim()) addReportNoteMutation.mutate(newReportNote); }}
+                    >
+                      {addReportNoteMutation.isPending ? "Saving…" : "Add Report Entry"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </TabsContent>
 
             {/* ── Photos tab ───────────────────────────────────────────── */}
