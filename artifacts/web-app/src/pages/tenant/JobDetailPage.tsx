@@ -1715,24 +1715,24 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 <TabsList className="mb-4 flex-wrap h-auto gap-1">
                   <TabsTrigger value="work">Customer Concerns</TabsTrigger>
                   {showInspection && isInspection && (
-                    <TabsTrigger value="parts">Diagnosis ({parts.length})</TabsTrigger>
+                    <TabsTrigger value="parts">Diagnosis</TabsTrigger>
                   )}
                   {showInspection && !isInspection && job.source_inspection_id && (
-                    <TabsTrigger value="inspection">Inspection ({inspectionParts.length})</TabsTrigger>
+                    <TabsTrigger value="inspection">Inspection</TabsTrigger>
                   )}
                   {showInspection && !isInspection && !job.source_inspection_id && (
-                    <TabsTrigger value="parts">Inspection ({parts.length})</TabsTrigger>
+                    <TabsTrigger value="parts">Inspection</TabsTrigger>
                   )}
                   {showQuotation && (
                     <TabsTrigger value="cost">Quotation</TabsTrigger>
                   )}
                   {showReport && (
-                    <TabsTrigger value="report">Job Report ({reportNotes.length})</TabsTrigger>
+                    <TabsTrigger value="report">Job Report</TabsTrigger>
                   )}
                   {showInvoices && (
-                    <TabsTrigger value="invoices">Invoices ({(invoices as any[]).length})</TabsTrigger>
+                    <TabsTrigger value="invoices">Invoices</TabsTrigger>
                   )}
-                  <TabsTrigger value="history">History ({statusHistory.length})</TabsTrigger>
+                  <TabsTrigger value="history">History</TabsTrigger>
                 </TabsList>
               );
             })()}
