@@ -865,6 +865,12 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         return false;
       }
     }
+    if (job.status === "in_progress" && targetStatus === "completed") {
+      if (reportNotes.length === 0) {
+        toast.error("Please add at least one report entry before marking work as done");
+        return false;
+      }
+    }
     if (job.status === "completed" && targetStatus === "invoiced") {
       const hasReportEntries = reportNotes.length > 0;
       if (!hasReportEntries) {
