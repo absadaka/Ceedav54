@@ -1592,7 +1592,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             ) : (
               <>
                 <div className="space-y-0">
-                  {[...statusHistory].reverse().slice(0, 4).map((h, idx, arr) => (
+                  {[...statusHistory].reverse().slice(0, 3).map((h, idx, arr) => (
                     <div key={h.id} className="flex gap-4">
                       <div className="flex flex-col items-center">
                         <div className="w-3 h-3 rounded-full bg-blue-600 shrink-0 mt-0.5" />
@@ -1612,7 +1612,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     </div>
                   ))}
                 </div>
-                {statusHistory.length > 4 && (
+                {statusHistory.length > 3 && (
                   <button
                     className="mt-4 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
                     onClick={() => setShowFullTimeline(true)}
