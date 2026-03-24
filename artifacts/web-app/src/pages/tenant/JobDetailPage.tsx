@@ -1448,38 +1448,36 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 </div>
                 {job.status !== "delivered" && (
                   <div className="flex flex-col gap-2 shrink-0 w-44">
-                    <button
-                      onClick={() => {
-                        if (job.status === "on_hold") {
-                          setActiveTab("parts");
-                          setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-                        } else if (job.status === "qc") {
-                          setActiveTab("cost");
-                          setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-                        } else {
-                          moveToNext();
-                        }
-                      }}
-                      disabled={moveStatusMutation.isPending}
-                      className={cn(
-                        "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                        isReady ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
-                      )}
-                    >
-                      {action.icon}
-                      <span className="text-xs font-bold">{action.btn}</span>
-                    </button>
-                    {job.status === "on_hold" && (
+                    {job.status === "on_hold" ? (
                       <button
                         onClick={() => moveStatus("qc")}
                         disabled={moveStatusMutation.isPending}
                         className={cn(
                           "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                          (parts.length > 0 || techNotes.length > 0) ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
+                          isReady ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
                         )}
                       >
                         <Calculator className="w-4 h-4" />
                         <span className="text-xs font-bold">Move to Estimation</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          if (job.status === "qc") {
+                            setActiveTab("cost");
+                            setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                          } else {
+                            moveToNext();
+                          }
+                        }}
+                        disabled={moveStatusMutation.isPending}
+                        className={cn(
+                          "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                          isReady ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
+                        )}
+                      >
+                        {action.icon}
+                        <span className="text-xs font-bold">{action.btn}</span>
                       </button>
                     )}
                     {job.status === "qc" && (() => {
