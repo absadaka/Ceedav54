@@ -865,6 +865,13 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         return false;
       }
     }
+    if (job.status === "completed" && targetStatus === "invoiced") {
+      const hasReportEntries = reportNotes.length > 0;
+      if (!hasReportEntries) {
+        toast.error("Please add at least one report entry or photo before moving to Invoices");
+        return false;
+      }
+    }
     return true;
   };
 
@@ -1347,12 +1354,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         {/* Action bar */}
         <div className="px-6 py-3 border-t border-border bg-muted/30 flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            {!isInspection && job.status === "completed" && (
-              <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" disabled={createInvoiceMutation.isPending} onClick={() => createInvoiceMutation.mutate()}>
-                <Receipt className="w-3.5 h-3.5" />
-                {createInvoiceMutation.isPending ? "Creating…" : "Create invoice"}
-              </Button>
-            )}
             {!isInspection && (dirtyParts || (quotation && quotationOutOfSync)) && (
               <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" disabled={syncQuotationMutation.isPending} onClick={() => syncQuotationMutation.mutate()}>
                 <FileText className="w-3.5 h-3.5" />
