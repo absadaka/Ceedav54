@@ -288,6 +288,7 @@ export const jobNotesTable = pgTable("job_notes", {
   job_id:      uuid("job_id").references(() => jobsTable.id, { onDelete: "cascade" }).notNull(),
   tenant_id:   uuid("tenant_id").references(() => tenantsTable.id, { onDelete: "cascade" }).notNull(),
   note:        text("note").notNull(),
+  type:        text("type").default("technician").notNull(),
   created_by:  uuid("created_by").references(() => usersTable.id, { onDelete: "set null" }),
   created_at:  timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [

@@ -350,6 +350,7 @@ router.get("/:id", async (req, res) => {
         .select({
           id:             jobNotesTable.id,
           note:           jobNotesTable.note,
+          type:           jobNotesTable.type,
           created_by:     jobNotesTable.created_by,
           created_by_name: usersTable.name,
           created_at:     jobNotesTable.created_at,
@@ -402,7 +403,8 @@ router.get("/:id", async (req, res) => {
       inspectionParts,
       inspectionTechNote: (inspectionJob as any[])[0]?.technician_note ?? null,
       inspectionRef:      (inspectionJob as any[])[0]?.ref ?? null,
-      techNotes: (notes as any[]) ?? [],
+      techNotes: ((notes as any[]) ?? []).filter((n: any) => n.type !== "report"),
+      reportNotes: ((notes as any[]) ?? []).filter((n: any) => n.type === "report"),
     });
   } catch (err) {
     console.error("GET /jobs/:id", err);
@@ -418,13 +420,14 @@ router.post("/:id/notes", async (req, res) => {
     const tenant = await resolveTenant(slug);
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
-    const { note, created_by } = req.body as { note: string; created_by?: string };
+    const { note, created_by, type } = req.body as { note: string; created_by?: string; type?: string };
     if (!note?.trim()) return res.status(400).json({ error: "Note text is required" });
 
     const [inserted] = await db.insert(jobNotesTable).values({
       job_id:     req.params.id,
       tenant_id:  tenant.id,
       note:       note.trim(),
+      type:       type === "report" ? "report" : "technician",
       created_by: created_by || null,
     }).returning();
 
