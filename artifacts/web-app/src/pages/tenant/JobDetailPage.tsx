@@ -1463,7 +1463,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       disabled={moveStatusMutation.isPending}
                       className={cn(
                         "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                        isReady ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-800 hover:border-blue-800 hover:shadow-lg hover:scale-[1.03]" : "border-blue-300 text-blue-400 hover:border-blue-500 hover:text-blue-500"
+                        isReady ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
                       )}
                     >
                       {action.icon}
@@ -1475,7 +1475,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         disabled={moveStatusMutation.isPending}
                         className={cn(
                           "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                          (parts.length > 0 || techNotes.length > 0) ? "border-green-600 bg-green-600 text-white hover:bg-green-800 hover:border-green-800 hover:shadow-lg hover:scale-[1.03]" : "border-blue-300 text-blue-400 hover:border-blue-500 hover:text-blue-500"
+                          (parts.length > 0 || techNotes.length > 0) ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
                         )}
                       >
                         <Calculator className="w-4 h-4" />
@@ -1490,7 +1490,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           disabled={moveStatusMutation.isPending || !qApproved}
                           className={cn(
                             "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                            qApproved ? "border-green-600 bg-green-600 text-white hover:bg-green-800 hover:border-green-800 hover:shadow-lg hover:scale-[1.03]" : "border-blue-300 text-blue-400 cursor-not-allowed"
+                            qApproved ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 cursor-not-allowed"
                           )}
                         >
                           <Hammer className="w-4 h-4" />
