@@ -923,7 +923,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["job", id] });
       qc.invalidateQueries({ queryKey: ["quotations"] });
-      toast.success(`Quotation ${data.quotation?.ref} created`);
+      toast.success(data.reused ? `Quotation ${data.quotation?.ref} already exists` : `Quotation ${data.quotation?.ref} created`);
     },
     onError: () => toast.error("Failed to create quotation"),
   });
