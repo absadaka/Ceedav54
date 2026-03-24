@@ -1507,7 +1507,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               const NEXT_ACTION: Record<string, { title: string; desc: string; btn: string }> = {
                 new:           { title: "Check In Vehicle",                desc: "Verify vehicle arrival, record mileage and start the job card.",                                              btn: "Start Check-in"       },
                 waiting:       { title: "Begin Vehicle Inspection",        desc: "Vehicle is checked in. Assign a technician and start the multi-point inspection.",                            btn: "Start Inspection"     },
-                on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Add required services and parts to the diagnosis list. Prices are hidden — focus on what the vehicle needs.", btn: "Start Inspection Checklist" },
+                on_hold:       { title: "Complete Full Vehicle Inspection", desc: "Add required services and parts to the diagnosis list. Prices are hidden — focus on what the vehicle needs.", btn: "Start Inspection" },
                 qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Quotation"    },
                 in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status"   },
                 waiting_parts: { title: "Awaiting Parts",                  desc: "Parts have been ordered. Update the status when parts arrive to resume work.",                               btn: "Mark Parts Arrived"   },
