@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
   quotationsTable, quoteLineItemsTable, jobsTable, jobPartsTable,
-  bookingsTable, catalogItemsTable,
+  bookingsTable, catalogItemsTable, jobStatusHistoryTable,
 } from "@workspace/db";
 import { quoteAdvancePaymentsTable } from "@workspace/db";
 
@@ -720,7 +720,8 @@ router.post("/:id/reject", async (req, res) => {
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
     const { note } = req.body;
-    const updates: Record<string, any> = { status: "rejected", rejected_at: new Date(), updated_at: new Date() };
+    const now = new Date();
+    const updates: Record<string, any> = { status: "rejected", rejected_at: now, updated_at: now };
     if (note) updates.notes = note;
 
     const [quotation] = await db
@@ -730,6 +731,28 @@ router.post("/:id/reject", async (req, res) => {
       .returning();
 
     if (!quotation) return res.status(404).json({ error: "Quotation not found" });
+
+    const [job] = await db.select({ id: jobsTable.id, status: jobsTable.status })
+      .from(jobsTable)
+      .where(and(eq(jobsTable.quotation_id, quotation.id), eq(jobsTable.tenant_id, tenant.id)))
+      .limit(1);
+
+    if (job) {
+      const cancellationNote = note ? `Quotation rejected: ${note}` : "Quotation rejected by customer";
+      await db.update(jobsTable)
+        .set({ status: "cancelled", cancellation_note: cancellationNote, updated_at: now })
+        .where(eq(jobsTable.id, job.id));
+
+      await db.insert(jobStatusHistoryTable).values({
+        job_id: job.id,
+        tenant_id: tenant.id,
+        from_status: job.status,
+        to_status: "cancelled",
+        note: cancellationNote,
+        created_at: now,
+      });
+    }
+
     res.json({ quotation });
   } catch (e: any) {
     console.error("POST /quotations/:id/reject", e);

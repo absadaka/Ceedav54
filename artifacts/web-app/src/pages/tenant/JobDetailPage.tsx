@@ -3,7 +3,7 @@ import {
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
   Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil, ArrowRight,
-  Loader2, DollarSign, Wallet,
+  Loader2, DollarSign, Wallet, CircleX,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -786,6 +786,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareChannels, setShareChannels] = useState<{ whatsapp: boolean; sms: boolean; email: boolean }>({ whatsapp: false, sms: false, email: false });
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const [showRevertShareModal, setShowRevertShareModal] = useState(false);
   const [newNote,        setNewNote]        = useState("");
   const [timerNote,      setTimerNote]      = useState("");
@@ -995,6 +997,22 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Quotation approved"); },
     onError: () => toast.error("Failed to approve quotation"),
+  });
+
+  const rejectQuotationMutation = useMutation({
+    mutationFn: (reason: string) =>
+      fetch(`${API}/api/quotations/${quotation?.id}/reject?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: reason }),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      toast.success("Quotation rejected — job cancelled");
+      setShowRejectConfirm(false);
+      setRejectReason("");
+    },
+    onError: () => toast.error("Failed to reject quotation"),
   });
 
   const shareQuotationMutation = useMutation({
@@ -2133,21 +2151,33 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         </span>
                       </div>
                       {isShared && !isApproved && !isRejected && (
-                        <Button
-                          size="sm"
-                          className="w-full gap-1.5"
-                          onClick={() => setShowApproveConfirm(true)}
-                          disabled={approveQuotationMutation.isPending}
-                        >
-                          {approveQuotationMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                          {approveQuotationMutation.isPending ? "Approving…" : "Force Approve"}
-                        </Button>
+                        <div className="space-y-1.5">
+                          <Button
+                            size="sm"
+                            className="w-full gap-1.5"
+                            onClick={() => setShowApproveConfirm(true)}
+                            disabled={approveQuotationMutation.isPending}
+                          >
+                            {approveQuotationMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                            {approveQuotationMutation.isPending ? "Approving…" : "Force Approve"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full gap-1.5 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                            onClick={() => setShowRejectConfirm(true)}
+                            disabled={rejectQuotationMutation.isPending}
+                          >
+                            {rejectQuotationMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CircleX className="w-3.5 h-3.5" />}
+                            {rejectQuotationMutation.isPending ? "Rejecting…" : "Reject"}
+                          </Button>
+                        </div>
                       )}
                       {isApproved && (
                         <p className="text-[11px] text-green-600/70">Customer approved</p>
                       )}
                       {isRejected && (
-                        <p className="text-[11px] text-red-600/70">Customer rejected</p>
+                        <p className="text-[11px] text-red-600/70">Customer rejected — job cancelled</p>
                       )}
                     </div>
                   </div>
@@ -2557,6 +2587,36 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               onClick={() => { approveQuotationMutation.mutate(); setShowApproveConfirm(false); }}
             >
               {approveQuotationMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin mr-1.5" />Approving…</> : "Yes, Force Approve"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Quotation Confirmation */}
+      <Dialog open={showRejectConfirm} onOpenChange={(open) => { setShowRejectConfirm(open); if (!open) setRejectReason(""); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reject Quotation?</DialogTitle>
+            <DialogDescription>
+              Rejecting the quotation will cancel this job. Please provide the customer's reason for rejection.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <textarea
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm min-h-[80px] resize-none focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Reason for rejection…"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setShowRejectConfirm(false); setRejectReason(""); }}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={rejectQuotationMutation.isPending || !rejectReason.trim()}
+              onClick={() => rejectQuotationMutation.mutate(rejectReason.trim())}
+            >
+              {rejectQuotationMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin mr-1.5" />Rejecting…</> : "Reject & Cancel Job"}
             </Button>
           </DialogFooter>
         </DialogContent>
