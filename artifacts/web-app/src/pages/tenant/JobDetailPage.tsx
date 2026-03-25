@@ -2511,7 +2511,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   </div>
 
                   {/* Line items */}
-                  <div className="rounded-lg border border-border bg-background overflow-hidden">
+                  <div className={cn("rounded-lg border border-border bg-background", showAddQtLine ? "overflow-visible" : "overflow-hidden")}>
                     <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Line items ({quoteLineItems.length})</p>
                       <div className="flex gap-2">
