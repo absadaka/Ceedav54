@@ -1101,7 +1101,11 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     mutationFn: (partId: string) =>
       fetch(`${API}/api/jobs/${id}/parts/${partId}?tenant=${TENANT}`, { method: "DELETE" })
         .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["job", id] }); toast.success("Part removed"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      toast.success("Part removed");
+      if (job?.quotation_id) syncQuotationMutation.mutate();
+    },
     onError: () => toast.error("Failed to remove part"),
   });
 
@@ -1387,12 +1391,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         {/* Action bar */}
         <div className="px-6 py-3 border-t border-border bg-muted/30 flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            {!isInspection && (dirtyParts || (quotation && quotationOutOfSync)) && (
-              <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" disabled={syncQuotationMutation.isPending} onClick={() => syncQuotationMutation.mutate()}>
-                <FileText className="w-3.5 h-3.5" />
-                {syncQuotationMutation.isPending ? "Updating…" : "Update quotation"}
-              </Button>
-            )}
             {!quotation && isInspection && (job.status === "completed" || job.status === "delivered") && (
               <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" disabled={createQuotationMutation.isPending} onClick={() => createQuotationMutation.mutate()}>
                 <FileText className="w-3.5 h-3.5" />
@@ -2185,7 +2183,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <AddDiagnosisForm jobId={job.id} onAdded={() => {
                       qc.invalidateQueries({ queryKey: ["job", id] });
                       setShowAddPart(false);
-                      setDirtyParts(true);
+                      if (job?.quotation_id) syncQuotationMutation.mutate();
                     }} />
                   </div>
                 )}
@@ -2194,7 +2192,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <AddManualPartForm jobId={job.id} onAdded={() => {
                       qc.invalidateQueries({ queryKey: ["job", id] });
                       setShowAddManualPart(false);
-                      setDirtyParts(true);
+                      if (job?.quotation_id) syncQuotationMutation.mutate();
                     }} />
                   </div>
                 )}
