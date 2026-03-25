@@ -2089,19 +2089,30 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               )}
 
               {isInspectionStage && parts.length > 0 && (
-                <div className="space-y-2">
-                  {parts.map(p => (
-                    <div key={p.id} className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 group/part">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground">{p.description}</p>
-                        <p className="text-xs text-muted-foreground">Qty: {parseFloat(p.qty).toFixed(0)}{p.part_number ? ` · ${p.part_number}` : ""}</p>
-                      </div>
-                      <button onClick={() => removePartMutation.mutate(p.id)}
-                        className="opacity-0 group-hover/part:opacity-100 transition-opacity text-muted-foreground hover:text-red-500 p-1.5 rounded">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
+                <div className="border border-border rounded-lg bg-background overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30">
+                        <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Item</th>
+                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground w-20">Qty</th>
+                        <th className="w-10 px-2 py-2" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parts.map(p => (
+                        <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/20 group/part">
+                          <td className="px-4 py-2.5 text-sm font-medium">{p.description}</td>
+                          <td className="px-4 py-2.5 text-right text-sm tabular-nums">{parseFloat(p.qty).toFixed(0)}</td>
+                          <td className="px-2 py-2.5">
+                            <button onClick={() => removePartMutation.mutate(p.id)}
+                              className="opacity-0 group-hover/part:opacity-100 transition-opacity text-muted-foreground hover:text-red-500 p-1">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
 
