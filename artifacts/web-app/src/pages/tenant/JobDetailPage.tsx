@@ -392,7 +392,7 @@ function CatalogDropdown({
 }
 
 /* ─── AddQuoteLineInline ──────────────────────────────────────────────────── */
-function AddQuoteLineInline({ quotationId, onAdded, onCancel }: { quotationId: string; onAdded: () => void; onCancel: () => void }) {
+function AddQuoteLineInline({ quotationId, lineType, onAdded, onCancel }: { quotationId: string; lineType: "labour" | "part"; onAdded: () => void; onCancel: () => void }) {
   const [search, setSearch] = useState("");
   const [description, setDescription] = useState("");
   const [qty, setQty] = useState("1");
@@ -422,7 +422,7 @@ function AddQuoteLineInline({ quotationId, onAdded, onCancel }: { quotationId: s
     mutationFn: () => fetch(`${API}/api/quotations/${quotationId}/lines?tenant=${TENANT}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description: description || search, type: "labour", qty, unit_price: unitPrice, discount: "0.00" }),
+      body: JSON.stringify({ description: description || search, type: lineType, qty, unit_price: unitPrice, discount: "0.00" }),
     }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
     onSuccess: () => {
       toast.success("Line item added");
@@ -437,7 +437,7 @@ function AddQuoteLineInline({ quotationId, onAdded, onCancel }: { quotationId: s
         <div className="relative">
           <Input
             className="h-7 text-xs"
-            placeholder="Search catalog or type description…"
+            placeholder={lineType === "part" ? "Search parts catalog…" : "Search services catalog…"}
             value={search}
             onChange={e => { setSearch(e.target.value); setDescription(e.target.value); setShowDrop(true); }}
             onFocus={() => setShowDrop(true)}
@@ -782,6 +782,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showAddPhoto,   setShowAddPhoto]   = useState(false);
   const [dirtyParts,     setDirtyParts]     = useState(false);
   const [showAddQtLine,  setShowAddQtLine]  = useState(false);
+  const [qtLineType,     setQtLineType]     = useState<"labour" | "part">("labour");
   const [showAddQtDiscount, setShowAddQtDiscount] = useState(false);
   const [showAddAdvance, setShowAddAdvance] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -2516,9 +2517,14 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Line items ({quoteLineItems.length})</p>
                       <div className="flex gap-2">
                         {!showAddQtLine && (
-                          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setShowAddQtLine(true); setShowAddQtDiscount(false); }}>
-                            <Plus className="w-3 h-3" />Add item
-                          </Button>
+                          <>
+                            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setQtLineType("labour"); setShowAddQtLine(true); setShowAddQtDiscount(false); }}>
+                              <Plus className="w-3 h-3" />Add Service
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setQtLineType("part"); setShowAddQtLine(true); setShowAddQtDiscount(false); }}>
+                              <Plus className="w-3 h-3" />Add Part
+                            </Button>
+                          </>
                         )}
                         {!showAddQtDiscount && (
                           <Button size="sm" variant="outline" className="h-7 gap-1 text-xs text-orange-600 border-orange-200 hover:bg-orange-50"
@@ -2562,6 +2568,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           {showAddQtLine && (
                             <AddQuoteLineInline
                               quotationId={quotation.id}
+                              lineType={qtLineType}
                               onAdded={() => { qc.invalidateQueries({ queryKey: ["job", id] }); setShowAddQtLine(false); }}
                               onCancel={() => setShowAddQtLine(false)}
                             />
