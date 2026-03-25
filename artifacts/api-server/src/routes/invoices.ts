@@ -80,6 +80,47 @@ async function recalcPaid(invoiceId: string) {
     .where(eq(invoicesTable.id, invoiceId));
 }
 
+/* ─── sync invoice line items from quotation ─────────────────────────────── */
+export async function syncInvoiceFromQuotation(invoiceId: string, quotationId: string) {
+  const quoteLines = await db
+    .select()
+    .from(quoteLineItemsTable)
+    .where(eq(quoteLineItemsTable.quotation_id, quotationId))
+    .orderBy(quoteLineItemsTable.sort_order);
+
+  await db.delete(invoiceLineItemsTable).where(eq(invoiceLineItemsTable.invoice_id, invoiceId));
+
+  let lineOrder = 0;
+  for (const l of quoteLines) {
+    await db.insert(invoiceLineItemsTable).values({
+      invoice_id:  invoiceId,
+      sort_order:  lineOrder++,
+      description: l.description,
+      type:        l.type ?? "labour",
+      part_number: l.part_number ?? null,
+      catalog_item_id: (l as any).catalog_item_id ?? null,
+      notes:       (l as any).notes ?? null,
+      qty:         l.qty,
+      unit_price:  l.unit_price,
+      discount:    l.discount ?? "0.00",
+      line_total:  l.line_total,
+    });
+  }
+
+  await recalcInvoice(invoiceId);
+}
+
+export async function syncDraftInvoicesForQuotation(quotationId: string) {
+  const draftInvoices = await db
+    .select({ id: invoicesTable.id })
+    .from(invoicesTable)
+    .where(and(eq(invoicesTable.quotation_id, quotationId), eq(invoicesTable.status, "draft")));
+
+  for (const inv of draftInvoices) {
+    await syncInvoiceFromQuotation(inv.id, quotationId);
+  }
+}
+
 /* ─── next sequence ──────────────────────────────────────────────────────── */
 async function nextSeq(tenantId: string) {
   const [r] = await db
@@ -423,6 +464,36 @@ router.put("/:id", async (req, res) => {
     return res.json({ invoice: fresh });
   } catch (err) {
     console.error("PUT /invoices/:id", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ──────────────────────────────────────────────────────────────────────────
+   POST /invoices/:id/sync-from-quotation
+─────────────────────────────────────────────────────────────────────────── */
+router.post("/:id/sync-from-quotation", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const [inv] = await db.select().from(invoicesTable)
+      .where(and(eq(invoicesTable.id, req.params.id), eq(invoicesTable.tenant_id, tenant.id)))
+      .limit(1);
+    if (!inv) return res.status(404).json({ error: "Invoice not found" });
+    if (!inv.quotation_id) return res.status(400).json({ error: "Invoice has no linked quotation" });
+    if (inv.status !== "draft") return res.status(400).json({ error: "Can only sync draft invoices" });
+
+    await syncInvoiceFromQuotation(inv.id, inv.quotation_id);
+    const [fresh] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, inv.id)).limit(1);
+
+    const lineItems = await db.select().from(invoiceLineItemsTable)
+      .where(eq(invoiceLineItemsTable.invoice_id, inv.id))
+      .orderBy(invoiceLineItemsTable.sort_order);
+
+    return res.json({ invoice: { ...fresh, lineItems } });
+  } catch (err) {
+    console.error("POST /invoices/:id/sync-from-quotation", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
