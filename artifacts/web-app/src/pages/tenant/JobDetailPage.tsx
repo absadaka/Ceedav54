@@ -530,7 +530,7 @@ function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => vo
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
             <Input
-              className="h-8 text-sm pl-7 pr-3"
+              className={cn("h-8 text-sm pl-7 pr-3", selected ? "border-green-500 ring-1 ring-green-500/20" : "")}
               placeholder="Search catalog or type custom…"
               value={search}
               onChange={e => {
@@ -542,11 +542,6 @@ function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => vo
               onBlur={() => setTimeout(() => setOpen(false), 100)}
             />
           </div>
-          {selected && (
-            <p className="text-[10px] text-green-700 font-medium">
-              ✓ From catalog{selected.sku ? ` · SKU: ${selected.sku}` : ""}
-            </p>
-          )}
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Qty</Label>
