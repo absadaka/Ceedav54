@@ -524,42 +524,36 @@ function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => vo
   return (
     <div className="border border-dashed border-primary/30 rounded-lg p-4 mt-3 space-y-3 bg-primary/5" ref={anchorRef}>
       <p className="text-xs font-semibold text-primary/70 uppercase tracking-wide">Add service / part</p>
-      <div className="grid grid-cols-4 gap-3 items-end">
-        <div className="col-span-3 space-y-1">
-          <Label className="text-xs">Service or part *</Label>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            <Input
-              className={cn("h-8 text-sm pl-7 pr-3", selected ? "border-green-500 ring-1 ring-green-500/20" : "")}
-              placeholder="Search catalog or type custom…"
-              value={search}
-              onChange={e => {
-                setSearch(e.target.value);
-                setSelected(null);
-                setOpen(true);
-              }}
-              onFocus={() => setOpen(true)}
-              onBlur={() => setTimeout(() => setOpen(false), 100)}
-            />
-          </div>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Qty</Label>
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           <Input
-            type="number" min="0.01" step="0.01"
-            value={qty} onChange={e => setQty(e.target.value)}
-            className="h-8 text-sm"
+            className={cn("h-8 text-sm pl-7 pr-3", selected ? "border-green-500 ring-1 ring-green-500/20" : "")}
+            placeholder="Search catalog or type custom…"
+            value={search}
+            onChange={e => {
+              setSearch(e.target.value);
+              setSelected(null);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setTimeout(() => setOpen(false), 100)}
           />
         </div>
-        <div className="col-span-4 flex justify-end gap-2">
-          <Button
-            size="sm"
-            disabled={(!selected && !search.trim()) || mutation.isPending}
-            onClick={() => mutation.mutate()}
-          >
-            {mutation.isPending ? "Adding…" : "Add service"}
-          </Button>
-        </div>
+        <Input
+          type="number" min="0.01" step="0.01"
+          value={qty} onChange={e => setQty(e.target.value)}
+          className="h-8 text-sm w-16 shrink-0"
+          placeholder="Qty"
+        />
+        <Button
+          size="sm"
+          className="h-8 shrink-0"
+          disabled={(!selected && !search.trim()) || mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending ? "Adding…" : "Add"}
+        </Button>
       </div>
 
       {open && (
