@@ -4,6 +4,7 @@ import {
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
   Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil, ArrowRight,
   Loader2, DollarSign, Wallet, CircleX, ClipboardCheck, Eye, Calculator, Hammer, Send, Truck,
+  MessageSquare, Mail, Phone,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -797,6 +798,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [inlineValue,    setInlineValue]    = useState("");
   const inlineSavedRef = useRef(false);
   const [showFullTimeline, setShowFullTimeline] = useState(false);
+  const [showShareInvoice, setShowShareInvoice] = useState(false);
+  const [shareChannels, setShareChannels] = useState<{ sms: boolean; whatsapp: boolean; email: boolean }>({ sms: false, whatsapp: false, email: false });
   const [activeTab, setActiveTab] = useState("work");
   const tabsRef = useRef<HTMLDivElement>(null);
 
@@ -1543,7 +1546,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           onClick={() => {
                             if (isSent) return;
                             if (hasInvoice) {
-                              sendInvoiceMutation.mutate(inv.id);
+                              setShareChannels({ sms: false, whatsapp: false, email: false });
+                              setShowShareInvoice(true);
                             } else {
                               createInvoiceMutation.mutate();
                             }
@@ -1609,6 +1613,70 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     </div>
                   ))}
                 </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showShareInvoice} onOpenChange={setShowShareInvoice}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Share Invoice</DialogTitle>
+                <DialogDescription>Choose how to send the invoice to the customer</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                {([
+                  { key: "sms" as const, label: "SMS", icon: <MessageSquare className="w-4 h-4" />, desc: "Send via text message" },
+                  { key: "whatsapp" as const, label: "WhatsApp", icon: <Phone className="w-4 h-4" />, desc: "Send via WhatsApp" },
+                  { key: "email" as const, label: "Email", icon: <Mail className="w-4 h-4" />, desc: "Send via email" },
+                ]).map(ch => (
+                  <label
+                    key={ch.key}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all",
+                      shareChannels[ch.key]
+                        ? "border-[#161aff] bg-[#161aff]/5"
+                        : "border-border hover:border-muted-foreground/30"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={shareChannels[ch.key]}
+                      onChange={() => setShareChannels(prev => ({ ...prev, [ch.key]: !prev[ch.key] }))}
+                      className="sr-only"
+                    />
+                    <div className={cn(
+                      "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                      shareChannels[ch.key] ? "border-[#161aff] bg-[#161aff]" : "border-muted-foreground/30"
+                    )}>
+                      {shareChannels[ch.key] && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                    </div>
+                    <div className={cn("p-1.5 rounded-md", shareChannels[ch.key] ? "text-[#161aff]" : "text-muted-foreground")}>
+                      {ch.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{ch.label}</p>
+                      <p className="text-xs text-muted-foreground">{ch.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setShowShareInvoice(false)}>Cancel</Button>
+                <Button
+                  size="sm"
+                  disabled={!shareChannels.sms && !shareChannels.whatsapp && !shareChannels.email || sendInvoiceMutation.isPending}
+                  onClick={() => {
+                    const inv = (invoices as any[])[0];
+                    if (inv) {
+                      sendInvoiceMutation.mutate(inv.id);
+                      setShowShareInvoice(false);
+                    }
+                  }}
+                  className="bg-[#161aff] hover:bg-[#1014cc] text-white"
+                >
+                  <Send className="w-3.5 h-3.5 mr-1.5" />
+                  {sendInvoiceMutation.isPending ? "Sending…" : "Share Invoice"}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
