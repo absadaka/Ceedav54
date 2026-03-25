@@ -2456,9 +2456,17 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               })()}
 
               {!quotation ? (
-                <div className="border border-dashed border-border rounded-lg bg-muted/10 p-6 text-center">
+                <div className="border border-dashed border-border rounded-lg bg-muted/10 p-6 text-center space-y-3">
                   <DollarSign className="w-8 h-8 mx-auto text-muted-foreground/20 mb-2" />
-                  <p className="text-sm text-muted-foreground">Create a quotation above to get started.</p>
+                  <p className="text-sm text-muted-foreground">No quotation yet. Create one from the inspection findings.</p>
+                  <Button
+                    className="bg-[#161aff] hover:bg-[#1014cc] text-white gap-1.5"
+                    disabled={createQuotationMutation.isPending}
+                    onClick={() => createQuotationMutation.mutate()}
+                  >
+                    {createQuotationMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                    {createQuotationMutation.isPending ? "Creating…" : "Create Quotation"}
+                  </Button>
                 </div>
               ) : (
                 <>
@@ -2670,6 +2678,19 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       )}
                     </div>
                   </div>
+
+                  {dirtyParts && (
+                    <div className="flex justify-end">
+                      <Button
+                        className="bg-[#161aff] hover:bg-[#1014cc] text-white gap-1.5"
+                        disabled={syncQuotationMutation.isPending}
+                        onClick={() => syncQuotationMutation.mutate()}
+                      >
+                        {syncQuotationMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                        {syncQuotationMutation.isPending ? "Updating…" : "Update Quotation"}
+                      </Button>
+                    </div>
+                  )}
                 </>
               )}
             </TabsContent>
