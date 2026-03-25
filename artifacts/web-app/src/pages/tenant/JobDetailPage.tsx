@@ -522,10 +522,10 @@ function AddDiagnosisForm({ jobId, onAdded }: { jobId: string; onAdded: () => vo
   });
 
   return (
-    <div className="border border-dashed border-primary/30 rounded-lg p-4 mt-3 space-y-3 bg-primary/5">
+    <div className="border border-dashed border-primary/30 rounded-lg p-4 mt-3 space-y-3 bg-primary/5" ref={anchorRef}>
       <p className="text-xs font-semibold text-primary/70 uppercase tracking-wide">Add service / part</p>
       <div className="grid grid-cols-4 gap-3 items-end">
-        <div className="col-span-3 space-y-1" ref={anchorRef}>
+        <div className="col-span-3 space-y-1">
           <Label className="text-xs">Service or part *</Label>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
