@@ -4,7 +4,7 @@ import {
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
   Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil, ArrowRight,
   Loader2, DollarSign, Wallet, CircleX, ClipboardCheck, Eye, Calculator, Hammer, Send, Truck,
-  MessageSquare, Mail, Phone,
+  MessageSquare, Mail, Phone, Download,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -944,6 +944,18 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       toast.success(data.reused ? `Quotation ${data.quotation?.ref} already exists` : `Quotation ${data.quotation?.ref} created`);
     },
     onError: () => toast.error("Failed to create quotation"),
+  });
+
+  const sendQuotationMutation = useMutation({
+    mutationFn: (quotationId: string) => fetch(`${API}/api/quotations/${quotationId}/send?tenant=${TENANT}`, {
+      method: "POST",
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      qc.invalidateQueries({ queryKey: ["quotations"] });
+      toast.success("Quotation sent to customer");
+    },
+    onError: () => toast.error("Failed to send quotation"),
   });
 
   const syncQuotationMutation = useMutation({
@@ -2701,6 +2713,32 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       </Button>
                     </div>
                   )}
+
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2"
+                      onClick={() => {
+                        window.open(`${API}/api/quotations/${quotation.id}/pdf?tenant=${TENANT}`, "_blank");
+                      }}
+                    >
+                      <Download className="w-4 h-4" />
+                      Download PDF
+                    </Button>
+                    <Button
+                      className={cn(
+                        "flex-1 gap-2",
+                        quotation.status === "sent" || quotation.status === "approved"
+                          ? "bg-green-600 hover:bg-green-700 text-white"
+                          : "bg-[#161aff] hover:bg-[#1014cc] text-white"
+                      )}
+                      disabled={sendQuotationMutation.isPending || quotation.status === "sent" || quotation.status === "approved"}
+                      onClick={() => sendQuotationMutation.mutate(quotation.id)}
+                    >
+                      {sendQuotationMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      {sendQuotationMutation.isPending ? "Sending…" : quotation.status === "sent" || quotation.status === "approved" ? "Quotation Sent" : "Send Quotation"}
+                    </Button>
+                  </div>
                 </>
               )}
             </TabsContent>
