@@ -678,6 +678,114 @@ router.delete("/:id/advance/:aid", async (req, res) => {
   }
 });
 
+/* ─── GET /quotations/:id/pdf ─────────────────────────────────────────────── */
+router.get("/:id/pdf", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const [quotation] = await db.select().from(quotationsTable)
+      .where(and(eq(quotationsTable.id, req.params.id), eq(quotationsTable.tenant_id, tenant.id)))
+      .limit(1);
+    if (!quotation) return res.status(404).json({ error: "Quotation not found" });
+
+    const lines = await db.select().from(quoteLineItemsTable)
+      .where(eq(quoteLineItemsTable.quotation_id, quotation.id));
+
+    const advisor = quotation.advisor_id ? (await db.select().from(usersTable).where(eq(usersTable.id, quotation.advisor_id)).limit(1))[0] : null;
+
+    let clientName = "—";
+    let vehicleInfo = "";
+    if (quotation.client_id) {
+      const [cl] = await db.select().from(clientsTable).where(eq(clientsTable.id, quotation.client_id)).limit(1);
+      if (cl) clientName = cl.name;
+    }
+    if (quotation.vehicle_id) {
+      const [vh] = await db.select().from(vehiclesTable).where(eq(vehiclesTable.id, quotation.vehicle_id)).limit(1);
+      if (vh) vehicleInfo = `${vh.make ?? ""} ${vh.model ?? ""} ${vh.year ?? ""}`.trim() + (vh.plate ? ` — ${vh.plate}` : "");
+    }
+
+    const fmtAed = (v: any) => {
+      const n = parseFloat(v ?? "0");
+      return `AED ${n.toFixed(2)}`;
+    };
+
+    const lineRows = lines.map((l, i) => `
+      <tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;color:#666;">${i + 1}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #eee;">${l.description ?? ""}${l.part_number ? `<br/><span style="font-size:11px;color:#888;">Part # ${l.part_number}</span>` : ""}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;">${parseFloat(l.qty ?? "1").toFixed(0)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right;">${fmtAed(l.unit_price)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right;font-weight:500;">${fmtAed(l.line_total)}</td>
+      </tr>`).join("");
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/><title>Quotation ${quotation.ref}</title>
+<style>
+  @media print { body { margin: 0; } @page { margin: 20mm; } }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #222; max-width: 800px; margin: 0 auto; padding: 40px 30px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #161aff; }
+  .ref { font-size: 28px; font-weight: 700; color: #161aff; }
+  .meta { font-size: 13px; color: #666; margin-top: 4px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .info-box { background: #f8f9fa; border-radius: 8px; padding: 14px 16px; }
+  .info-box h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #888; }
+  .info-box p { margin: 0; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  thead th { background: #f1f3f5; padding: 10px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; font-weight: 600; }
+  .totals { width: 300px; margin-left: auto; }
+  .totals .row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+  .totals .total-row { font-size: 18px; font-weight: 700; border-top: 2px solid #161aff; padding-top: 10px; margin-top: 6px; }
+  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center; }
+  .print-btn { position: fixed; top: 20px; right: 20px; background: #161aff; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .print-btn:hover { background: #1014cc; }
+  @media print { .print-btn { display: none; } }
+</style></head><body>
+<button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+<div class="header">
+  <div>
+    <div class="ref">${quotation.ref}</div>
+    <div class="meta">Date: ${new Date(quotation.created_at ?? Date.now()).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</div>
+    <div class="meta">Status: <strong style="text-transform:capitalize;">${quotation.status}</strong></div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:20px;font-weight:700;">QUOTATION</div>
+    ${advisor ? `<div class="meta">Advisor: ${advisor.name}</div>` : ""}
+  </div>
+</div>
+<div class="info-grid">
+  <div class="info-box"><h4>Customer</h4><p>${clientName}</p></div>
+  <div class="info-box"><h4>Vehicle</h4><p>${vehicleInfo || "—"}</p></div>
+</div>
+<table>
+  <thead><tr>
+    <th style="text-align:center;width:40px;">#</th>
+    <th style="text-align:left;">Description</th>
+    <th style="text-align:center;width:60px;">Qty</th>
+    <th style="text-align:right;width:110px;">Unit Price</th>
+    <th style="text-align:right;width:110px;">Total</th>
+  </tr></thead>
+  <tbody>${lineRows}</tbody>
+</table>
+<div class="totals">
+  <div class="row"><span>Subtotal</span><span>${fmtAed(quotation.subtotal)}</span></div>
+  ${parseFloat(quotation.discount ?? "0") > 0 ? `<div class="row" style="color:#e67700;"><span>Discount</span><span>− ${fmtAed(quotation.discount)}</span></div>` : ""}
+  <div class="row"><span>VAT (${quotation.tax_rate ?? 5}%)</span><span>${fmtAed(quotation.tax_amount)}</span></div>
+  <div class="row total-row"><span>Total</span><span>${fmtAed(quotation.total)}</span></div>
+</div>
+${quotation.notes ? `<div style="margin-top:24px;padding:14px 16px;background:#f8f9fa;border-radius:8px;"><h4 style="margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#888;">Notes</h4><p style="margin:0;font-size:14px;white-space:pre-wrap;">${quotation.notes}</p></div>` : ""}
+<div class="footer">Thank you for your business. This quotation is valid for 30 days.</div>
+</body></html>`;
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(html);
+  } catch (e: any) {
+    console.error("GET /quotations/:id/pdf", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 /* ─── POST /quotations/:id/send ───────────────────────────────────────────── */
 router.post("/:id/send", async (req, res) => {
   try {
