@@ -2469,13 +2469,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   <div className="rounded-lg border border-border bg-background p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Quotation {quotation.ref}</p>
-                      {quotationOutOfSync && (
-                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-amber-600 border-amber-200 hover:bg-amber-50"
-                          onClick={() => syncQuotationMutation.mutate()} disabled={syncQuotationMutation.isPending}>
-                          {syncQuotationMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlertTriangle className="w-3 h-3" />}
-                          Sync from diagnosis
-                        </Button>
-                      )}
                     </div>
                     <dl className="space-y-1.5 text-sm">
                       <div className="flex justify-between">
@@ -2561,7 +2554,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           {quoteLineItems.length === 0 && !showAddQtLine && (
                             <tr>
                               <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground/50">
-                                No line items yet. Click "Add item" or sync from diagnosis.
+                                No line items yet. Click "Add Service" or "Add Part" to begin.
                               </td>
                             </tr>
                           )}
