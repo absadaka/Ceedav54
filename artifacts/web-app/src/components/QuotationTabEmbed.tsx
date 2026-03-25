@@ -89,6 +89,7 @@ function AddLineForm({ quotationId, onDone }: { quotationId: string; onDone: () 
     }).then(r => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["quotation", quotationId] });
+      qc.invalidateQueries({ queryKey: ["job", jobId] });
       toast.success("Line item added");
       setDescription(""); setPartNumber(""); setQty("1"); setUnitPrice("0.00"); setType("labour"); setSearch("");
       onDone();
@@ -156,6 +157,7 @@ function AddDiscountLine({ quotationId, subtotal, onDone }: { quotationId: strin
     }).then(r => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["quotation", quotationId] });
+      qc.invalidateQueries({ queryKey: ["job", jobId] });
       toast.success("Discount line added");
       setLabel("Discount"); setPct("10");
       onDone();

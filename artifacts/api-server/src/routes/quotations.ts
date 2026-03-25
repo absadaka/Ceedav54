@@ -7,6 +7,7 @@ import {
   bookingsTable, catalogItemsTable, jobStatusHistoryTable,
 } from "@workspace/db";
 import { quoteAdvancePaymentsTable } from "@workspace/db";
+import { syncDraftInvoicesForQuotation } from "./invoices.js";
 
 const router = Router();
 
@@ -571,6 +572,7 @@ router.post("/:id/lines", async (req, res) => {
       .returning();
 
     const totals = await recalcTotals(req.params.id);
+    await syncDraftInvoicesForQuotation(req.params.id).catch(e => console.error("auto-sync invoice", e));
     res.status(201).json({ line, totals });
   } catch (e: any) {
     console.error("POST /quotations/:id/lines", e);
@@ -614,6 +616,7 @@ router.put("/:id/lines/:lid", async (req, res) => {
       .returning();
 
     const totals = await recalcTotals(req.params.id);
+    await syncDraftInvoicesForQuotation(req.params.id).catch(e => console.error("auto-sync invoice", e));
     res.json({ line, totals });
   } catch (e: any) {
     console.error("PUT /quotations/:id/lines/:lid", e);
@@ -630,6 +633,7 @@ router.delete("/:id/lines/:lid", async (req, res) => {
 
     await db.delete(quoteLineItemsTable).where(eq(quoteLineItemsTable.id, req.params.lid));
     const totals = await recalcTotals(req.params.id);
+    await syncDraftInvoicesForQuotation(req.params.id).catch(e => console.error("auto-sync invoice", e));
     res.json({ ok: true, totals });
   } catch (e: any) {
     console.error("DELETE /quotations/:id/lines/:lid", e);
