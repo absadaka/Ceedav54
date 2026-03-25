@@ -1470,8 +1470,11 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   <div className="flex flex-col gap-2 shrink-0 w-44">
                     {job.status === "on_hold" ? (
                       <button
-                        onClick={() => moveStatus("qc")}
-                        disabled={moveStatusMutation.isPending}
+                        onClick={() => {
+                          moveStatus("qc");
+                          if (!quotation) createQuotationMutation.mutate();
+                        }}
+                        disabled={moveStatusMutation.isPending || createQuotationMutation.isPending}
                         className={cn(
                           "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
                           isReady ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
@@ -1488,6 +1491,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                             if (qApproved) {
                               moveStatus("in_progress");
                             } else {
+                              if (!quotation) createQuotationMutation.mutate();
                               setActiveTab("cost");
                               setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
                             }
@@ -2527,22 +2531,16 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Line items ({quoteLineItems.length})</p>
                       <div className="flex gap-2">
-                        {!showAddQtLine && (
-                          <>
-                            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setQtLineType("labour"); setShowAddQtLine(true); setShowAddQtDiscount(false); }}>
-                              <Plus className="w-3 h-3" />Add Service
-                            </Button>
-                            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setQtLineType("part"); setShowAddQtLine(true); setShowAddQtDiscount(false); }}>
-                              <Plus className="w-3 h-3" />Add Part
-                            </Button>
-                          </>
-                        )}
-                        {!showAddQtDiscount && (
-                          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs text-orange-600 border-orange-200 hover:bg-orange-50"
-                            onClick={() => { setShowAddQtDiscount(true); setShowAddQtLine(false); }}>
-                            <Plus className="w-3 h-3" />Discount
-                          </Button>
-                        )}
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setQtLineType("labour"); setShowAddQtLine(true); setShowAddQtDiscount(false); }}>
+                          <Plus className="w-3 h-3" />Add Service
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { setQtLineType("part"); setShowAddQtLine(true); setShowAddQtDiscount(false); }}>
+                          <Plus className="w-3 h-3" />Add Part
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs text-orange-600 border-orange-200 hover:bg-orange-50"
+                          onClick={() => { setShowAddQtDiscount(true); setShowAddQtLine(false); }}>
+                          <Plus className="w-3 h-3" />Discount
+                        </Button>
                       </div>
                     </div>
                     <div className={showAddQtLine ? "overflow-visible" : "overflow-x-auto"}>
