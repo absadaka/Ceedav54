@@ -785,7 +785,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showAddQtDiscount, setShowAddQtDiscount] = useState(false);
   const [showAddAdvance, setShowAddAdvance] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [shareChannels, setShareChannels] = useState<{ whatsapp: boolean; sms: boolean; email: boolean }>({ whatsapp: false, sms: false, email: false });
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
