@@ -2099,40 +2099,52 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 </div>
               )}
 
-              <div className="border border-border rounded-lg bg-background overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    {isInspectionStage ? "Inspection List" : "Inspection items"}
-                  </p>
+              {isInspectionStage && parts.length > 0 && (
+                <div className="space-y-2">
+                  {parts.map(p => (
+                    <div key={p.id} className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 group/part">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{p.description}</p>
+                        <p className="text-xs text-muted-foreground">Qty: {parseFloat(p.qty).toFixed(0)}{p.part_number ? ` · ${p.part_number}` : ""}</p>
+                      </div>
+                      <button onClick={() => removePartMutation.mutate(p.id)}
+                        className="opacity-0 group-hover/part:opacity-100 transition-opacity text-muted-foreground hover:text-red-500 p-1.5 rounded">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
+              )}
 
-                {parts.length === 0 && !showAddPart && !showAddManualPart ? (
-                  <div className="p-8 text-center text-sm text-muted-foreground/50">
-                    {isInspectionStage ? "No items added yet — use the buttons above to add services or parts" : "No inspection items added yet"}
+              {!isInspection && !isInspectionStage && (
+                <div className="border border-border rounded-lg bg-background overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Inspection items</p>
                   </div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Description</th>
-                        {!isInspectionStage && <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Part #</th>}
-                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Qty</th>
-                        {!isInspectionStage && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Unit Price</th>}
-                        {!isInspectionStage && <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Total</th>}
-                        <th className="px-2 py-2" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {parts.map(p => {
-                        const needsPrice = !isInspectionStage && parseFloat(p.unit_price) === 0;
-                        const isCatalogItem = catalogSet.has(p.description.toLowerCase()) || (p.part_number && catalogSet.has(p.part_number.toLowerCase()));
-                        const priceEditable = isEstimationStage && !isCatalogItem;
-                        return (
-                        <tr key={p.id} className={cn("border-b border-border last:border-0", needsPrice && isEstimationStage ? "bg-amber-50 dark:bg-amber-950/20" : "")}>
-                          <td className="px-4 py-2.5 text-sm">{p.description}</td>
-                          {!isInspectionStage && <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number ?? "—"}</td>}
-                          <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.qty).toFixed(2)}</td>
-                          {!isInspectionStage && (
+                  {parts.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-muted-foreground/50">No inspection items added yet</div>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Description</th>
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground hidden sm:table-cell">Part #</th>
+                          <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Qty</th>
+                          <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Unit Price</th>
+                          <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground">Total</th>
+                          <th className="px-2 py-2" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parts.map(p => {
+                          const needsPrice = parseFloat(p.unit_price) === 0;
+                          const isCatalogItem = catalogSet.has(p.description.toLowerCase()) || (p.part_number && catalogSet.has(p.part_number.toLowerCase()));
+                          const priceEditable = isEstimationStage && !isCatalogItem;
+                          return (
+                          <tr key={p.id} className={cn("border-b border-border last:border-0", needsPrice && isEstimationStage ? "bg-amber-50 dark:bg-amber-950/20" : "")}>
+                            <td className="px-4 py-2.5 text-sm">{p.description}</td>
+                            <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number ?? "—"}</td>
+                            <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.qty).toFixed(2)}</td>
                             <td className="px-4 py-2.5 text-right text-sm">
                               {priceEditable ? (
                                 <input
@@ -2157,46 +2169,46 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                                 <span>{parseFloat(p.unit_price).toFixed(2)}</span>
                               )}
                             </td>
-                          )}
-                          {!isInspectionStage && <td className="px-4 py-2.5 text-right text-sm font-medium">{parseFloat(p.line_total).toFixed(2)}</td>}
-                          <td className="px-2 py-2">
-                            <button onClick={() => removePartMutation.mutate(p.id)}
-                              className="text-muted-foreground/40 hover:text-destructive transition-colors p-1">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                        );
-                      })}
-                      {!isInspectionStage && parts.length > 0 && (
-                        <tr className="bg-muted/30">
-                          <td colSpan={4} className="px-4 py-2 text-xs font-semibold text-right">Total</td>
-                          <td className="px-4 py-2 text-right text-sm font-bold">{partsTotal.toFixed(2)} AED</td>
-                          <td />
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                )}
-                {!isInspection && showAddPart && (
-                  <div className="px-4 pb-4">
-                    <AddDiagnosisForm jobId={job.id} onAdded={() => {
-                      qc.invalidateQueries({ queryKey: ["job", id] });
-                      setShowAddPart(false);
-                      if (job?.quotation_id) syncQuotationMutation.mutate();
-                    }} />
-                  </div>
-                )}
-                {!isInspection && showAddManualPart && (
-                  <div className="px-4 pb-4">
-                    <AddManualPartForm jobId={job.id} onAdded={() => {
-                      qc.invalidateQueries({ queryKey: ["job", id] });
-                      setShowAddManualPart(false);
-                      if (job?.quotation_id) syncQuotationMutation.mutate();
-                    }} />
-                  </div>
-                )}
-              </div>
+                            <td className="px-4 py-2.5 text-right text-sm font-medium">{parseFloat(p.line_total).toFixed(2)}</td>
+                            <td className="px-2 py-2">
+                              <button onClick={() => removePartMutation.mutate(p.id)}
+                                className="text-muted-foreground/40 hover:text-destructive transition-colors p-1">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                          );
+                        })}
+                        {parts.length > 0 && (
+                          <tr className="bg-muted/30">
+                            <td colSpan={4} className="px-4 py-2 text-xs font-semibold text-right">Total</td>
+                            <td className="px-4 py-2 text-right text-sm font-bold">{partsTotal.toFixed(2)} AED</td>
+                            <td />
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                  {!isInspection && showAddPart && (
+                    <div className="px-4 pb-4">
+                      <AddDiagnosisForm jobId={job.id} onAdded={() => {
+                        qc.invalidateQueries({ queryKey: ["job", id] });
+                        setShowAddPart(false);
+                        if (job?.quotation_id) syncQuotationMutation.mutate();
+                      }} />
+                    </div>
+                  )}
+                  {!isInspection && showAddManualPart && (
+                    <div className="px-4 pb-4">
+                      <AddManualPartForm jobId={job.id} onAdded={() => {
+                        qc.invalidateQueries({ queryKey: ["job", id] });
+                        setShowAddManualPart(false);
+                        if (job?.quotation_id) syncQuotationMutation.mutate();
+                      }} />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {isInspectionStage && (
                 <div className="border border-border rounded-lg bg-background overflow-hidden mt-4">
