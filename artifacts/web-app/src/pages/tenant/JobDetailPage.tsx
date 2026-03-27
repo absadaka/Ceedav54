@@ -1547,7 +1547,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               const showInspection = !["new", "waiting"].includes(s);
               const showQuotation  = !["new", "waiting", "on_hold"].includes(s);
               const showReport     = !["new", "waiting", "on_hold", "qc"].includes(s);
-              const showInvoices   = ["invoiced", "delivered"].includes(s);
+              const showInvoices   = !["new", "waiting", "on_hold"].includes(s);
               return (
                 <TabsList className="mb-4 flex-wrap h-auto gap-1">
                   <TabsTrigger value="work">Customer Concerns</TabsTrigger>
