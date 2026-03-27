@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FileText, Trash2, Send, CheckCircle2, XCircle,
-  Plus, X, User, Car, Loader2, AlertTriangle, Download,
+  Plus, X, User, Car, Loader2, AlertTriangle, Download, Pencil, Check,
 } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import QuotationPDFDocument from "@/components/QuotationPDF";
@@ -250,6 +250,9 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
   const [addDiscountOpen,setAddDiscountOpen]= useState(false);
   const [addPayOpen,     setAddPayOpen]     = useState(false);
   const [pdfLoading,     setPdfLoading]     = useState(false);
+  const [editingLineId,  setEditingLineId]  = useState<string | null>(null);
+  const [editQty,        setEditQty]        = useState("");
+  const [editPrice,      setEditPrice]      = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["quotation", quotationId],
@@ -313,6 +316,22 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
     mutationFn: (lid: string) =>
       fetch(`${API}/api/quotations/${quotationId}/lines/${lid}?tenant=${TENANT}`, { method: "DELETE" }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["quotation", quotationId] }); qc.invalidateQueries({ queryKey: ["job", jobId] }); toast.success("Line removed"); },
+  });
+
+  const updateLine = useMutation({
+    mutationFn: ({ lid, qty, unit_price }: { lid: string; qty: string; unit_price: string }) =>
+      fetch(`${API}/api/quotations/${quotationId}/lines/${lid}?tenant=${TENANT}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ qty, unit_price }),
+      }).then(r => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["quotation", quotationId] });
+      qc.invalidateQueries({ queryKey: ["job", jobId] });
+      setEditingLineId(null);
+      toast.success("Price updated");
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const deleteAdv = useMutation({
@@ -474,31 +493,95 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
               <tr className="border-b border-border text-left">
                 <th className="px-3 py-2 text-xs font-medium text-muted-foreground">Description</th>
                 <th className="px-3 py-2 text-xs font-medium text-muted-foreground w-16">Qty</th>
-                <th className="px-3 py-2 text-xs font-medium text-muted-foreground text-right w-32">Total</th>
-                {editable && <th className="w-8" />}
+                <th className="px-3 py-2 text-xs font-medium text-muted-foreground text-right w-28">Unit Price</th>
+                <th className="px-3 py-2 text-xs font-medium text-muted-foreground text-right w-28">Total</th>
+                {editable && <th className="w-16" />}
               </tr>
             </thead>
             <tbody>
-              {lines.map((l: any) => (
+              {lines.map((l: any) => {
+                const isEditing = editingLineId === l.id;
+                return (
                 <tr key={l.id} className="border-b border-border last:border-0 hover:bg-muted/20">
                   <td className="px-3 py-2.5 font-medium">{l.description}</td>
-                  <td className="px-3 py-2.5 tabular-nums">{parseFloat(l.qty)}</td>
+                  <td className="px-3 py-2.5 tabular-nums">
+                    {isEditing ? (
+                      <Input
+                        type="number" min="0.01" step="0.01"
+                        className="h-7 text-xs w-16 tabular-nums"
+                        value={editQty}
+                        onChange={e => setEditQty(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") updateLine.mutate({ lid: l.id, qty: editQty, unit_price: editPrice }); if (e.key === "Escape") setEditingLineId(null); }}
+                      />
+                    ) : (
+                      <span
+                        className={editable ? "cursor-pointer hover:text-primary" : ""}
+                        onClick={() => { if (editable) { setEditingLineId(l.id); setEditQty(String(parseFloat(l.qty))); setEditPrice(parseFloat(l.unit_price).toFixed(2)); } }}
+                      >{parseFloat(l.qty)}</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">
+                    {isEditing ? (
+                      <Input
+                        type="number" min="0" step="0.01"
+                        className="h-7 text-xs w-24 tabular-nums text-right ml-auto"
+                        value={editPrice}
+                        onChange={e => setEditPrice(e.target.value)}
+                        autoFocus
+                        onKeyDown={e => { if (e.key === "Enter") updateLine.mutate({ lid: l.id, qty: editQty, unit_price: editPrice }); if (e.key === "Escape") setEditingLineId(null); }}
+                      />
+                    ) : (
+                      <span
+                        className={editable ? "cursor-pointer hover:text-primary" : ""}
+                        onClick={() => { if (editable) { setEditingLineId(l.id); setEditQty(String(parseFloat(l.qty))); setEditPrice(parseFloat(l.unit_price).toFixed(2)); } }}
+                      >{fmtAed(l.unit_price)}</span>
+                    )}
+                  </td>
                   <td className="px-3 py-2.5 text-right tabular-nums font-medium">{fmtAed(l.line_total)}</td>
                   {editable && (
                     <td className="px-3 py-2.5">
-                      <Button
-                        variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteLine.mutate(l.id)}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
+                      <div className="flex items-center gap-0.5 justify-end">
+                        {isEditing ? (
+                          <>
+                            <Button
+                              variant="ghost" size="icon" className="h-6 w-6 text-green-600 hover:text-green-700"
+                              disabled={updateLine.isPending}
+                              onClick={() => updateLine.mutate({ lid: l.id, qty: editQty, unit_price: editPrice })}
+                            >
+                              {updateLine.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                              onClick={() => setEditingLineId(null)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary"
+                              onClick={() => { setEditingLineId(l.id); setEditQty(String(parseFloat(l.qty))); setEditPrice(parseFloat(l.unit_price).toFixed(2)); }}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                              onClick={() => deleteLine.mutate(l.id)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   )}
                 </tr>
-              ))}
+                );
+              })}
               {lines.length === 0 && !addLineOpen && (
                 <tr>
-                  <td colSpan={editable ? 4 : 3} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={editable ? 5 : 4} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     {editable ? 'No line items yet. Click "Add item" to get started.' : 'No line items yet.'}
                   </td>
                 </tr>
