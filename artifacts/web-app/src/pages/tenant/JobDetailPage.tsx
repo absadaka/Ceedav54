@@ -758,8 +758,11 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       }
     }
     if (job.status === "waiting" && targetStatus === "on_hold") {
-      if (!job.technician_id && !job.advisor_id) {
-        toast.error("Please assign a Technician or an Advisor before moving to Inspection");
+      const missing: string[] = [];
+      if (!job.advisor_id) missing.push("Advisor name");
+      if (!job.bay) missing.push("Bay number");
+      if (missing.length > 0) {
+        toast.error(`Please set ${missing.join(" and ")} before moving to Inspection`);
         return false;
       }
     }
@@ -1307,7 +1310,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             const isReady = (() => {
               switch (job.status) {
                 case "new": return !!(job.vin && (job.mileage_in ?? (job as any).vehicle_mileage));
-                case "waiting": return !!(job.technician_id || job.advisor_id);
+                case "waiting": return !!(job.advisor_id && job.bay);
                 case "on_hold": return parts.length > 0 || techNotes.length > 0;
                 case "qc": return !!quotation;
                 case "in_progress": return reportNotes.length > 0;
