@@ -688,7 +688,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [showAddPart,       setShowAddPart]       = useState(false);
   const [showAddManualPart, setShowAddManualPart] = useState(false);
   const [showAddPhoto,   setShowAddPhoto]   = useState(false);
-  const [dirtyParts,     setDirtyParts]     = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
@@ -861,20 +860,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     onError: () => toast.error("Failed to create quotation"),
   });
 
-  const syncQuotationMutation = useMutation({
-    mutationFn: () => fetch(`${API}/api/quotations/sync-from-job/${id}?tenant=${TENANT}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
-    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ["job", id] });
-      qc.invalidateQueries({ queryKey: ["quotations"] });
-      setDirtyParts(false);
-      toast.success(`Quotation ${data.quotation?.ref} updated`);
-    },
-    onError: () => toast.error("Failed to update quotation"),
-  });
 
   const revertToSharedMutation = useMutation({
     mutationFn: () =>
@@ -969,8 +954,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["job", id] });
+      if (job?.quotation_id) qc.invalidateQueries({ queryKey: ["quotation", job.quotation_id] });
       toast.success("Part removed");
-      if (job?.quotation_id) syncQuotationMutation.mutate();
     },
     onError: () => toast.error("Failed to remove part"),
   });
@@ -2073,8 +2058,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <div className="px-4 pb-4">
                       <AddDiagnosisForm jobId={job.id} onAdded={() => {
                         qc.invalidateQueries({ queryKey: ["job", id] });
+                        if (job?.quotation_id) qc.invalidateQueries({ queryKey: ["quotation", job.quotation_id] });
                         setShowAddPart(false);
-                        if (job?.quotation_id) syncQuotationMutation.mutate();
                       }} />
                     </div>
                   )}
@@ -2082,8 +2067,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <div className="px-4 pb-4">
                       <AddManualPartForm jobId={job.id} onAdded={() => {
                         qc.invalidateQueries({ queryKey: ["job", id] });
+                        if (job?.quotation_id) qc.invalidateQueries({ queryKey: ["quotation", job.quotation_id] });
                         setShowAddManualPart(false);
-                        if (job?.quotation_id) syncQuotationMutation.mutate();
                       }} />
                     </div>
                   )}
