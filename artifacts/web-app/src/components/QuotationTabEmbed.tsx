@@ -375,6 +375,12 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
         </div>
         <div className="flex items-center gap-2">
           {qt.status === "draft" && (
+            <Button size="sm" className="gap-1.5 h-8 bg-[#161aff] hover:bg-[#1014cc] text-white" onClick={() => action.mutate({ act: "send" })} disabled={action.isPending}>
+              {action.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+              Create Quotation
+            </Button>
+          )}
+          {qt.status !== "draft" && (
             <Button size="sm" className="gap-1.5 h-8" onClick={() => action.mutate({ act: "send" })} disabled={action.isPending}>
               <Send className="w-3.5 h-3.5" />Send to customer
             </Button>
@@ -389,16 +395,18 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
               </Button>
             </>
           )}
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5 h-8"
-            onClick={downloadPDF}
-            disabled={pdfLoading}
-          >
-            {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-            {pdfLoading ? "Generating…" : "Download PDF"}
-          </Button>
+          {qt.status !== "draft" && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 h-8"
+              onClick={downloadPDF}
+              disabled={pdfLoading}
+            >
+              {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              {pdfLoading ? "Generating…" : "Download PDF"}
+            </Button>
+          )}
         </div>
       </div>
 
