@@ -989,6 +989,44 @@ router.post("/:id/parts", async (req, res) => {
       })
       .returning();
 
+    const [job] = await db.select({ quotation_id: jobsTable.quotation_id })
+      .from(jobsTable).where(and(eq(jobsTable.id, req.params.id), eq(jobsTable.tenant_id, tenant.id))).limit(1);
+    if (job?.quotation_id) {
+      const [qt] = await db.select({ id: quotationsTable.id, discount: quotationsTable.discount, tax_rate: quotationsTable.tax_rate })
+        .from(quotationsTable).where(and(eq(quotationsTable.id, job.quotation_id), eq(quotationsTable.tenant_id, tenant.id))).limit(1);
+      if (qt) {
+        const [{ maxQOrder }] = await db
+          .select({ maxQOrder: sql<number>`coalesce(max(sort_order), 0)` })
+          .from(quoteLineItemsTable)
+          .where(eq(quoteLineItemsTable.quotation_id, qt.id));
+
+        await db.insert(quoteLineItemsTable).values({
+          quotation_id: qt.id,
+          sort_order:   maxQOrder + 1,
+          description,
+          part_number:  part_number ?? null,
+          qty:          qtyNum.toString(),
+          unit_price:   "0.00",
+          line_total:   "0.00",
+        });
+
+        const lines = await db.select({ line_total: quoteLineItemsTable.line_total })
+          .from(quoteLineItemsTable).where(eq(quoteLineItemsTable.quotation_id, qt.id));
+        const subtotal = lines.reduce((s, l) => s + parseFloat(l.line_total), 0);
+        const discount = parseFloat(qt.discount ?? "0");
+        const taxRate = parseFloat(qt.tax_rate ?? "5");
+        const taxable = Math.max(0, subtotal - discount);
+        const tax_amount = taxable * taxRate / 100;
+        const qTotal = taxable + tax_amount;
+        await db.update(quotationsTable).set({
+          subtotal: subtotal.toFixed(2), tax_amount: tax_amount.toFixed(2), total: qTotal.toFixed(2), updated_at: new Date(),
+        }).where(eq(quotationsTable.id, qt.id));
+
+        const { syncDraftInvoicesForQuotation } = await import("./invoices.js");
+        await syncDraftInvoicesForQuotation(qt.id).catch(e => console.error("auto-sync invoice", e));
+      }
+    }
+
     return res.status(201).json({ part });
   } catch (err) {
     console.error("POST /jobs/:id/parts", err);
@@ -1048,6 +1086,15 @@ router.delete("/:id/parts/:partId", async (req, res) => {
     const tenant = await resolveTenant(slug);
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
+    const [removedPart] = await db
+      .select({ description: jobPartsTable.description, part_number: jobPartsTable.part_number })
+      .from(jobPartsTable)
+      .where(and(
+        eq(jobPartsTable.id, req.params.partId),
+        eq(jobPartsTable.job_id, req.params.id),
+        eq(jobPartsTable.tenant_id, tenant.id),
+      )).limit(1);
+
     await db
       .delete(jobPartsTable)
       .where(and(
@@ -1055,6 +1102,47 @@ router.delete("/:id/parts/:partId", async (req, res) => {
         eq(jobPartsTable.job_id, req.params.id),
         eq(jobPartsTable.tenant_id, tenant.id),
       ));
+
+    if (removedPart) {
+      const [job] = await db.select({ quotation_id: jobsTable.quotation_id })
+        .from(jobsTable).where(and(eq(jobsTable.id, req.params.id), eq(jobsTable.tenant_id, tenant.id))).limit(1);
+      if (job?.quotation_id) {
+        const [qt] = await db.select({ id: quotationsTable.id, discount: quotationsTable.discount, tax_rate: quotationsTable.tax_rate })
+          .from(quotationsTable).where(and(eq(quotationsTable.id, job.quotation_id), eq(quotationsTable.tenant_id, tenant.id))).limit(1);
+        if (qt) {
+          const matchConditions = [
+            eq(quoteLineItemsTable.quotation_id, qt.id),
+            eq(quoteLineItemsTable.description, removedPart.description),
+          ];
+          if (removedPart.part_number) {
+            matchConditions.push(eq(quoteLineItemsTable.part_number, removedPart.part_number));
+          }
+          const matchingLines = await db.select({ id: quoteLineItemsTable.id })
+            .from(quoteLineItemsTable)
+            .where(and(...matchConditions))
+            .orderBy(quoteLineItemsTable.sort_order)
+            .limit(1);
+          if (matchingLines.length > 0) {
+            await db.delete(quoteLineItemsTable).where(eq(quoteLineItemsTable.id, matchingLines[0].id));
+
+            const lines = await db.select({ line_total: quoteLineItemsTable.line_total })
+              .from(quoteLineItemsTable).where(eq(quoteLineItemsTable.quotation_id, qt.id));
+            const subtotal = lines.reduce((s, l) => s + parseFloat(l.line_total), 0);
+            const discount = parseFloat(qt.discount ?? "0");
+            const taxRate = parseFloat(qt.tax_rate ?? "5");
+            const taxable = Math.max(0, subtotal - discount);
+            const tax_amount = taxable * taxRate / 100;
+            const qTotal = taxable + tax_amount;
+            await db.update(quotationsTable).set({
+              subtotal: subtotal.toFixed(2), tax_amount: tax_amount.toFixed(2), total: qTotal.toFixed(2), updated_at: new Date(),
+            }).where(eq(quotationsTable.id, qt.id));
+
+            const { syncDraftInvoicesForQuotation } = await import("./invoices.js");
+            await syncDraftInvoicesForQuotation(qt.id).catch(e => console.error("auto-sync invoice", e));
+          }
+        }
+      }
+    }
 
     return res.json({ ok: true });
   } catch (err) {
