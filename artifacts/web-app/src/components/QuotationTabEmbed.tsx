@@ -235,7 +235,7 @@ function AddAdvanceForm({ quotationId, onDone }: { quotationId: string; onDone: 
       <div className="flex justify-end gap-2">
         <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onDone}>Cancel</Button>
         <Button size="sm" className="h-7 text-xs" onClick={() => add.mutate()} disabled={!amount || parseFloat(amount) <= 0 || add.isPending}>
-          {add.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}Record payment
+          {add.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}Advanced payment
         </Button>
       </div>
     </div>
@@ -516,8 +516,8 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
         )}
       </div>
 
-      {/* Notes + Advance payments */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Notes */}
+      <div className="space-y-4">
         <div className="space-y-3">
           {qt.notes && (
             <div className="rounded-lg border border-border bg-background p-4 space-y-1.5">
@@ -546,7 +546,7 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
             <p className="text-sm font-semibold">Advance payments ({advs.length})</p>
             {!addPayOpen && (
               <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setAddPayOpen(true)}>
-                <Plus className="w-3 h-3" />Record payment
+                <Plus className="w-3 h-3" />Advanced payment
               </Button>
             )}
           </div>
