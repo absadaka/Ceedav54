@@ -2,15 +2,13 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
-  Receipt, Plus, Search, FileText, CheckCircle2, Clock, TrendingUp,
+  Receipt, Search, FileText, CheckCircle2, Clock, TrendingUp,
 } from "lucide-react";
-import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Badge }    from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn }       from "@/lib/utils";
 import { statusClass } from "@/lib/status";
-import InvoiceDrawer   from "@/components/InvoiceDrawer";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -81,7 +79,6 @@ export default function InvoicesPage() {
   const qc = useQueryClient();
   const [search,     setSearch]     = useState("");
   const [statusTab,  setStatusTab]  = useState("all");
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data, isLoading } = useQuery<{ data: InvoiceRow[] }>({
     queryKey: ["invoices", statusTab, search],
@@ -107,9 +104,6 @@ export default function InvoicesPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="page-title">Invoices</h1>
-        <Button size="sm" className="gap-1.5" onClick={() => setDrawerOpen(true)}>
-          <Plus className="w-4 h-4" />New invoice
-        </Button>
       </div>
 
       {/* Stats strip */}
@@ -182,10 +176,7 @@ export default function InvoicesPage() {
                   <div className="flex flex-col items-center gap-3">
                     <Receipt className="w-10 h-10 text-muted-foreground/20" />
                     <p className="text-[15px] font-medium text-muted-foreground">No invoices yet</p>
-                    <p className="text-sm text-muted-foreground/60">Create invoices manually or from a completed job card.</p>
-                    <Button variant="outline" size="sm" onClick={() => setDrawerOpen(true)}>
-                      <Plus className="w-3.5 h-3.5 mr-1.5" />Create invoice
-                    </Button>
+                    <p className="text-sm text-muted-foreground/60">Invoices are created from service job or quick repair flows.</p>
                   </div>
                 </td>
               </tr>
@@ -220,11 +211,6 @@ export default function InvoicesPage() {
         </table>
       </div>
 
-      <InvoiceDrawer
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        onCreated={(id) => { qc.invalidateQueries({ queryKey: ["invoices"] }); navigate(`/invoices/${id}`); }}
-      />
     </div>
   );
 }
