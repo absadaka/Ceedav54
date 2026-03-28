@@ -36,7 +36,7 @@ const features = [
 ];
 
 const stats = [
-  { value: "2,400+", label: "Workshops using CEEDA" },
+  { value: "2,400+", label: "Workshops using ceeda>" },
   { value: "1.2M+", label: "Job cards processed" },
   { value: "AED 840M+", label: "Invoices managed" },
   { value: "4.9 / 5", label: "Average customer rating" },
@@ -51,7 +51,7 @@ const journey = [
 
 const testimonials = [
   {
-    quote: "We went from 4 hours of admin per day to under 30 minutes. CEEDA paid for itself in the first week.",
+    quote: "We went from 4 hours of admin per day to under 30 minutes. ceeda> paid for itself in the first week.",
     author: "Mohammed Al-Harbi",
     role: "Owner, Al-Harbi Auto Centre — Riyadh",
     avatar: "MA",
@@ -130,7 +130,7 @@ const growStats = [
   {
     value: "392%",
     label: "Return on investment",
-    body: "Most workshops cover the full annual cost of CEEDA within the first month through time saved on admin.",
+    body: "Most workshops cover the full annual cost of ceeda> within the first month through time saved on admin.",
   },
   {
     value: "41%",
@@ -433,9 +433,9 @@ function GrowSection() {
             Grow Your Business
           </h2>
           <p className="text-base text-muted-foreground max-w-xl">
-            At CEEDA, we want to help you grow your workshop, attract new clients and boost revenue.{" "}
+            At ceeda>, we want to help you grow your workshop, attract new clients and boost revenue.{" "}
             <Link href="/register" className="text-primary hover:underline font-medium">
-              See how workshops grow with CEEDA →
+              See how workshops grow with ceeda> →
             </Link>
           </p>
         </div>
@@ -501,7 +501,7 @@ function CtaSection() {
           Ready to modernise your workshop?
         </h2>
         <p className="text-primary-foreground/75 text-lg mb-10 leading-relaxed">
-          Join 2,400+ workshops that cut admin time by 70% and get paid faster with CEEDA.
+          Join 2,400+ workshops that cut admin time by 70% and get paid faster with ceeda>.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/register">
