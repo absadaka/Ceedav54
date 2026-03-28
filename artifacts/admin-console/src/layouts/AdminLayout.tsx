@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, CreditCard, Flag, UserSearch,
@@ -32,6 +32,7 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
+  children?: NavItem[];
 }
 
 interface NavSection {
@@ -46,19 +47,21 @@ const adminSections: NavSection[] = [
       { label: "Tenants",       href: "/tenants",     icon: Building2 },
       { label: "Billing",       href: "/billing",     icon: CreditCard },
       { label: "Feature Flags", href: "/flags",       icon: Flag },
-    ],
-  },
-  {
-    title: "Subscriptions",
-    items: [
-      { label: "Plans",            href: "/subscriptions/plans",       icon: Package },
-      { label: "Coupons",          href: "/subscriptions/coupons",     icon: Tag },
-      { label: "Invoices",         href: "/subscriptions/invoices",    icon: FileText },
-      { label: "Failed Payments",  href: "/subscriptions/failed",     icon: AlertCircle },
-      { label: "Plan Override",    href: "/subscriptions/override",   icon: Shield },
-      { label: "Add-Ons",          href: "/subscriptions/addons",     icon: Puzzle },
-      { label: "Revenue",          href: "/subscriptions/revenue",    icon: BarChart3 },
-      { label: "Churn & Renewals", href: "/subscriptions/churn",      icon: UserMinus },
+      {
+        label: "Subscriptions",
+        href: "/subscriptions/plans",
+        icon: CreditCard,
+        children: [
+          { label: "Plans",            href: "/subscriptions/plans",     icon: Package },
+          { label: "Coupons",          href: "/subscriptions/coupons",   icon: Tag },
+          { label: "Invoices",         href: "/subscriptions/invoices",  icon: FileText },
+          { label: "Failed Payments",  href: "/subscriptions/failed",   icon: AlertCircle },
+          { label: "Plan Override",    href: "/subscriptions/override", icon: Shield },
+          { label: "Add-Ons",          href: "/subscriptions/addons",   icon: Puzzle },
+          { label: "Revenue",          href: "/subscriptions/revenue",  icon: BarChart3 },
+          { label: "Churn & Renewals", href: "/subscriptions/churn",    icon: UserMinus },
+        ],
+      },
     ],
   },
   {
@@ -91,6 +94,77 @@ function SidebarLink({ item, collapsed, active }: {
         {!collapsed && <span className="truncate">{item.label}</span>}
       </span>
     </Link>
+  );
+}
+
+function CollapsibleNavItem({ item, collapsed, location }: {
+  item: NavItem; collapsed: boolean; location: string;
+}) {
+  const Icon = item.icon;
+  const isChildActive = item.children?.some(c => location === c.href || location.startsWith(c.href + "/")) ?? false;
+  const [open, setOpen] = useState(isChildActive);
+
+  useEffect(() => {
+    if (isChildActive) setOpen(true);
+  }, [isChildActive]);
+
+  if (collapsed) {
+    return (
+      <Link href={item.href}>
+        <span
+          className={cn(
+            "flex items-center justify-center px-2 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer select-none",
+            isChildActive
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          )}
+          title={item.label}
+        >
+          <Icon className="w-5 h-5 shrink-0" />
+        </span>
+      </Link>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer select-none",
+          isChildActive
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        )}
+      >
+        <Icon className="w-4 h-4 shrink-0" />
+        <span className="truncate flex-1 text-left">{item.label}</span>
+        <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="mt-0.5 ml-3 pl-3 border-l border-sidebar-border/30 space-y-0.5">
+          {item.children?.map(child => {
+            const ChildIcon = child.icon;
+            const childActive = location === child.href || location.startsWith(child.href + "/");
+            return (
+              <Link key={child.href} href={child.href}>
+                <span
+                  className={cn(
+                    "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer select-none",
+                    childActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  )}
+                >
+                  <ChildIcon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{child.label}</span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -130,14 +204,23 @@ function AdminSidebar({ collapsed, onToggle, light }: { collapsed: boolean; onTo
                 {section.title}
               </p>
             )}
-            {section.items.map((item) => (
-              <SidebarLink
-                key={item.href}
-                item={item}
-                collapsed={collapsed}
-                active={isActive(item.href)}
-              />
-            ))}
+            {section.items.map((item) =>
+              item.children ? (
+                <CollapsibleNavItem
+                  key={item.href}
+                  item={item}
+                  collapsed={collapsed}
+                  location={location}
+                />
+              ) : (
+                <SidebarLink
+                  key={item.href}
+                  item={item}
+                  collapsed={collapsed}
+                  active={isActive(item.href)}
+                />
+              )
+            )}
           </div>
         ))}
       </nav>
