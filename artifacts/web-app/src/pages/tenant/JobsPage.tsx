@@ -1,18 +1,16 @@
 import {
-  Wrench, Plus, Search, LayoutGrid, List,
+  Wrench, Search, LayoutGrid, List,
   Clock, User, Car,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge }    from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { statusClass, statusLabel } from "@/lib/status";
-import JobDrawer     from "@/components/JobDrawer";
 import StatusTransitionModal, { JOB_STATUSES } from "@/components/StatusTransitionModal";
 
 import { getTenantSlug } from "@/lib/tenant";
@@ -112,7 +110,6 @@ export default function JobsPage() {
   const [, navigate]    = useLocation();
   const [view, setView] = useState<"board" | "list">("board");
   const [q, setQ]       = useState("");
-  const [drawerOpen, setDrawerOpen]     = useState(false);
   const [movingJob, setMovingJob]       = useState<KanbanJob | null>(null);
   const [expandedLane, setExpandedLane] = useState<typeof JOB_STATUSES[number] | null>(null);
 
@@ -140,9 +137,6 @@ export default function JobsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="page-title">Service Jobs</h1>
-        <Button size="sm" className="gap-1.5" onClick={() => setDrawerOpen(true)}>
-          <Plus className="w-4 h-4" />New service job
-        </Button>
       </div>
 
       <div className="flex items-center gap-2">
@@ -270,10 +264,7 @@ export default function JobsPage() {
                         <div className="flex flex-col items-center gap-3">
                           <Wrench className="w-10 h-10 text-muted-foreground/20" />
                           <p className="text-[15px] font-medium text-muted-foreground">No service jobs yet</p>
-                          <p className="text-sm text-muted-foreground/70">Service jobs are created from quotations or directly.</p>
-                          <Button size="sm" className="mt-1" onClick={() => setDrawerOpen(true)}>
-                            <Plus className="w-3.5 h-3.5 mr-1" />New service job
-                          </Button>
+                          <p className="text-sm text-muted-foreground/70">Create a booking with type "Service Job" to get started.</p>
                         </div>
                       </td>
                     </tr>
@@ -310,7 +301,6 @@ export default function JobsPage() {
         </div>
       )}
 
-      <JobDrawer open={drawerOpen} onOpenChange={setDrawerOpen} jobType="service_job" />
       {movingJob && (
         <StatusTransitionModal
           open={!!movingJob}

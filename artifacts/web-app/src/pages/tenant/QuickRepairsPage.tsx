@@ -1,18 +1,16 @@
 import {
-  Zap, Plus, Search, LayoutGrid, List,
+  Zap, Search, LayoutGrid, List,
   Clock, User, Car,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge }    from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { statusClass, statusLabel } from "@/lib/status";
-import JobDrawer from "@/components/JobDrawer";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -102,7 +100,6 @@ export default function QuickRepairsPage() {
   const [, navigate]    = useLocation();
   const [view, setView] = useState<"board" | "list">("board");
   const [q, setQ]       = useState("");
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [expandedLane, setExpandedLane] = useState<typeof QR_STATUSES[number] | null>(null);
 
   const { data: kanbanData, isLoading: kanbanLoading } = useQuery<Record<string, KanbanJob[]>>({
@@ -129,9 +126,6 @@ export default function QuickRepairsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="page-title">Quick Repair</h1>
-        <Button size="sm" className="gap-1.5" onClick={() => setDrawerOpen(true)}>
-          <Plus className="w-4 h-4" />New quick repair
-        </Button>
       </div>
 
       <div className="flex items-center gap-2">
@@ -255,10 +249,7 @@ export default function QuickRepairsPage() {
                         <div className="flex flex-col items-center gap-3">
                           <Zap className="w-10 h-10 text-muted-foreground/20" />
                           <p className="text-[15px] font-medium text-muted-foreground">No quick repairs yet</p>
-                          <p className="text-sm text-muted-foreground/70">Quick repairs skip the quotation and inspection steps.</p>
-                          <Button size="sm" className="mt-1" onClick={() => setDrawerOpen(true)}>
-                            <Plus className="w-3.5 h-3.5 mr-1" />New quick repair
-                          </Button>
+                          <p className="text-sm text-muted-foreground/70">Create a booking with type "Quick Repair" to get started.</p>
                         </div>
                       </td>
                     </tr>
@@ -295,7 +286,6 @@ export default function QuickRepairsPage() {
         </div>
       )}
 
-      <JobDrawer open={drawerOpen} onOpenChange={setDrawerOpen} jobType="quick_repair" />
     </div>
   );
 }
