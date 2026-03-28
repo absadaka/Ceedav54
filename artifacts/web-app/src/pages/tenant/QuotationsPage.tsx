@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
-  FileText, Plus, Search, User, Car, ChevronRight, MoreHorizontal, Trash2,
+  FileText, Search, User, Car, ChevronRight, MoreHorizontal, Trash2,
   Clock,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
@@ -16,7 +16,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import QuotationDrawer from "@/components/QuotationDrawer";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -70,7 +69,6 @@ export default function QuotationsPage() {
 
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [drawerOpen,   setDrawerOpen]   = useState(false);
 
   const params = new URLSearchParams({
     tenant: TENANT,
@@ -100,9 +98,6 @@ export default function QuotationsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="page-title">Quotations</h1>
-        <Button size="sm" className="gap-1.5" onClick={() => setDrawerOpen(true)}>
-          <Plus className="w-4 h-4" />New quote
-        </Button>
       </div>
 
       {/* Status summary strip */}
@@ -162,10 +157,7 @@ export default function QuotationsPage() {
                       <div className="flex flex-col items-center gap-3">
                         <FileText className="w-10 h-10 text-muted-foreground/20" />
                         <p className="text-[15px] font-medium text-muted-foreground">No quotations found</p>
-                        <p className="text-sm text-muted-foreground/70">Create your first price estimate for a customer.</p>
-                        <Button size="sm" className="mt-1 gap-1.5" onClick={() => setDrawerOpen(true)}>
-                          <Plus className="w-4 h-4" />New quote
-                        </Button>
+                        <p className="text-sm text-muted-foreground/70">Quotations are created from service job or quick repair flows.</p>
                       </div>
                     </td>
                   </tr>
@@ -237,7 +229,6 @@ export default function QuotationsPage() {
         </table>
       </div>
 
-      <QuotationDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
 }
