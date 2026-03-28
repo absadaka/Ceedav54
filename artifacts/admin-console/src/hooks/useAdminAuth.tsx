@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 
-const API = import.meta.env.BASE_URL.replace(/\/$/, "");
+const API = "";
 
 interface AdminUser {
   id: string;
