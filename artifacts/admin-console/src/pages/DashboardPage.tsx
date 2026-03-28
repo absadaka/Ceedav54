@@ -72,7 +72,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="page-title">Platform overview</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Real-time health of the CEEDA platform.
+          Real-time health of the ceeda> platform.
         </p>
       </div>
 

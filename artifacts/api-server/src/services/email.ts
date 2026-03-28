@@ -50,7 +50,7 @@ export function quoteActionResultHtml(shopName: string, action: "approve" | "rej
   <div style="font-size:56px;color:${iconColor};margin-bottom:16px;">${icon}</div>
   <h1 style="margin:0 0 8px;font-size:22px;color:#0a0a0a;">${title}</h1>
   <p style="margin:0 0 24px;font-size:15px;color:#71717a;line-height:1.6;">${body}</p>
-  <p style="margin:0;font-size:13px;color:#a1a1aa;">${shopName} via CEEDA</p>
+  <p style="margin:0;font-size:13px;color:#a1a1aa;">${shopName} via ceeda></p>
 </div>
 </body></html>`;
 }
@@ -89,7 +89,7 @@ const DEFAULT_FROM_EMAIL = VERIFIED_DOMAIN
   : "onboarding@resend.dev";
 
 function buildFrom(shopName: string, config: TenantEmailConfig): string {
-  const name = config.fromName || shopName || "CEEDA";
+  const name = config.fromName || shopName || "ceeda>";
   return `${name} <${DEFAULT_FROM_EMAIL}>`;
 }
 
@@ -162,7 +162,7 @@ function baseTemplate(shopName: string, content: string): string {
 </td></tr>
 <tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
   <p style="margin:0;font-size:12px;color:#a1a1aa;text-align:center;">
-    Sent by ${shopName} via CEEDA
+    Sent by ${shopName} via ceeda>
   </p>
 </td></tr>
 </table>
