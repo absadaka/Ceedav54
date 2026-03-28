@@ -8,6 +8,7 @@ import {
   quotationsTable, quoteLineItemsTable,
 } from "@workspace/db";
 import { sendEmail, invoiceEmailHtml } from "../services/email.js";
+import { sendSms, sendWhatsApp, invoiceSmsBody } from "../services/sms.js";
 
 const router = Router();
 
@@ -516,24 +517,25 @@ router.post("/:id/send", async (req, res) => {
     if (!inv) return res.status(404).json({ error: "Invoice not found" });
 
     const [client] = inv.client_id
-      ? await db.select({ name: clientsTable.name, email: clientsTable.email })
+      ? await db.select({ name: clientsTable.name, email: clientsTable.email, phone: clientsTable.phone })
           .from(clientsTable).where(eq(clientsTable.id, inv.client_id)).limit(1)
       : [null];
 
     let emailResult = null;
+
+    const lines = (await db.execute(sql`
+      SELECT description, type, qty::text, unit_price::text, discount::text, line_total::text
+      FROM invoice_line_items WHERE invoice_id = ${inv.id} ORDER BY sort_order
+    `)).rows as { description: string; type: string; qty: string; unit_price: string; discount: string; line_total: string }[];
+
+    let vehicleInfo: string | undefined;
+    if (inv.vehicle_id) {
+      const [v] = await db.select({ make: vehiclesTable.make, model: vehiclesTable.model, plate: vehiclesTable.plate })
+        .from(vehiclesTable).where(eq(vehiclesTable.id, inv.vehicle_id)).limit(1);
+      if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
+    }
+
     if (client?.email) {
-      const lines = (await db.execute(sql`
-        SELECT description, type, qty::text, unit_price::text, discount::text, line_total::text
-        FROM invoice_line_items WHERE invoice_id = ${inv.id} ORDER BY sort_order
-      `)).rows as { description: string; type: string; qty: string; unit_price: string; discount: string; line_total: string }[];
-
-      let vehicleInfo: string | undefined;
-      if (inv.vehicle_id) {
-        const [v] = await db.select({ make: vehiclesTable.make, model: vehiclesTable.model, plate: vehiclesTable.plate })
-          .from(vehiclesTable).where(eq(vehiclesTable.id, inv.vehicle_id)).limit(1);
-        if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
-      }
-
       const html = invoiceEmailHtml({
         shopName: tenant.name,
         invoiceRef: inv.ref,
@@ -556,6 +558,19 @@ router.post("/:id/send", async (req, res) => {
         tenantId: tenant.id,
         shopName: tenant.name,
       });
+    }
+
+    if (client?.phone) {
+      const smsBody = invoiceSmsBody({
+        shopName: tenant.name,
+        invoiceRef: inv.ref,
+        clientName: client.name ?? "Customer",
+        total: inv.total ?? "0",
+        currency: tenant.currency ?? "AED",
+        dueDate: inv.due_at?.toISOString() ?? null,
+      });
+      await sendSms({ to: client.phone, body: smsBody, tenantId: tenant.id });
+      await sendWhatsApp({ to: client.phone, body: smsBody, tenantId: tenant.id });
     }
 
     return res.json({ invoice: inv, emailSent: emailResult?.success ?? false });

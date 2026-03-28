@@ -9,6 +9,7 @@ import {
 import { quoteAdvancePaymentsTable } from "@workspace/db";
 import { syncDraftInvoicesForQuotation } from "./invoices.js";
 import { sendEmail, quotationEmailHtml, generateQuoteActionToken, verifyQuoteActionToken, quoteActionResultHtml } from "../services/email.js";
+import { sendSms, sendWhatsApp, quotationSmsBody } from "../services/sms.js";
 
 const router = Router();
 
@@ -875,32 +876,33 @@ router.post("/:id/send", async (req, res) => {
     if (!quotation) return res.status(404).json({ error: "Quotation not found" });
 
     const [client] = quotation.client_id
-      ? await db.select({ name: clientsTable.name, email: clientsTable.email })
+      ? await db.select({ name: clientsTable.name, email: clientsTable.email, phone: clientsTable.phone })
           .from(clientsTable).where(eq(clientsTable.id, quotation.client_id)).limit(1)
       : [null];
 
     let emailResult = null;
+
+    const lines = (await db.execute(sql`
+      SELECT description, type, qty::text, unit_price::text, discount::text, line_total::text
+      FROM quote_line_items WHERE quotation_id = ${quotation.id} ORDER BY sort_order
+    `)).rows as { description: string; type: string; qty: string; unit_price: string; discount: string; line_total: string }[];
+
+    let vehicleInfo: string | undefined;
+    if (quotation.vehicle_id) {
+      const [v] = await db.select({ make: vehiclesTable.make, model: vehiclesTable.model, plate: vehiclesTable.plate })
+        .from(vehiclesTable).where(eq(vehiclesTable.id, quotation.vehicle_id)).limit(1);
+      if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
+    }
+
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : (process.env.APP_URL ?? "https://ceeda.me");
+    const approveToken = generateQuoteActionToken(quotation.id, "approve");
+    const rejectToken = generateQuoteActionToken(quotation.id, "reject");
+    const approveUrl = `${baseUrl}/api/quotations/email-action?token=${approveToken}&tenant=${slug}`;
+    const rejectUrl = `${baseUrl}/api/quotations/email-action?token=${rejectToken}&tenant=${slug}`;
+
     if (client?.email) {
-      const lines = (await db.execute(sql`
-        SELECT description, type, qty::text, unit_price::text, discount::text, line_total::text
-        FROM quote_line_items WHERE quotation_id = ${quotation.id} ORDER BY sort_order
-      `)).rows as { description: string; type: string; qty: string; unit_price: string; discount: string; line_total: string }[];
-
-      let vehicleInfo: string | undefined;
-      if (quotation.vehicle_id) {
-        const [v] = await db.select({ make: vehiclesTable.make, model: vehiclesTable.model, plate: vehiclesTable.plate })
-          .from(vehiclesTable).where(eq(vehiclesTable.id, quotation.vehicle_id)).limit(1);
-        if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
-      }
-
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : (process.env.APP_URL ?? "https://ceeda.me");
-      const approveToken = generateQuoteActionToken(quotation.id, "approve");
-      const rejectToken = generateQuoteActionToken(quotation.id, "reject");
-      const approveUrl = `${baseUrl}/api/quotations/email-action?token=${approveToken}&tenant=${slug}`;
-      const rejectUrl = `${baseUrl}/api/quotations/email-action?token=${rejectToken}&tenant=${slug}`;
-
       const html = quotationEmailHtml({
         shopName: tenant.name ?? "Workshop",
         quoteRef: quotation.ref,
@@ -925,6 +927,20 @@ router.post("/:id/send", async (req, res) => {
         tenantId: tenant.id,
         shopName: tenant.name ?? "Workshop",
       });
+    }
+
+    if (client?.phone) {
+      const smsBody = quotationSmsBody({
+        shopName: tenant.name ?? "Workshop",
+        quoteRef: quotation.ref,
+        clientName: client.name ?? "Customer",
+        total: quotation.total ?? "0",
+        currency: tenant.currency ?? "AED",
+        approveUrl,
+        rejectUrl,
+      });
+      await sendSms({ to: client.phone, body: smsBody, tenantId: tenant.id });
+      await sendWhatsApp({ to: client.phone, body: smsBody, tenantId: tenant.id });
     }
 
     res.json({ quotation, sent: true, emailSent: emailResult?.success ?? false });

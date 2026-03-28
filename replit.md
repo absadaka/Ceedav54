@@ -30,7 +30,7 @@ ceeda/
 | Auth        | JWT + HTTP-only cookies, Google OAuth, Magic links (planned) |
 | Payments    | Stripe (planned) |
 | Email       | Resend SDK — sends from `info@ceeda.me` (env: `RESEND_API_KEY`, `EMAIL_FROM_DOMAIN`) |
-| Messaging   | WhatsApp Cloud API (planned) |
+| SMS/WhatsApp | Twilio SDK — SMS & WhatsApp via `api-server/src/services/sms.ts` (env: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `TWILIO_WHATSAPP_NUMBER`). Per-tenant config in `integrations` table. |
 | Monorepo    | pnpm workspaces |
 
 ## Design System
