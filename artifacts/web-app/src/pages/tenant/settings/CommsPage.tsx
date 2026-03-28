@@ -37,11 +37,11 @@ function Section({ title, description, icon: Icon, badge, children }: {
 function StatusBadge({ enabled }: { enabled: boolean }) {
   return enabled ? (
     <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-      <CheckCircle2 className="w-3 h-3" /> Connected
+      <CheckCircle2 className="w-3 h-3" /> Enabled
     </span>
   ) : (
     <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-500 border border-zinc-200">
-      <XCircle className="w-3 h-3" /> Not connected
+      <XCircle className="w-3 h-3" /> Disabled
     </span>
   );
 }
@@ -60,15 +60,8 @@ export default function CommsPage() {
     sms_sender_id: "",
   });
 
-  const [smsConfig, setSmsConfig] = useState({
-    enabled: false,
-    phone_number: "",
-  });
-
-  const [waConfig, setWaConfig] = useState({
-    enabled: false,
-    phone_number: "",
-  });
+  const [smsEnabled, setSmsEnabled] = useState(false);
+  const [waEnabled, setWaEnabled] = useState(false);
 
   const [notifications, setNotifications] = useState({
     booking_confirmation_email: true,
@@ -93,16 +86,10 @@ export default function CommsPage() {
       sms_sender_id:   s.sms_sender_id   ?? "",
     });
     if (data.integrations?.sms) {
-      setSmsConfig({
-        enabled: data.integrations.sms.enabled ?? false,
-        phone_number: data.integrations.sms.phone_number ?? "",
-      });
+      setSmsEnabled(data.integrations.sms.enabled ?? false);
     }
     if (data.integrations?.whatsapp) {
-      setWaConfig({
-        enabled: data.integrations.whatsapp.enabled ?? false,
-        phone_number: data.integrations.whatsapp.phone_number ?? "",
-      });
+      setWaEnabled(data.integrations.whatsapp.enabled ?? false);
     }
   }, [data]);
 
@@ -118,10 +105,10 @@ export default function CommsPage() {
   const smsMutation = useMutation({
     mutationFn: () => fetch(`${API}/api/settings/integrations/sms?tenant=${TENANT}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: smsConfig.enabled, config: { phone_number: smsConfig.phone_number } }),
+      body: JSON.stringify({ enabled: smsEnabled }),
     }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
     onSuccess: () => {
-      toast.success("SMS integration saved");
+      toast.success("SMS settings saved");
       queryClient.invalidateQueries({ queryKey: ["settings", TENANT] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -130,10 +117,10 @@ export default function CommsPage() {
   const waMutation = useMutation({
     mutationFn: () => fetch(`${API}/api/settings/integrations/whatsapp?tenant=${TENANT}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: waConfig.enabled, config: { phone_number: waConfig.phone_number } }),
+      body: JSON.stringify({ enabled: waEnabled }),
     }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
     onSuccess: () => {
-      toast.success("WhatsApp integration saved");
+      toast.success("WhatsApp settings saved");
       queryClient.invalidateQueries({ queryKey: ["settings", TENANT] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -170,7 +157,7 @@ export default function CommsPage() {
           <div>
             <h1 className="page-title">Communication setup</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Configure email, SMS, WhatsApp and notification delivery for your team and customers.
+              Configure email, SMS, WhatsApp and notification delivery for your customers.
             </p>
           </div>
           <Button
@@ -209,80 +196,45 @@ export default function CommsPage() {
           </div>
         </Section>
 
-        {/* SMS (Twilio) */}
+        {/* SMS */}
         <Section
           title="SMS"
-          description="Send SMS notifications to customers via Twilio."
+          description="Send SMS notifications to customers. Messages are sent from ceeda>."
           icon={Phone}
-          badge={<StatusBadge enabled={smsConfig.enabled} />}
+          badge={<StatusBadge enabled={smsEnabled} />}
         >
-          <div className="flex items-start justify-between gap-6 pb-4 border-b border-border">
+          <div className="flex items-start justify-between gap-6">
             <div>
               <p className="text-sm font-medium text-foreground">Enable SMS notifications</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Sends booking confirmations, quotations, and invoices via SMS.
+                Booking confirmations, quotations, and invoices will be sent via SMS to customers who have a phone number.
               </p>
             </div>
             <Switch
-              checked={smsConfig.enabled}
-              onCheckedChange={(v) => setSmsConfig((p) => ({ ...p, enabled: v }))}
+              checked={smsEnabled}
+              onCheckedChange={setSmsEnabled}
             />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="sms-phone">Twilio phone number</Label>
-              <Input
-                id="sms-phone"
-                value={smsConfig.phone_number}
-                onChange={(e) => setSmsConfig((p) => ({ ...p, phone_number: e.target.value }))}
-                placeholder="+1234567890"
-              />
-              <p className="text-xs text-muted-foreground">Your Twilio phone number for sending SMS.</p>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="sms-sender">Sender ID (optional)</Label>
-              <Input
-                id="sms-sender"
-                value={form.sms_sender_id}
-                onChange={set("sms_sender_id")}
-                placeholder="WORKSHOP"
-                maxLength={11}
-              />
-              <p className="text-xs text-muted-foreground">Up to 11 alphanumeric characters.</p>
-            </div>
           </div>
         </Section>
 
-        {/* WhatsApp (Twilio) */}
+        {/* WhatsApp */}
         <Section
           title="WhatsApp"
-          description="Send WhatsApp messages to customers via Twilio."
+          description="Send WhatsApp messages to customers. Messages are sent from ceeda>."
           icon={MessageSquare}
-          badge={<StatusBadge enabled={waConfig.enabled} />}
+          badge={<StatusBadge enabled={waEnabled} />}
         >
-          <div className="flex items-start justify-between gap-6 pb-4 border-b border-border">
+          <div className="flex items-start justify-between gap-6">
             <div>
               <p className="text-sm font-medium text-foreground">Enable WhatsApp notifications</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Sends booking confirmations, quotations, and invoices via WhatsApp.
+                Booking confirmations, quotations, and invoices will be sent via WhatsApp to customers who have a phone number.
               </p>
             </div>
             <Switch
-              checked={waConfig.enabled}
-              onCheckedChange={(v) => setWaConfig((p) => ({ ...p, enabled: v }))}
+              checked={waEnabled}
+              onCheckedChange={setWaEnabled}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="wa-phone">Twilio WhatsApp number</Label>
-            <Input
-              id="wa-phone"
-              value={waConfig.phone_number}
-              onChange={(e) => setWaConfig((p) => ({ ...p, phone_number: e.target.value }))}
-              placeholder="whatsapp:+14155238886"
-            />
-            <p className="text-xs text-muted-foreground">
-              Your Twilio WhatsApp-enabled number. Use the Twilio sandbox number for testing.
-            </p>
           </div>
         </Section>
 

@@ -1,6 +1,6 @@
 import twilio from "twilio";
-import { db, tenantSettingsTable, integrationsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { db, integrationsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 let _client: twilio.Twilio | null = null;
 
@@ -12,39 +12,21 @@ function getClient(): twilio.Twilio | null {
   return _client;
 }
 
-interface TenantSmsConfig {
-  smsEnabled: boolean;
-  whatsappEnabled: boolean;
-  twilioPhone: string;
-  twilioWhatsappPhone: string;
-  senderName: string;
-}
+const SMS_FROM = () => process.env.TWILIO_PHONE_NUMBER || "";
+const WA_FROM = () => {
+  const num = process.env.TWILIO_WHATSAPP_NUMBER || "";
+  return num.startsWith("whatsapp:") ? num : num ? `whatsapp:${num}` : "";
+};
 
-async function getTenantSmsConfig(tenantId: string): Promise<TenantSmsConfig> {
-  const [settings] = await db
-    .select({ sms_sender_id: tenantSettingsTable.sms_sender_id })
-    .from(tenantSettingsTable)
-    .where(eq(tenantSettingsTable.tenant_id, tenantId))
+async function isTenantChannelEnabled(tenantId: string, channel: "sms" | "whatsapp"): Promise<boolean> {
+  const [row] = await db
+    .select({ enabled: integrationsTable.enabled })
+    .from(integrationsTable)
+    .where(eq(integrationsTable.tenant_id, tenantId))
     .limit(1);
 
-  const integrations = await db
-    .select({ type: integrationsTable.type, enabled: integrationsTable.enabled, config: integrationsTable.config })
-    .from(integrationsTable)
-    .where(eq(integrationsTable.tenant_id, tenantId));
-
-  const smsInteg = integrations.find((i) => i.type === "sms");
-  const waInteg = integrations.find((i) => i.type === "whatsapp");
-
-  const smsCfg = (smsInteg?.config ?? {}) as Record<string, string>;
-  const waCfg = (waInteg?.config ?? {}) as Record<string, string>;
-
-  return {
-    smsEnabled: smsInteg?.enabled ?? false,
-    whatsappEnabled: waInteg?.enabled ?? false,
-    twilioPhone: smsCfg.phone_number || process.env.TWILIO_PHONE_NUMBER || "",
-    twilioWhatsappPhone: waCfg.phone_number || process.env.TWILIO_WHATSAPP_NUMBER || "",
-    senderName: settings?.sms_sender_id || "",
-  };
+  if (!row) return true;
+  return row.enabled !== false;
 }
 
 interface SendSmsParams {
@@ -60,21 +42,16 @@ export async function sendSms({ to, body, tenantId }: SendSmsParams) {
     return { success: false, reason: "no_twilio_credentials" };
   }
 
-  const config = await getTenantSmsConfig(tenantId);
-  if (!config.smsEnabled) {
-    console.log("[sms] SMS disabled for tenant — skipping");
-    return { success: false, reason: "sms_disabled" };
-  }
-
-  if (!config.twilioPhone) {
-    console.warn("[sms] No Twilio phone number configured");
+  const from = SMS_FROM();
+  if (!from) {
+    console.warn("[sms] TWILIO_PHONE_NUMBER not set — skipping SMS");
     return { success: false, reason: "no_phone_number" };
   }
 
   try {
     const message = await client.messages.create({
       body,
-      from: config.twilioPhone,
+      from,
       to: normalizePhone(to),
     });
     console.log(`[sms] Sent to ${to}: SID=${message.sid}`);
@@ -98,20 +75,11 @@ export async function sendWhatsApp({ to, body, tenantId }: SendWhatsAppParams) {
     return { success: false, reason: "no_twilio_credentials" };
   }
 
-  const config = await getTenantSmsConfig(tenantId);
-  if (!config.whatsappEnabled) {
-    console.log("[whatsapp] WhatsApp disabled for tenant — skipping");
-    return { success: false, reason: "whatsapp_disabled" };
-  }
-
-  if (!config.twilioWhatsappPhone) {
-    console.warn("[whatsapp] No WhatsApp phone number configured");
+  const from = WA_FROM();
+  if (!from) {
+    console.warn("[whatsapp] TWILIO_WHATSAPP_NUMBER not set — skipping WhatsApp");
     return { success: false, reason: "no_whatsapp_number" };
   }
-
-  const waFrom = config.twilioWhatsappPhone.startsWith("whatsapp:")
-    ? config.twilioWhatsappPhone
-    : `whatsapp:${config.twilioWhatsappPhone}`;
 
   const waTo = normalizePhone(to);
   const waToFmt = waTo.startsWith("whatsapp:") ? waTo : `whatsapp:${waTo}`;
@@ -119,7 +87,7 @@ export async function sendWhatsApp({ to, body, tenantId }: SendWhatsAppParams) {
   try {
     const message = await client.messages.create({
       body,
-      from: waFrom,
+      from,
       to: waToFmt,
     });
     console.log(`[whatsapp] Sent to ${to}: SID=${message.sid}`);
