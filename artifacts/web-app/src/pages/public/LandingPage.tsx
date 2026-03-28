@@ -433,9 +433,9 @@ function GrowSection() {
             Grow Your Business
           </h2>
           <p className="text-base text-muted-foreground max-w-xl">
-            At ceeda>, we want to help you grow your workshop, attract new clients and boost revenue.{" "}
+            At ceeda{">"}, we want to help you grow your workshop, attract new clients and boost revenue.{" "}
             <Link href="/register" className="text-primary hover:underline font-medium">
-              See how workshops grow with ceeda> →
+              See how workshops grow with ceeda{">"} →
             </Link>
           </p>
         </div>
@@ -501,7 +501,7 @@ function CtaSection() {
           Ready to modernise your workshop?
         </h2>
         <p className="text-primary-foreground/75 text-lg mb-10 leading-relaxed">
-          Join 2,400+ workshops that cut admin time by 70% and get paid faster with ceeda>.
+          Join 2,400+ workshops that cut admin time by 70% and get paid faster with ceeda{">"}.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/register">
