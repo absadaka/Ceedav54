@@ -212,35 +212,35 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
 
         {showTypeStep ? (
           <div className="flex-1 overflow-y-auto px-6 py-8">
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => setBookingType("quick_repair")}
-                className={cn(
-                  "flex flex-col items-center gap-3 rounded-xl border-2 border-border p-6 transition-all hover:border-primary/60 hover:shadow-md cursor-pointer"
-                )}
-              >
-                <div className="w-14 h-14 rounded-xl bg-amber-50 flex items-center justify-center">
-                  <Zap className="w-7 h-7 text-amber-600" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold">Quick Repair</p>
-                  <p className="text-xs text-muted-foreground mt-1">Fast repair — no quotation or inspection needed</p>
-                </div>
-              </button>
+            <div className="flex flex-col gap-3">
               <button
                 type="button"
                 onClick={() => setBookingType("service_job")}
                 className={cn(
-                  "flex flex-col items-center gap-3 rounded-xl border-2 border-border p-6 transition-all hover:border-primary/60 hover:shadow-md cursor-pointer"
+                  "flex items-center gap-4 rounded-xl border-2 border-border p-5 transition-all hover:border-primary/60 hover:shadow-md cursor-pointer text-left"
                 )}
               >
-                <div className="w-14 h-14 rounded-xl bg-orange-50 flex items-center justify-center">
-                  <Wrench className="w-7 h-7 text-orange-600" />
+                <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                  <Wrench className="w-6 h-6 text-orange-600" />
                 </div>
-                <div className="text-center">
+                <div>
                   <p className="text-sm font-semibold">Service Job</p>
-                  <p className="text-xs text-muted-foreground mt-1">Full service with quotation and inspection</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Full service with quotation and inspection</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBookingType("quick_repair")}
+                className={cn(
+                  "flex items-center gap-4 rounded-xl border-2 border-border p-5 transition-all hover:border-primary/60 hover:shadow-md cursor-pointer text-left"
+                )}
+              >
+                <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                  <Zap className="w-6 h-6 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Quick Repair</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Fast repair — no quotation or inspection needed</p>
                 </div>
               </button>
             </div>
