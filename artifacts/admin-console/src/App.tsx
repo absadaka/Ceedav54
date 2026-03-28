@@ -14,6 +14,14 @@ import FlagsPage from "@/pages/FlagsPage";
 import ImpersonatePage from "@/pages/ImpersonatePage";
 import SystemHealthPage from "@/pages/SystemHealthPage";
 import SupportTicketsPage from "@/pages/SupportTicketsPage";
+import PlansPage from "@/pages/subscriptions/PlansPage";
+import CouponsPage from "@/pages/subscriptions/CouponsPage";
+import InvoiceHistoryPage from "@/pages/subscriptions/InvoiceHistoryPage";
+import FailedPaymentsPage from "@/pages/subscriptions/FailedPaymentsPage";
+import PlanOverridePage from "@/pages/subscriptions/PlanOverridePage";
+import AddOnsPage from "@/pages/subscriptions/AddOnsPage";
+import RevenueAnalyticsPage from "@/pages/subscriptions/RevenueAnalyticsPage";
+import ChurnPage from "@/pages/subscriptions/ChurnPage";
 import NotFoundPage from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -52,6 +60,14 @@ function ProtectedRouter() {
         <Route path="/impersonate" component={ImpersonatePage} />
         <Route path="/tickets"     component={SupportTicketsPage} />
         <Route path="/health"      component={SystemHealthPage} />
+        <Route path="/subscriptions/plans"    component={PlansPage} />
+        <Route path="/subscriptions/coupons"  component={CouponsPage} />
+        <Route path="/subscriptions/invoices" component={InvoiceHistoryPage} />
+        <Route path="/subscriptions/failed"   component={FailedPaymentsPage} />
+        <Route path="/subscriptions/override" component={PlanOverridePage} />
+        <Route path="/subscriptions/addons"   component={AddOnsPage} />
+        <Route path="/subscriptions/revenue"  component={RevenueAnalyticsPage} />
+        <Route path="/subscriptions/churn"    component={ChurnPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </AdminLayout>

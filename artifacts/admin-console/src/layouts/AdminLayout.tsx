@@ -4,6 +4,8 @@ import {
   LayoutDashboard, Building2, CreditCard, Flag, UserSearch,
   ChevronLeft, ChevronRight, Bell, LogOut, ChevronDown,
   AlertTriangle, Activity, LifeBuoy, Sun, Moon,
+  Package, Tag, FileText, AlertCircle, Shield, Puzzle,
+  BarChart3, UserMinus,
 } from "lucide-react";
 
 function useSidebarTheme() {
@@ -44,6 +46,19 @@ const adminSections: NavSection[] = [
       { label: "Tenants",       href: "/tenants",     icon: Building2 },
       { label: "Billing",       href: "/billing",     icon: CreditCard },
       { label: "Feature Flags", href: "/flags",       icon: Flag },
+    ],
+  },
+  {
+    title: "Subscriptions",
+    items: [
+      { label: "Plans",            href: "/subscriptions/plans",       icon: Package },
+      { label: "Coupons",          href: "/subscriptions/coupons",     icon: Tag },
+      { label: "Invoices",         href: "/subscriptions/invoices",    icon: FileText },
+      { label: "Failed Payments",  href: "/subscriptions/failed",     icon: AlertCircle },
+      { label: "Plan Override",    href: "/subscriptions/override",   icon: Shield },
+      { label: "Add-Ons",          href: "/subscriptions/addons",     icon: Puzzle },
+      { label: "Revenue",          href: "/subscriptions/revenue",    icon: BarChart3 },
+      { label: "Churn & Renewals", href: "/subscriptions/churn",      icon: UserMinus },
     ],
   },
   {

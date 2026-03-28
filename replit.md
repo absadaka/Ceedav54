@@ -63,6 +63,7 @@ ceeda/
 - Protected admin routes (in `AdminLayout`): `/dashboard`, `/tenants`, `/billing`, `/flags`, `/impersonate`, `/tickets`, `/health`
 - Auth guard: `App.tsx` `ProtectedRouter` checks `useAdminAuth().user`, redirects to `/auth` if not logged in
 - Logout: via user dropdown in `AdminLayout` top bar
+- **Subscriptions section** (sidebar group): Plans (`/subscriptions/plans`), Coupons (`/subscriptions/coupons`), Invoices (`/subscriptions/invoices`), Failed Payments (`/subscriptions/failed`), Plan Override (`/subscriptions/override`), Add-Ons (`/subscriptions/addons`), Revenue Analytics (`/subscriptions/revenue`), Churn & Renewals (`/subscriptions/churn`)
 
 ## Auth Service Abstraction
 
