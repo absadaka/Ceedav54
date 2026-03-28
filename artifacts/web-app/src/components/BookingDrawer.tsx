@@ -73,7 +73,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   const [advisorId,   setAdvisorId]   = useState("");
   const [date,        setDate]        = useState("");
   const [time,        setTime]        = useState("09:00");
-  const [duration,    setDuration]    = useState("60");
+  const [duration,    setDuration]    = useState("");
   const [source,      setSource]      = useState("phone");
   const [notes,       setNotes]       = useState("");
   const [mileageIn,   setMileageIn]   = useState("");
@@ -88,7 +88,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
       const dt = booking.scheduled_at ? new Date(booking.scheduled_at) : new Date();
       setDate(dt.toISOString().slice(0, 10));
       setTime(dt.toTimeString().slice(0, 5));
-      setDuration(String(booking.duration_min ?? 60));
+      setDuration(booking.duration_min ? String(booking.duration_min) : "");
       setSource(booking.source ?? "phone");
       setNotes(booking.notes ?? "");
       setMileageIn(booking.mileage_in ?? "");
@@ -100,7 +100,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
       setDate(now.toISOString().slice(0, 10));
       setTime(now.toTimeString().slice(0, 5));
       setClientId(""); setVehicleId(""); setAdvisorId("");
-      setDuration("60"); setSource("phone"); setNotes(""); setMileageIn("");
+      setDuration(""); setSource("phone"); setNotes(""); setMileageIn("");
     }
   }, [booking, open]);
 
@@ -174,7 +174,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
         vehicle_id:   vehicleId  || null,
         advisor_id:   advisorId  || null,
         scheduled_at,
-        duration_min: Number(duration),
+        duration_min: duration ? Number(duration) : null,
         source,
         notes:        notes      || null,
         mileage_in:   mileageIn  || null,
@@ -287,7 +287,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
             <div className="space-y-1.5">
               <Label>Duration</Label>
               <Select value={duration} onValueChange={setDuration}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Not set" /></SelectTrigger>
                 <SelectContent>
                   {DURATIONS.map(d => (
                     <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
