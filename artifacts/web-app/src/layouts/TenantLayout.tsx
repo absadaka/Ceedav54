@@ -29,6 +29,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import CommandPalette, { useCommandPalette } from "@/components/CommandPalette";
 import { useAuth } from "@/hooks/useAuth";
+import { resolveTenant } from "@/lib/tenant";
+import type { TenantInfo } from "@/lib/tenant";
 
 /* ─── Nav definition ─────────────────────────────────────────────────────── */
 
@@ -415,9 +417,23 @@ export default function TenantLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
-  const { isManager } = useAuth();
+  const { user, isManager } = useAuth();
   const adminVisible = showAdmin !== undefined ? showAdmin : isManager;
   const { dark: sidebarDark, toggle: toggleSidebar } = useSidebarTheme();
+
+  const [resolvedTenant, setResolvedTenant] = useState<TenantInfo | null>(null);
+
+  useEffect(() => {
+    const nameKnown = tenantName || user?.tenantName;
+    if (!nameKnown && tenantSlug) {
+      resolveTenant(tenantSlug).then((info) => {
+        if (info) setResolvedTenant(info);
+      });
+    }
+  }, [tenantSlug, tenantName, user?.tenantName]);
+
+  const effectiveTenantName = tenantName ?? user?.tenantName ?? resolvedTenant?.name;
+  const effectiveTenantLogoUrl = tenantLogoUrl ?? user?.tenantLogoUrl ?? resolvedTenant?.logoUrl;
 
   /* Close mobile drawer on resize to desktop */
   useEffect(() => {
@@ -481,8 +497,8 @@ export default function TenantLayout({
       {/* Main area */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <TopBar
-          tenantName={tenantName}
-          tenantLogoUrl={tenantLogoUrl}
+          tenantName={effectiveTenantName}
+          tenantLogoUrl={effectiveTenantLogoUrl}
           tenantSlug={tenantSlug}
           onMobileMenuToggle={() => setMobileOpen((v) => !v)}
           onSearchOpen={() => setCmdOpen(true)}
