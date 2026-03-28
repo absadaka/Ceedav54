@@ -283,8 +283,9 @@ export default function BookingsPage() {
       qc.invalidateQueries({ queryKey: ["bookings"] });
       toast.success("Status updated to Checked In");
 
-      const bookingType = row.booking_type;
-      if (bookingType === "inspection" || bookingType === "service_job") {
+      const rawType = row.booking_type;
+      const bookingType = rawType === "inspection" ? "quick_repair" : rawType;
+      if (bookingType === "quick_repair" || bookingType === "service_job") {
         try {
           const existingRes = await fetch(`${API}/api/jobs?tenant=${TENANT}&booking_id=${row.id}&limit=1`).then(r => r.json());
           const existingJobs = existingRes?.data ?? [];
@@ -313,14 +314,14 @@ export default function BookingsPage() {
 
           qc.invalidateQueries({ queryKey: ["jobs"] });
           qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
-          qc.invalidateQueries({ queryKey: ["inspections-kanban"] });
+          qc.invalidateQueries({ queryKey: ["quick-repairs-kanban"] });
 
           const jobId = jobRes?.id ?? jobRes?.job?.id;
           const jobRef = jobRes?.ref ?? jobRes?.job?.ref ?? "Job";
-          const linkPath = bookingType === "inspection" ? `/inspections/${jobId}` : `/jobs/${jobId}`;
+          const linkPath = bookingType === "quick_repair" ? `/quick-repairs/${jobId}` : `/jobs/${jobId}`;
 
           toast.success(
-            `${bookingType === "inspection" ? "Inspection" : "Service Job"} card ${jobRef} created`,
+            `${bookingType === "quick_repair" ? "Quick Repair" : "Service Job"} card ${jobRef} created`,
             {
               action: jobId ? {
                 label: "View",

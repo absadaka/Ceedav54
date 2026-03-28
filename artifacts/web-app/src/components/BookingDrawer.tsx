@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select";
 import { toast } from "sonner";
-import { ClipboardCheck, Wrench } from "lucide-react";
+import { Zap, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { getTenantSlug } from "@/lib/tenant";
@@ -67,7 +67,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   const qc = useQueryClient();
   const isEdit = !!booking?.id;
 
-  const [bookingType, setBookingType] = useState<"inspection" | "service_job" | "">("");
+  const [bookingType, setBookingType] = useState<"quick_repair" | "service_job" | "">("");
   const [clientId,    setClientId]    = useState("");
   const [vehicleId,   setVehicleId]   = useState("");
   const [advisorId,   setAdvisorId]   = useState("");
@@ -81,7 +81,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   useEffect(() => {
     if (!open) return;
     if (booking) {
-      setBookingType((booking.booking_type === "inspection" || booking.booking_type === "service_job") ? booking.booking_type : "");
+      setBookingType((booking.booking_type === "quick_repair" || booking.booking_type === "service_job") ? booking.booking_type : booking.booking_type === "inspection" ? "quick_repair" : "");
       setClientId(booking.client_id ?? "");
       setVehicleId(booking.vehicle_id ?? "");
       setAdvisorId(booking.advisor_id ?? "");
@@ -215,17 +215,17 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <button
                 type="button"
-                onClick={() => setBookingType("inspection")}
+                onClick={() => setBookingType("quick_repair")}
                 className={cn(
                   "flex flex-col items-center gap-3 rounded-xl border-2 border-border p-6 transition-all hover:border-primary/60 hover:shadow-md cursor-pointer"
                 )}
               >
-                <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center">
-                  <ClipboardCheck className="w-7 h-7 text-indigo-600" />
+                <div className="w-14 h-14 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <Zap className="w-7 h-7 text-amber-600" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-semibold">Inspection</p>
-                  <p className="text-xs text-muted-foreground mt-1">Vehicle inspection or diagnostic check</p>
+                  <p className="text-sm font-semibold">Quick Repair</p>
+                  <p className="text-xs text-muted-foreground mt-1">Fast repair — no quotation or inspection needed</p>
                 </div>
               </button>
               <button
@@ -240,7 +240,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-semibold">Service Job</p>
-                  <p className="text-xs text-muted-foreground mt-1">Repair, maintenance, or service work</p>
+                  <p className="text-xs text-muted-foreground mt-1">Full service with quotation and inspection</p>
                 </div>
               </button>
             </div>
@@ -253,12 +253,12 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
               <span className="text-muted-foreground">Type:</span>
               <span className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border",
-                bookingType === "inspection"
-                  ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                bookingType === "quick_repair"
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
                   : "bg-orange-50 text-orange-700 border-orange-200"
               )}>
-                {bookingType === "inspection" ? <ClipboardCheck className="w-3 h-3" /> : <Wrench className="w-3 h-3" />}
-                {bookingType === "inspection" ? "Inspection" : "Service Job"}
+                {bookingType === "quick_repair" ? <Zap className="w-3 h-3" /> : <Wrench className="w-3 h-3" />}
+                {bookingType === "quick_repair" ? "Quick Repair" : "Service Job"}
               </span>
               <button
                 type="button"
