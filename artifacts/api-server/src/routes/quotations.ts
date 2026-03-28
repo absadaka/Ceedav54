@@ -8,11 +8,12 @@ import {
 } from "@workspace/db";
 import { quoteAdvancePaymentsTable } from "@workspace/db";
 import { syncDraftInvoicesForQuotation } from "./invoices.js";
+import { sendEmail, quotationEmailHtml } from "../services/email.js";
 
 const router = Router();
 
 async function resolveTenant(slug: string) {
-  const [t] = await db.select({ id: tenantsTable.id }).from(tenantsTable).where(eq(tenantsTable.slug, slug)).limit(1);
+  const [t] = await db.select({ id: tenantsTable.id, name: tenantsTable.name, currency: tenantsTable.currency }).from(tenantsTable).where(eq(tenantsTable.slug, slug)).limit(1);
   return t ?? null;
 }
 
@@ -804,8 +805,32 @@ router.post("/:id/send", async (req, res) => {
       .returning();
 
     if (!quotation) return res.status(404).json({ error: "Quotation not found" });
-    // TODO: dispatch WhatsApp/email notification
-    res.json({ quotation, sent: true });
+
+    const [client] = quotation.client_id
+      ? await db.select({ name: clientsTable.name, email: clientsTable.email })
+          .from(clientsTable).where(eq(clientsTable.id, quotation.client_id)).limit(1)
+      : [null];
+
+    let emailResult = null;
+    if (client?.email) {
+      const html = quotationEmailHtml({
+        shopName: tenant.name ?? "Workshop",
+        quoteRef: quotation.ref,
+        clientName: client.name ?? "Customer",
+        total: quotation.total ?? "0",
+        currency: tenant.currency ?? "AED",
+        expiresAt: quotation.expires_at?.toISOString() ?? null,
+      });
+      emailResult = await sendEmail({
+        to: client.email,
+        subject: `Quotation ${quotation.ref} from ${tenant.name ?? "Workshop"}`,
+        html,
+        tenantId: tenant.id,
+        shopName: tenant.name ?? "Workshop",
+      });
+    }
+
+    res.json({ quotation, sent: true, emailSent: emailResult?.success ?? false });
   } catch (e: any) {
     console.error("POST /quotations/:id/send", e);
     res.status(500).json({ error: e.message });
