@@ -29,6 +29,7 @@ ceeda/
 | Database    | PostgreSQL 16, Drizzle ORM |
 | Auth        | JWT + HTTP-only cookies, Google OAuth, Magic links (planned) |
 | Payments    | Stripe (planned) |
+| Email       | Resend SDK — sends from `info@ceeda.me` (env: `RESEND_API_KEY`, `EMAIL_FROM_DOMAIN`) |
 | Messaging   | WhatsApp Cloud API (planned) |
 | Monorepo    | pnpm workspaces |
 
