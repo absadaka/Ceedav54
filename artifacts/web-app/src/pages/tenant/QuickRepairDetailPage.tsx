@@ -250,7 +250,7 @@ export default function QuickRepairDetailPage() {
         {next && (
           <div className="mt-4 flex justify-center">
             <Button size="sm" className="gap-1.5" onClick={() => handleStatusClick(next.key)} disabled={statusMut.isPending}>
-              {statusMut.isPending ? "Updating…" : `Mark as ${next.label}`}
+              {statusMut.isPending ? "Updating…" : next.key === "completed" ? "Update Work Report" : `Mark as ${next.label}`}
             </Button>
           </div>
         )}
@@ -408,7 +408,7 @@ export default function QuickRepairDetailPage() {
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>
-              {pendingStatus && `Mark as ${QR_FLOW.find(s => s.key === pendingStatus)?.label}`}
+              {pendingStatus && (pendingStatus === "completed" ? "Update Work Report" : `Mark as ${QR_FLOW.find(s => s.key === pendingStatus)?.label}`)}
             </DialogTitle>
             <DialogDescription>Add an optional note for this status change.</DialogDescription>
           </DialogHeader>
