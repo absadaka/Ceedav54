@@ -3,7 +3,7 @@ import {
   Edit, Trash2, Package, History, CheckCircle2,
   Receipt, Truck, Pencil, Search,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Button }   from "@/components/ui/button";
@@ -98,6 +98,7 @@ export default function QuickRepairDetailPage() {
   const [statusDialog, setStatusDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [statusNote, setStatusNote] = useState("");
+  const partsRef = useRef<HTMLDivElement>(null);
 
   const statusMut = useMutation({
     mutationFn: async ({ status, note }: { status: string; note?: string }) => {
@@ -249,9 +250,28 @@ export default function QuickRepairDetailPage() {
         </div>
         {next && (
           <div className="mt-4 flex justify-center">
-            <Button size="sm" className="gap-1.5" onClick={() => handleStatusClick(next.key)} disabled={statusMut.isPending}>
-              {statusMut.isPending ? "Updating…" : next.key === "completed" ? "Update Work Report" : `Mark as ${next.label}`}
-            </Button>
+            {next.key === "completed" ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  partsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+              >
+                Update Work Report
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => handleStatusClick(next.key)}
+                disabled={statusMut.isPending || (job.status === "new" && parts.length === 0)}
+              >
+                {statusMut.isPending ? "Updating…" : `Mark as ${next.label}`}
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -306,6 +326,7 @@ export default function QuickRepairDetailPage() {
       )}
 
       {/* Tabs: Parts & History */}
+      <div ref={partsRef}>
       <Tabs defaultValue="parts">
         <TabsList>
           <TabsTrigger value="parts" className="gap-1.5"><Package className="w-3.5 h-3.5" />Parts & Services</TabsTrigger>
@@ -402,6 +423,23 @@ export default function QuickRepairDetailPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {job.status === "new" && (
+        <div className="flex justify-center pt-2 pb-4">
+          <Button
+            size="sm"
+            className="gap-1.5"
+            onClick={() => handleStatusClick("completed")}
+            disabled={statusMut.isPending || parts.length === 0}
+          >
+            {statusMut.isPending ? "Updating…" : "Mark as Work Done"}
+          </Button>
+          {parts.length === 0 && (
+            <p className="text-xs text-muted-foreground ml-3 self-center">Add at least one part, service or note first</p>
+          )}
+        </div>
+      )}
+      </div>
 
       {/* Status confirmation dialog */}
       <Dialog open={statusDialog} onOpenChange={setStatusDialog}>
