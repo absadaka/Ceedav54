@@ -54,9 +54,9 @@ function buildNav(tenantSlug?: string): {
       { label: "Dashboard",    href: `/dashboard${q}`,    icon: LayoutDashboard },
       { label: "Customers",    href: `/customers${q}`,    icon: Users },
       { label: "Bookings",     href: `/bookings${q}`,     icon: CalendarCheck },
+      { label: "Service Jobs", href: `/jobs${q}`,         icon: Wrench },
       { label: "Inspections",  href: `/inspections${q}`,  icon: ClipboardCheck },
       { label: "Quotations",   href: `/quotations${q}`,   icon: FileText },
-      { label: "Service Jobs", href: `/jobs${q}`,         icon: Wrench },
       { label: "Invoices",     href: `/invoices${q}`,     icon: Receipt },
     ],
     workspace: [
