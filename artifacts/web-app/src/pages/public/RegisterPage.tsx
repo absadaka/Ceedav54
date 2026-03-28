@@ -870,7 +870,7 @@ function SuccessScreen({ slug, shopName }: { slug: string; shopName: string }) {
       </p>
       <p className="text-sm text-gray-400 mb-10">
         Your subdomain:{" "}
-        <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 font-mono text-xs">{slug}.ceeda.io</code>
+        <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 font-mono text-xs">{slug}.ceeda.me</code>
       </p>
 
       <button

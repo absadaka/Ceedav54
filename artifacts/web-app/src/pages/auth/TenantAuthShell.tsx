@@ -13,7 +13,7 @@ import { tenantInitials } from "@/lib/tenant";
 interface TenantAuthShellProps {
   tenant: TenantInfo | null;
   children: React.ReactNode;
-  /** Show a back link to the tenant's login page instead of ceeda.io */
+  /** Show a back link to the tenant's login page instead of ceeda.me */
   backToLogin?: boolean;
   className?: string;
 }
@@ -59,7 +59,7 @@ export default function TenantAuthShell({
       ? `/${tenant.slug}/login`
       : "/"
     : "/";
-  const backLabel = backToLogin ? "Back to sign in" : "Back to ceeda.io";
+  const backLabel = backToLogin ? "Back to sign in" : "Back to ceeda.me";
 
   return (
     <div className={cn("h-screen flex overflow-hidden", className)}>
