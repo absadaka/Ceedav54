@@ -30,9 +30,14 @@ async function getTenantEmailConfig(tenantId: string): Promise<TenantEmailConfig
   };
 }
 
+const VERIFIED_DOMAIN = process.env.EMAIL_FROM_DOMAIN;
+const DEFAULT_FROM_EMAIL = VERIFIED_DOMAIN
+  ? `noreply@${VERIFIED_DOMAIN}`
+  : "onboarding@resend.dev";
+
 function buildFrom(shopName: string, config: TenantEmailConfig): string {
   const name = config.fromName || shopName || "CEEDA";
-  return `${name} <noreply@ceeda.io>`;
+  return `${name} <${DEFAULT_FROM_EMAIL}>`;
 }
 
 interface SendEmailParams {
