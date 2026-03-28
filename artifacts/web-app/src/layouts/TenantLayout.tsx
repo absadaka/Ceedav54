@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, CalendarCheck, FileText, Wrench, Receipt,
   Settings, Bell, LogOut, ChevronDown, ChevronLeft, ChevronRight,
   UsersRound, Building2, ShieldCheck, Monitor, Laptop2,
-  Menu, X, Search, Sun, Moon, ClipboardCheck,
+  Menu, X, Search, Sun, Moon, ClipboardCheck, Zap,
 } from "lucide-react";
 
 function useSidebarTheme() {
@@ -54,7 +54,8 @@ function buildNav(tenantSlug?: string): {
       { label: "Dashboard",    href: `/dashboard${q}`,    icon: LayoutDashboard },
       { label: "Customers",    href: `/customers${q}`,    icon: Users },
       { label: "Bookings",     href: `/bookings${q}`,     icon: CalendarCheck },
-      { label: "Service Jobs", href: `/jobs${q}`,         icon: Wrench },
+      { label: "Service Jobs",  href: `/jobs${q}`,           icon: Wrench },
+      { label: "Quick Repair", href: `/quick-repairs${q}`, icon: Zap },
       { label: "Quotations",   href: `/quotations${q}`,   icon: FileText },
       { label: "Invoices",     href: `/invoices${q}`,     icon: Receipt },
     ],
