@@ -39,7 +39,7 @@ interface Props {
   job?: JobRow | null;
   defaultClientId?: string;
   defaultVehicleId?: string;
-  jobType?: "inspection" | "service_job";
+  jobType?: "inspection" | "service_job" | "quick_repair";
 }
 
 export default function JobDrawer({ open, onOpenChange, job, defaultClientId, defaultVehicleId, jobType }: Props) {
@@ -127,7 +127,9 @@ export default function JobDrawer({ open, onOpenChange, job, defaultClientId, de
       qc.invalidateQueries({ queryKey: ["jobs-kanban"] });
       qc.invalidateQueries({ queryKey: ["inspections"] });
       qc.invalidateQueries({ queryKey: ["inspections-kanban"] });
-      toast.success(isEdit ? "Job updated" : jobType === "inspection" ? "Inspection created" : "Job created");
+      qc.invalidateQueries({ queryKey: ["quick-repairs"] });
+      qc.invalidateQueries({ queryKey: ["quick-repairs-kanban"] });
+      toast.success(isEdit ? "Job updated" : jobType === "inspection" ? "Inspection created" : jobType === "quick_repair" ? "Quick repair created" : "Job created");
       onOpenChange(false);
     },
     onError: () => toast.error("Failed to save job"),
@@ -142,9 +144,9 @@ export default function JobDrawer({ open, onOpenChange, job, defaultClientId, de
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[540px] p-0 gap-0 flex flex-col max-h-[90vh]">
         <DialogHeader className="px-6 py-5 border-b border-border shrink-0">
-          <DialogTitle>{isEdit ? `Edit ${job!.ref}` : jobType === "inspection" ? "New inspection" : "New job card"}</DialogTitle>
+          <DialogTitle>{isEdit ? `Edit ${job!.ref}` : jobType === "inspection" ? "New inspection" : jobType === "quick_repair" ? "New quick repair" : "New job card"}</DialogTitle>
           <DialogDescription>
-            {isEdit ? "Update job details and assignments." : jobType === "inspection" ? "Create a new inspection card." : "Create a new job card for the workshop."}
+            {isEdit ? "Update job details and assignments." : jobType === "inspection" ? "Create a new inspection card." : jobType === "quick_repair" ? "Quick repair — no quotation or inspection needed." : "Create a new job card for the workshop."}
           </DialogDescription>
         </DialogHeader>
 

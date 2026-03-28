@@ -187,10 +187,10 @@ router.get("/kanban", async (req, res) => {
 
     const lanes: Record<string, typeof jobs> = {
       new: [], waiting: [], in_progress: [], waiting_parts: [],
-      on_hold: [], qc: [], completed: [],
+      on_hold: [], qc: [], completed: [], invoiced: [], delivered: [],
     };
     for (const j of jobs) {
-      lanes[j.status]?.push(j);
+      if (lanes[j.status]) lanes[j.status].push(j);
     }
 
     return res.json(lanes);
@@ -527,7 +527,7 @@ router.post("/", async (req, res) => {
       .where(eq(jobsTable.tenant_id, tenant.id));
 
     const year   = new Date().getFullYear();
-    const prefix = type === "inspection" ? "Insp" : "JC";
+    const prefix = type === "inspection" ? "Insp" : type === "quick_repair" ? "QR" : "JC";
     const ref    = `${prefix}-${year}-${String(seq).padStart(4, "0")}`;
 
     const validPriority = (["low", "normal", "high", "urgent"] as const).includes(priority as "low" | "normal" | "high" | "urgent")
@@ -729,7 +729,7 @@ router.post("/:id/status", async (req, res) => {
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
     const [existing] = await db
-      .select({ id: jobsTable.id, status: jobsTable.status, quotation_id: jobsTable.quotation_id })
+      .select({ id: jobsTable.id, status: jobsTable.status, quotation_id: jobsTable.quotation_id, type: jobsTable.type })
       .from(jobsTable)
       .where(and(eq(jobsTable.id, req.params.id), eq(jobsTable.tenant_id, tenant.id)))
       .limit(1);
@@ -741,7 +741,7 @@ router.post("/:id/status", async (req, res) => {
       return res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` });
     }
 
-    if (status === "in_progress" && existing.status === "qc") {
+    if (status === "in_progress" && existing.status === "qc" && existing.type !== "quick_repair") {
       if (existing.quotation_id) {
         const [q] = await db.select({ status: quotationsTable.status }).from(quotationsTable).where(eq(quotationsTable.id, existing.quotation_id)).limit(1);
         if (!q || q.status !== "approved") {

@@ -80,6 +80,7 @@ ceeda/
 
 | Module | Status | Notes |
 |---|---|---|
+| Quick Repair | Live | Simplified 4-status flow (New→Work Done→Invoiced→Delivered), no quotation/inspection. Uses `jobs` table with `type="quick_repair"`, ref prefix "QR-". Kanban + list views, detail page with parts CRUD. |
 | Bookings | Live | Full CRUD, 7-status flow, advisor meta, stat strip, booking detail page |
 | Quotations | Live | Full CRUD, line items CRUD with auto-recalc, advance payments, send/approve/reject/convert-to-job flow |
 | Jobs | Live | Kanban + list views (7-lane incl. Delivered), job detail: live Start/Stop timer, assign-technician dialog, parts CRUD, photo URL upload, status history, QC section, Mark as delivered flow |
@@ -170,7 +171,7 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 
 **Layout**: `artifacts/web-app/src/layouts/TenantLayout.tsx`
 - Left: collapsible sidebar (220px ↔ 56px on desktop; overlay drawer on mobile via hamburger)
-- Sidebar groups: **Main** (Dashboard, Customers, Bookings, Quotations, Jobs, Invoices) → **Workspace** (Team, Settings) → **Admin** (Users, SSO, Audit log, API keys)
+- Sidebar groups: **Main** (Dashboard, Customers, Bookings, Service Jobs, Quick Repair, Quotations, Invoices) → **Workspace** (Team, Settings) → **Admin** (Users, SSO, Audit log, API keys)
 - Top bar: hamburger (mobile), Search/Cmd+K trigger (center), shop avatar + name (right), notification bell, user dropdown
 - CEEDA logo (wrench icon + text) anchors the sidebar top
 - Collapse toggle at sidebar bottom (desktop only)

@@ -34,6 +34,8 @@ import JobsPage       from "@/pages/tenant/JobsPage";
 import JobDetailPage  from "@/pages/tenant/JobDetailPage";
 import InspectionsPage     from "@/pages/tenant/InspectionsPage";
 import InspectionDetailPage from "@/pages/tenant/InspectionDetailPage";
+import QuickRepairsPage       from "@/pages/tenant/QuickRepairsPage";
+import QuickRepairDetailPage  from "@/pages/tenant/QuickRepairDetailPage";
 import InvoicesPage       from "@/pages/tenant/InvoicesPage";
 import InvoiceDetailPage  from "@/pages/tenant/InvoiceDetailPage";
 import TeamPage from "@/pages/tenant/TeamPage";
@@ -64,7 +66,7 @@ const PUBLIC_PATHS = ["/", "/pricing", "/auth", "/register"];
 
 const LEGACY_APP_PREFIXES = [
   "dashboard", "customers", "clients", "vehicles", "bookings", "inspections", "quotations", "jobs",
-  "invoices", "team", "settings", "account",
+  "quick-repairs", "invoices", "team", "settings", "account",
 ];
 
 const TENANT_AUTH_ACTIONS = [
@@ -180,6 +182,8 @@ function AppRouter() {
           <Route path="/inspections"     component={InspectionsPage} />
           <Route path="/jobs/:id">{() => <JobDetailPage />}</Route>
           <Route path="/jobs"    component={JobsPage} />
+          <Route path="/quick-repairs/:id">{() => <QuickRepairDetailPage />}</Route>
+          <Route path="/quick-repairs" component={QuickRepairsPage} />
           <Route path="/invoices/:id" component={InvoiceDetailPage} />
           <Route path="/invoices"    component={InvoicesPage} />
           {/* Team — top-level section */}
