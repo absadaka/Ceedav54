@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomBytes, scryptSync, scrypt, timingSafeEqual } from "crypto";
 import {
   db, tenantsTable, usersTable, auditLogsTable, featureFlagsTable,
   clientsTable, vehiclesTable, bookingsTable, jobsTable, invoicesTable,
@@ -8,6 +9,27 @@ import {
 } from "drizzle-orm";
 
 const router = Router();
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password: string, stored: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const [salt, hash] = stored.split(":");
+      if (!salt || !hash) return resolve(false);
+      scrypt(password, salt, 64, (err, derived) => {
+        if (err) return resolve(false);
+        try {
+          resolve(timingSafeEqual(Buffer.from(hash, "hex"), derived));
+        } catch { resolve(false); }
+      });
+    } catch { resolve(false); }
+  });
+}
 
 /* ─────────────────────────────────────────────────────────────────────────
    HELPERS
@@ -426,6 +448,166 @@ router.get("/admin/impersonation-log", async (_req, res) => {
       tenant: r.tenant_id ? tenantMap.get(r.tenant_id) : null,
     })),
   });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   POST /admin/auth/login
+   Body: { email, password }
+   Admin console login — only platform_admin users
+───────────────────────────────────────────────────────────────────────── */
+router.post("/admin/auth/login", async (req, res) => {
+  const { email, password } = req.body as { email?: string; password?: string };
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required." });
+  }
+
+  const user = await db
+    .select({
+      id:            usersTable.id,
+      name:          usersTable.name,
+      email:         usersTable.email,
+      role:          usersTable.role,
+      is_active:     usersTable.is_active,
+      password_hash: usersTable.password_hash,
+    })
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.email, email.toLowerCase().trim()),
+        eq(usersTable.role, "platform_admin"),
+        isNull(usersTable.deleted_at),
+      )
+    )
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  if (!user) {
+    return res.status(401).json({ error: "Incorrect email or password." });
+  }
+
+  if (!user.is_active) {
+    return res.status(403).json({ error: "Account deactivated." });
+  }
+
+  if (!user.password_hash) {
+    return res.json({ mustSetPassword: true, userId: user.id, email: user.email });
+  }
+
+  const valid = await verifyPassword(password, user.password_hash);
+  if (!valid) {
+    return res.status(401).json({ error: "Incorrect email or password." });
+  }
+
+  await db.update(usersTable).set({ last_login_at: new Date() }).where(eq(usersTable.id, user.id));
+
+  return res.json({
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   POST /admin/auth/set-password
+   Body: { userId, email, password }
+   First-time password set for admin users who have no password yet
+───────────────────────────────────────────────────────────────────────── */
+router.post("/admin/auth/set-password", async (req, res) => {
+  const { userId, email, password } = req.body as { userId?: string; email?: string; password?: string };
+  if (!userId || !email || !password) {
+    return res.status(400).json({ error: "userId, email, and password are required." });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters." });
+  }
+
+  const user = await db
+    .select({ id: usersTable.id, password_hash: usersTable.password_hash, role: usersTable.role })
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.id, userId),
+        eq(usersTable.email, email.toLowerCase().trim()),
+        eq(usersTable.role, "platform_admin"),
+        isNull(usersTable.deleted_at),
+      )
+    )
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  if (!user) {
+    return res.status(404).json({ error: "Admin user not found." });
+  }
+
+  if (user.password_hash) {
+    return res.status(400).json({ error: "Password already set. Use login instead." });
+  }
+
+  const hashed = hashPassword(password);
+  await db.update(usersTable).set({ password_hash: hashed, last_login_at: new Date() }).where(eq(usersTable.id, user.id));
+
+  return res.json({
+    user: { id: user.id, email: email.toLowerCase().trim(), role: user.role },
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   GET /admin/auth/me
+   Header: X-Admin-Id
+───────────────────────────────────────────────────────────────────────── */
+router.get("/admin/auth/me", async (req, res) => {
+  const userId = req.headers["x-admin-id"] as string | undefined;
+  if (!userId) return res.status(401).json({ error: "Not authenticated." });
+
+  const user = await db
+    .select({
+      id:        usersTable.id,
+      name:      usersTable.name,
+      email:     usersTable.email,
+      role:      usersTable.role,
+      is_active: usersTable.is_active,
+    })
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.id, userId),
+        eq(usersTable.role, "platform_admin"),
+        isNull(usersTable.deleted_at),
+      )
+    )
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  if (!user || !user.is_active) {
+    return res.status(401).json({ error: "Session expired." });
+  }
+
+  return res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   POST /admin/seed-super-admin  (idempotent — creates if not exists)
+───────────────────────────────────────────────────────────────────────── */
+router.post("/admin/seed-super-admin", async (_req, res) => {
+  const SUPER_EMAIL = "ab.sadaqa@gmail.com";
+
+  const existing = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.email, SUPER_EMAIL))
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  if (existing) {
+    return res.json({ message: "Super admin already exists.", id: existing.id });
+  }
+
+  const [created] = await db.insert(usersTable).values({
+    email:     SUPER_EMAIL,
+    name:      "Platform Admin",
+    role:      "platform_admin",
+    is_active: true,
+  }).returning({ id: usersTable.id });
+
+  return res.json({ message: "Super admin created. Must set password on first login.", id: created.id });
 });
 
 export default router;

@@ -1,7 +1,8 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AdminAuthProvider, useAdminAuth } from "@/hooks/useAdminAuth";
 
 import AdminLayout from "@/layouts/AdminLayout";
 import LoginPage from "@/pages/LoginPage";
@@ -22,6 +23,23 @@ const queryClient = new QueryClient({
 });
 
 function ProtectedRouter() {
+  const { user, loading } = useAdminAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Redirect to="/auth" />;
+  }
+
   return (
     <AdminLayout>
       <Switch>
@@ -40,10 +58,18 @@ function ProtectedRouter() {
   );
 }
 
+function AuthRouter() {
+  const { user, loading } = useAdminAuth();
+
+  if (loading) return null;
+  if (user) return <Redirect to="/" />;
+  return <LoginPage />;
+}
+
 function AppRouter() {
   return (
     <Switch>
-      <Route path="/auth" component={LoginPage} />
+      <Route path="/auth" component={AuthRouter} />
       <Route>{() => <ProtectedRouter />}</Route>
     </Switch>
   );
@@ -53,10 +79,12 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AppRouter />
-        </WouterRouter>
-        <Toaster position="bottom-right" richColors />
+        <AdminAuthProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AppRouter />
+          </WouterRouter>
+          <Toaster position="bottom-right" richColors />
+        </AdminAuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

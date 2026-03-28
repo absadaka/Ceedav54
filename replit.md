@@ -58,8 +58,11 @@ ceeda/
 | `legacy-tenant-app` | `/dashboard`, `/clients`, `/bookings`, etc. | `TenantLayout` (no slug prefix) |
 
 ### admin-console
-- Login: `/auth`
-- Protected admin routes (in `AdminLayout`): `/dashboard`, `/tenants`, `/billing`, `/flags`, `/impersonate`
+- Login: `/auth` — email + password form, first-time login redirects to set-password page
+- Auth context: `src/hooks/useAdminAuth.tsx` — `AdminAuthProvider` wrapping the app, stores session in localStorage
+- Protected admin routes (in `AdminLayout`): `/dashboard`, `/tenants`, `/billing`, `/flags`, `/impersonate`, `/tickets`, `/health`
+- Auth guard: `App.tsx` `ProtectedRouter` checks `useAdminAuth().user`, redirects to `/auth` if not logged in
+- Logout: via user dropdown in `AdminLayout` top bar
 
 ## Auth Service Abstraction
 
