@@ -28,7 +28,7 @@ export default function LoginPage() {
 
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-          <p className="text-xs text-amber-700">This portal is restricted to ceeda> platform administrators.</p>
+          <p className="text-xs text-amber-700">This portal is restricted to ceeda{">"} platform administrators.</p>
         </div>
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-xs">
