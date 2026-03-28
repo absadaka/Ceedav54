@@ -6,6 +6,7 @@ import {
   Plus, ArrowRight, Clock, User, Car, Activity, RefreshCw,
 } from "lucide-react";
 import { getTenantSlug } from "@/lib/tenant";
+import { getSession } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -261,6 +262,8 @@ function DataTable({ cols, children }: { cols: string[]; children: React.ReactNo
 
 export default function DashboardPage() {
   const tenant = getTenantSlug();
+  const session = getSession();
+  const shopName = session?.tenantName;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { data, isLoading, error, refetch, isFetching } = useQuery<DashboardData>({
     queryKey: ["dashboard", tenant],
@@ -289,7 +292,7 @@ export default function DashboardPage() {
       {/* ── Header ────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="page-title">Dashboard</h1>
+          <h1 className="page-title">{shopName ?? "Dashboard"}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {greeting} — {new Date().toLocaleDateString("en-AE", { weekday: "long", day: "numeric", month: "long" })}
           </p>

@@ -333,7 +333,7 @@ function TopBar({
               {shopInitials}
             </AvatarFallback>
           </Avatar>
-          <span className="text-sm font-medium text-foreground hidden lg:block truncate max-w-[140px]">
+          <span className="text-sm font-medium text-foreground truncate max-w-[140px]">
             {shopName}
           </span>
         </div>
