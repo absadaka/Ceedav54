@@ -53,16 +53,6 @@ const SOURCES = [
   { value: "referral", label: "Referral" },
 ];
 
-const DURATIONS = [
-  { value: "30",  label: "30 minutes" },
-  { value: "60",  label: "1 hour" },
-  { value: "90",  label: "1.5 hours" },
-  { value: "120", label: "2 hours" },
-  { value: "180", label: "3 hours" },
-  { value: "240", label: "4 hours" },
-  { value: "480", label: "Full day (8 hrs)" },
-];
-
 export default function BookingDrawer({ open, onClose, booking }: Props) {
   const qc = useQueryClient();
   const isEdit = !!booking?.id;
@@ -73,7 +63,6 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   const [advisorId,   setAdvisorId]   = useState("");
   const [date,        setDate]        = useState("");
   const [time,        setTime]        = useState("09:00");
-  const [duration,    setDuration]    = useState("");
   const [source,      setSource]      = useState("phone");
   const [notes,       setNotes]       = useState("");
   const [mileageIn,   setMileageIn]   = useState("");
@@ -88,7 +77,6 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
       const dt = booking.scheduled_at ? new Date(booking.scheduled_at) : new Date();
       setDate(dt.toISOString().slice(0, 10));
       setTime(dt.toTimeString().slice(0, 5));
-      setDuration(booking.duration_min ? String(booking.duration_min) : "");
       setSource(booking.source ?? "phone");
       setNotes(booking.notes ?? "");
       setMileageIn(booking.mileage_in ?? "");
@@ -100,7 +88,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
       setDate(now.toISOString().slice(0, 10));
       setTime(now.toTimeString().slice(0, 5));
       setClientId(""); setVehicleId(""); setAdvisorId("");
-      setDuration(""); setSource("phone"); setNotes(""); setMileageIn("");
+      setSource("phone"); setNotes(""); setMileageIn("");
     }
   }, [booking, open]);
 
@@ -174,7 +162,7 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
         vehicle_id:   vehicleId  || null,
         advisor_id:   advisorId  || null,
         scheduled_at,
-        duration_min: duration ? Number(duration) : null,
+        duration_min: null,
         source,
         notes:        notes      || null,
         mileage_in:   mileageIn  || null,
@@ -282,30 +270,17 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
             </div>
           </div>
 
-          {/* Duration & Source */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Duration</Label>
-              <Select value={duration} onValueChange={setDuration}>
-                <SelectTrigger><SelectValue placeholder="Not set" /></SelectTrigger>
-                <SelectContent>
-                  {DURATIONS.map(d => (
-                    <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Source</Label>
-              <Select value={source} onValueChange={setSource}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {SOURCES.map(s => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Source */}
+          <div className="space-y-1.5">
+            <Label>Source</Label>
+            <Select value={source} onValueChange={setSource}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {SOURCES.map(s => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Customer */}
