@@ -55,7 +55,6 @@ function buildNav(tenantSlug?: string): {
       { label: "Customers",    href: `/customers${q}`,    icon: Users },
       { label: "Bookings",     href: `/bookings${q}`,     icon: CalendarCheck },
       { label: "Service Jobs", href: `/jobs${q}`,         icon: Wrench },
-      { label: "Inspections",  href: `/inspections${q}`,  icon: ClipboardCheck },
       { label: "Quotations",   href: `/quotations${q}`,   icon: FileText },
       { label: "Invoices",     href: `/invoices${q}`,     icon: Receipt },
     ],
