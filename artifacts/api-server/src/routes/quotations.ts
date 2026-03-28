@@ -8,7 +8,7 @@ import {
 } from "@workspace/db";
 import { quoteAdvancePaymentsTable } from "@workspace/db";
 import { syncDraftInvoicesForQuotation } from "./invoices.js";
-import { sendEmail, quotationEmailHtml } from "../services/email.js";
+import { sendEmail, quotationEmailHtml, generateQuoteActionToken, verifyQuoteActionToken, quoteActionResultHtml } from "../services/email.js";
 
 const router = Router();
 
@@ -168,6 +168,74 @@ router.get("/", async (req, res) => {
   } catch (e: any) {
     console.error("GET /quotations", e);
     res.status(500).json({ error: e.message });
+  }
+});
+
+/* ─── GET /quotations/email-action — approve/reject from email link ──────── */
+router.get("/email-action", async (req, res) => {
+  try {
+    const token = req.query.token as string;
+    const slug = (req.query.tenant as string) ?? "demo-workshop";
+    if (!token) return res.status(400).send("Missing token");
+
+    const parsed = verifyQuoteActionToken(token);
+    if (!parsed) return res.status(400).send("Invalid or expired link");
+
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).send("Tenant not found");
+
+    const [existing] = await db.select({ id: quotationsTable.id, ref: quotationsTable.ref, status: quotationsTable.status })
+      .from(quotationsTable)
+      .where(and(eq(quotationsTable.id, parsed.quotationId), eq(quotationsTable.tenant_id, tenant.id)))
+      .limit(1);
+
+    if (!existing) {
+      return res.send(quoteActionResultHtml(tenant.name ?? "Workshop", parsed.action, "Unknown", false, "Quotation not found."));
+    }
+
+    if (existing.status === "approved" || existing.status === "rejected") {
+      const alreadyMsg = existing.status === "approved"
+        ? `Quotation <strong>${existing.ref}</strong> has already been approved.`
+        : `Quotation <strong>${existing.ref}</strong> has already been rejected.`;
+      return res.send(quoteActionResultHtml(tenant.name ?? "Workshop", parsed.action, existing.ref, true, alreadyMsg));
+    }
+
+    const now = new Date();
+
+    if (parsed.action === "approve") {
+      await db.update(quotationsTable)
+        .set({ status: "approved", approved_at: now, updated_at: now })
+        .where(eq(quotationsTable.id, parsed.quotationId));
+    } else {
+      await db.update(quotationsTable)
+        .set({ status: "rejected", rejected_at: now, updated_at: now })
+        .where(eq(quotationsTable.id, parsed.quotationId));
+
+      const [job] = await db.select({ id: jobsTable.id, status: jobsTable.status })
+        .from(jobsTable)
+        .where(and(eq(jobsTable.quotation_id, parsed.quotationId), eq(jobsTable.tenant_id, tenant.id)))
+        .limit(1);
+
+      if (job) {
+        await db.update(jobsTable)
+          .set({ status: "cancelled", cancellation_note: "Quotation rejected by customer via email", updated_at: now })
+          .where(eq(jobsTable.id, job.id));
+
+        await db.insert(jobStatusHistoryTable).values({
+          job_id: job.id,
+          tenant_id: tenant.id,
+          from_status: job.status,
+          to_status: "cancelled",
+          note: "Quotation rejected by customer via email",
+          created_at: now,
+        });
+      }
+    }
+
+    res.send(quoteActionResultHtml(tenant.name ?? "Workshop", parsed.action, existing.ref, true));
+  } catch (e: any) {
+    console.error("GET /quotations/email-action", e);
+    res.status(500).send("Something went wrong. Please contact the workshop.");
   }
 });
 
@@ -825,6 +893,14 @@ router.post("/:id/send", async (req, res) => {
         if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
       }
 
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : (process.env.APP_URL ?? "https://ceeda.me");
+      const approveToken = generateQuoteActionToken(quotation.id, "approve");
+      const rejectToken = generateQuoteActionToken(quotation.id, "reject");
+      const approveUrl = `${baseUrl}/api/quotations/email-action?token=${approveToken}&tenant=${slug}`;
+      const rejectUrl = `${baseUrl}/api/quotations/email-action?token=${rejectToken}&tenant=${slug}`;
+
       const html = quotationEmailHtml({
         shopName: tenant.name ?? "Workshop",
         quoteRef: quotation.ref,
@@ -839,6 +915,8 @@ router.post("/:id/send", async (req, res) => {
         lineItems: lines,
         vehicleInfo,
         notes: quotation.notes,
+        approveUrl,
+        rejectUrl,
       });
       emailResult = await sendEmail({
         to: client.email,

@@ -1,6 +1,59 @@
 import { Resend } from "resend";
 import { db, tenantSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import crypto from "crypto";
+
+const TOKEN_SECRET = process.env.RESEND_API_KEY ?? "ceeda-fallback-secret";
+
+export function generateQuoteActionToken(quotationId: string, action: "approve" | "reject"): string {
+  const payload = `${quotationId}:${action}`;
+  const hmac = crypto.createHmac("sha256", TOKEN_SECRET).update(payload).digest("hex");
+  return Buffer.from(`${payload}:${hmac}`).toString("base64url");
+}
+
+export function verifyQuoteActionToken(token: string): { quotationId: string; action: "approve" | "reject" } | null {
+  try {
+    const decoded = Buffer.from(token, "base64url").toString("utf-8");
+    const parts = decoded.split(":");
+    if (parts.length !== 3) return null;
+    const [quotationId, action, hmac] = parts;
+    if (action !== "approve" && action !== "reject") return null;
+    const expected = crypto.createHmac("sha256", TOKEN_SECRET).update(`${quotationId}:${action}`).digest("hex");
+    if (hmac !== expected) return null;
+    return { quotationId, action };
+  } catch {
+    return null;
+  }
+}
+
+export function quoteActionResultHtml(shopName: string, action: "approve" | "reject", quoteRef: string, success: boolean, message?: string): string {
+  const icon = success
+    ? (action === "approve" ? "&#10004;" : "&#10006;")
+    : "&#9888;";
+  const iconColor = success
+    ? (action === "approve" ? "#16a34a" : "#dc2626")
+    : "#f59e0b";
+  const title = success
+    ? (action === "approve" ? "Quotation Approved" : "Quotation Rejected")
+    : "Action Failed";
+  const body = success
+    ? (action === "approve"
+        ? `You have approved quotation <strong>${quoteRef}</strong>. The workshop will proceed with the work.`
+        : `You have rejected quotation <strong>${quoteRef}</strong>. The workshop has been notified.`)
+    : (message ?? "Something went wrong. Please contact the workshop.");
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;">
+<div style="background:#fff;border-radius:16px;padding:48px;max-width:440px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <div style="font-size:56px;color:${iconColor};margin-bottom:16px;">${icon}</div>
+  <h1 style="margin:0 0 8px;font-size:22px;color:#0a0a0a;">${title}</h1>
+  <p style="margin:0 0 24px;font-size:15px;color:#71717a;line-height:1.6;">${body}</p>
+  <p style="margin:0;font-size:13px;color:#a1a1aa;">${shopName} via CEEDA</p>
+</div>
+</body></html>`;
+}
 
 let _resend: Resend | null = null;
 function getResend(): Resend | null {
@@ -134,7 +187,6 @@ function renderLineItemsTable(lines: LineItem[], currency: string): string {
       <td style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;color:#3f3f46;">${l.description}${l.type !== "labour" ? ` <span style="color:#a1a1aa;font-size:11px;">(${l.type})</span>` : ""}</td>
       <td align="center" style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;color:#3f3f46;">${parseFloat(l.qty)}</td>
       <td align="right" style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;color:#3f3f46;">${formatCurrency(l.unit_price, currency)}</td>
-      ${parseFloat(l.discount) > 0 ? `<td align="right" style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;color:#ef4444;">-${formatCurrency(l.discount, currency)}</td>` : `<td align="right" style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;color:#a1a1aa;">—</td>`}
       <td align="right" style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;font-weight:600;color:#0a0a0a;">${formatCurrency(l.line_total, currency)}</td>
     </tr>`).join("");
 
@@ -144,7 +196,6 @@ function renderLineItemsTable(lines: LineItem[], currency: string): string {
         <th align="left" style="padding:10px 12px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Description</th>
         <th align="center" style="padding:10px 12px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Qty</th>
         <th align="right" style="padding:10px 12px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Price</th>
-        <th align="right" style="padding:10px 12px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Disc.</th>
         <th align="right" style="padding:10px 12px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Total</th>
       </tr>
       ${rows}
@@ -237,7 +288,28 @@ export function quotationEmailHtml(opts: {
   lineItems?: LineItem[];
   vehicleInfo?: string;
   notes?: string | null;
+  approveUrl?: string;
+  rejectUrl?: string;
 }): string {
+  const actionButtons = (opts.approveUrl && opts.rejectUrl) ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
+      <tr>
+        <td align="center">
+          <p style="margin:0 0 16px;font-size:14px;color:#3f3f46;">Would you like to proceed with this quotation?</p>
+          <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+            <tr>
+              <td style="padding-right:12px;">
+                <a href="${opts.approveUrl}" style="display:inline-block;background:#16a34a;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;">Approve</a>
+              </td>
+              <td>
+                <a href="${opts.rejectUrl}" style="display:inline-block;background:#ffffff;color:#dc2626;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;border:1.5px solid #dc2626;">Reject</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>` : "";
+
   const content = `
     <h2 style="margin:0 0 8px;font-size:20px;color:#0a0a0a;">Quotation ${opts.quoteRef}</h2>
     <p style="margin:0 0 24px;color:#71717a;font-size:14px;">Hi ${opts.clientName},</p>
@@ -274,8 +346,9 @@ export function quotationEmailHtml(opts: {
       </td></tr>
     </table>
     ${opts.notes ? `<p style="margin:0 0 16px;font-size:13px;color:#71717a;font-style:italic;">Note: ${opts.notes}</p>` : ""}
-    <p style="margin:0;font-size:14px;color:#3f3f46;">
-      Please review and let us know if you'd like to proceed. We're happy to answer any questions.
+    ${actionButtons}
+    <p style="margin:${actionButtons ? "16px" : "0"} 0 0;font-size:13px;color:#a1a1aa;text-align:center;">
+      If you have any questions, please don't hesitate to reach out.
     </p>`;
   return baseTemplate(opts.shopName, content);
 }
