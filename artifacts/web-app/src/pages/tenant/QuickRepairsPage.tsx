@@ -11,6 +11,7 @@ import { Badge }    from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { statusClass, statusLabel } from "@/lib/status";
+import StatusTransitionModal from "@/components/StatusTransitionModal";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -78,19 +79,37 @@ function KanbanCard({ job, onClick }: { job: KanbanJob; onClick: () => void }) {
   );
 }
 
-function KanbanSkeletonCol() {
+function KanbanSkeletonCol({ wide }: { wide?: boolean }) {
   return (
     <div className="min-w-0">
       <div className="flex items-center justify-between mb-3">
         <Skeleton className="h-3.5 w-24" /><Skeleton className="h-4 w-5 rounded-full" />
       </div>
       <div className="space-y-2">
-        <div className="bg-background border border-border rounded-lg p-3 space-y-2.5">
-          <Skeleton className="h-3 w-full" /><Skeleton className="h-2.5 w-3/4" />
-          <div className="flex items-center justify-between pt-1">
-            <Skeleton className="h-5 w-14 rounded-full" /><Skeleton className="w-6 h-6 rounded-full" />
+        {Array.from({ length: wide ? 2 : 1 }).map((_, i) => (
+          <div key={i} className="bg-background border border-border rounded-lg p-3 space-y-2.5">
+            <Skeleton className="h-3 w-full" /><Skeleton className="h-2.5 w-3/4" />
+            <div className="flex items-center justify-between pt-1">
+              <Skeleton className="h-5 w-14 rounded-full" /><Skeleton className="w-6 h-6 rounded-full" />
+            </div>
           </div>
-        </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KanbanSkeleton() {
+  return (
+    <div className="space-y-6 pb-4">
+      <div className="grid grid-cols-2 gap-4">
+        <KanbanSkeletonCol wide />
+        <KanbanSkeletonCol />
+      </div>
+      <div className="border-t border-dashed border-border" />
+      <div className="grid grid-cols-2 gap-4">
+        <KanbanSkeletonCol />
+        <KanbanSkeletonCol />
       </div>
     </div>
   );
@@ -100,6 +119,7 @@ export default function QuickRepairsPage() {
   const [, navigate]    = useLocation();
   const [view, setView] = useState<"board" | "list">("board");
   const [q, setQ]       = useState("");
+  const [movingJob, setMovingJob]       = useState<KanbanJob | null>(null);
   const [expandedLane, setExpandedLane] = useState<typeof QR_STATUSES[number] | null>(null);
 
   const { data: kanbanData, isLoading: kanbanLoading } = useQuery<Record<string, KanbanJob[]>>({
@@ -121,6 +141,47 @@ export default function QuickRepairsPage() {
       [j.ref, j.client_name, j.plate_number, j.customer_concern].some(v => v?.toLowerCase().includes(lq));
     return Object.fromEntries(Object.entries(kanbanData).map(([k, v]) => [k, v.filter(fn)]));
   }, [kanbanData, q]);
+
+  const renderLane = (lane: typeof QR_STATUSES[number]) => {
+    const jobs: KanbanJob[] = filtered?.[lane.key] ?? [];
+    const visible = jobs.slice(0, 3);
+    const extra   = jobs.length - visible.length;
+    return (
+      <div key={lane.key} className="min-w-0">
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => setExpandedLane(lane)}
+            className="text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
+          >
+            {lane.label}
+          </button>
+          <span className={cn(
+            "text-[10px] font-semibold rounded-full px-1.5 py-0.5 border cursor-pointer",
+            jobs.length > 0 ? lane.color : "bg-muted text-muted-foreground border-border",
+          )} onClick={() => jobs.length > 0 && setExpandedLane(lane)}>{jobs.length}</span>
+        </div>
+        <div className={cn(
+          "min-h-[80px] space-y-2 rounded-lg p-1",
+          jobs.length === 0 && "border border-dashed border-border flex items-center justify-center",
+        )}>
+          {jobs.length === 0
+            ? <p className="text-xs text-muted-foreground/40 py-4">No repairs</p>
+            : visible.map(job => <KanbanCard key={job.id} job={job} onClick={() => navigate(`/quick-repairs/${job.id}`)} />)}
+        </div>
+        {extra > 0 && (
+          <button
+            onClick={() => setExpandedLane(lane)}
+            className="mt-2 w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+          >
+            +{extra} more
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const row1 = QR_STATUSES.slice(0, 2);
+  const row2 = QR_STATUSES.slice(2);
 
   return (
     <div className="space-y-5">
@@ -147,49 +208,11 @@ export default function QuickRepairsPage() {
       </div>
 
       {view === "board" && (
-        kanbanLoading ? (
-          <div className="grid grid-cols-4 gap-4">
-            {QR_STATUSES.map(s => <KanbanSkeletonCol key={s.key} />)}
-          </div>
-        ) : (
-          <div className="grid grid-cols-4 gap-4 pb-6">
-            {QR_STATUSES.map(lane => {
-              const jobs: KanbanJob[] = filtered?.[lane.key] ?? [];
-              const visible = jobs.slice(0, 5);
-              const extra   = jobs.length - visible.length;
-              return (
-                <div key={lane.key} className="min-w-0">
-                  <div className="flex items-center justify-between mb-3">
-                    <button
-                      onClick={() => setExpandedLane(lane)}
-                      className="text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
-                    >
-                      {lane.label}
-                    </button>
-                    <span className={cn(
-                      "text-[10px] font-semibold rounded-full px-1.5 py-0.5 border cursor-pointer",
-                      jobs.length > 0 ? lane.color : "bg-muted text-muted-foreground border-border",
-                    )} onClick={() => jobs.length > 0 && setExpandedLane(lane)}>{jobs.length}</span>
-                  </div>
-                  <div className={cn(
-                    "min-h-[80px] space-y-2 rounded-lg p-1",
-                    jobs.length === 0 && "border border-dashed border-border flex items-center justify-center",
-                  )}>
-                    {jobs.length === 0
-                      ? <p className="text-xs text-muted-foreground/40 py-4">No repairs</p>
-                      : visible.map(job => <KanbanCard key={job.id} job={job} onClick={() => navigate(`/quick-repairs/${job.id}`)} />)}
-                  </div>
-                  {extra > 0 && (
-                    <button
-                      onClick={() => setExpandedLane(lane)}
-                      className="mt-2 w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
-                    >
-                      +{extra} more
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+        kanbanLoading ? <KanbanSkeleton /> : (
+          <div className="space-y-6 pb-6">
+            <div className="grid grid-cols-2 gap-4">{row1.map(renderLane)}</div>
+            <div className="border-t border-dashed border-border" />
+            <div className="grid grid-cols-2 gap-4">{row2.map(renderLane)}</div>
           </div>
         )
       )}
@@ -286,6 +309,15 @@ export default function QuickRepairsPage() {
         </div>
       )}
 
+      {movingJob && (
+        <StatusTransitionModal
+          open={!!movingJob}
+          onOpenChange={o => { if (!o) setMovingJob(null); }}
+          jobId={movingJob.id}
+          jobRef={movingJob.ref}
+          currentStatus={movingJob.status}
+        />
+      )}
     </div>
   );
 }
