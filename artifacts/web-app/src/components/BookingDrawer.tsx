@@ -60,12 +60,10 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
   const [bookingType, setBookingType] = useState<"quick_repair" | "service_job" | "">("");
   const [clientId,    setClientId]    = useState("");
   const [vehicleId,   setVehicleId]   = useState("");
-  const [advisorId,   setAdvisorId]   = useState("");
   const [date,        setDate]        = useState("");
   const [time,        setTime]        = useState("09:00");
   const [source,      setSource]      = useState("phone");
   const [notes,       setNotes]       = useState("");
-  const [mileageIn,   setMileageIn]   = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -73,13 +71,11 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
       setBookingType((booking.booking_type === "quick_repair" || booking.booking_type === "service_job") ? booking.booking_type : booking.booking_type === "inspection" ? "quick_repair" : "");
       setClientId(booking.client_id ?? "");
       setVehicleId(booking.vehicle_id ?? "");
-      setAdvisorId(booking.advisor_id ?? "");
       const dt = booking.scheduled_at ? new Date(booking.scheduled_at) : new Date();
       setDate(dt.toISOString().slice(0, 10));
       setTime(dt.toTimeString().slice(0, 5));
       setSource(booking.source ?? "phone");
       setNotes(booking.notes ?? "");
-      setMileageIn(booking.mileage_in ?? "");
     } else {
       setBookingType("");
       const now = new Date();
@@ -87,8 +83,8 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
       now.setHours(now.getHours() + 1);
       setDate(now.toISOString().slice(0, 10));
       setTime(now.toTimeString().slice(0, 5));
-      setClientId(""); setVehicleId(""); setAdvisorId("");
-      setSource("phone"); setNotes(""); setMileageIn("");
+      setClientId(""); setVehicleId("");
+      setSource("phone"); setNotes("");
     }
   }, [booking, open]);
 
@@ -112,13 +108,6 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
     enabled: open && !!clientId,
   });
 
-  const { data: advisorsRaw = [] } = useQuery({
-    queryKey: ["booking-advisors", TENANT],
-    queryFn: () =>
-      fetch(`${API}/api/bookings/meta/advisors?tenant=${TENANT}`).then(r => r.json()),
-    enabled: open,
-  });
-
   /* ── Normalise to SelectOption[] ────────────────────────────────────── */
 
   const clientOptions: SelectOption[] = useMemo(
@@ -137,14 +126,6 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
     [vehiclesRaw],
   );
 
-  const advisorOptions: SelectOption[] = useMemo(
-    () => (Array.isArray(advisorsRaw) ? advisorsRaw as any[] : []).map((a: any) => ({
-      value: a.id,
-      label: `${a.name} (${a.role})`,
-    })),
-    [advisorsRaw],
-  );
-
   /* ── Handlers ───────────────────────────────────────────────────────── */
 
   function handleClientChange(id: string) {
@@ -160,12 +141,12 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
       const body = {
         client_id:    clientId   || null,
         vehicle_id:   vehicleId  || null,
-        advisor_id:   advisorId  || null,
+        advisor_id:   null,
         scheduled_at,
         duration_min: null,
         source,
         notes:        notes      || null,
-        mileage_in:   mileageIn  || null,
+        mileage_in:   null,
         booking_type: bookingType || null,
       };
       const url    = isEdit
@@ -316,29 +297,6 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
               }
               searchPlaceholder="Search by plate or model…"
               disabled={!clientId}
-            />
-          </div>
-
-          {/* Advisor */}
-          <div className="space-y-1.5">
-            <Label>Assigned advisor</Label>
-            <SearchableSelect
-              value={advisorId}
-              onValueChange={setAdvisorId}
-              options={advisorOptions}
-              placeholder="Unassigned"
-              searchPlaceholder="Search advisor…"
-            />
-          </div>
-
-          {/* Mileage */}
-          <div className="space-y-1.5">
-            <Label>Mileage in (km)</Label>
-            <Input
-              type="number"
-              placeholder="e.g. 45230"
-              value={mileageIn}
-              onChange={e => setMileageIn(e.target.value)}
             />
           </div>
 
