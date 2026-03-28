@@ -813,6 +813,18 @@ router.post("/:id/send", async (req, res) => {
 
     let emailResult = null;
     if (client?.email) {
+      const lines = (await db.execute(sql`
+        SELECT description, type, qty::text, unit_price::text, discount::text, line_total::text
+        FROM quote_line_items WHERE quotation_id = ${quotation.id} ORDER BY sort_order
+      `)).rows as { description: string; type: string; qty: string; unit_price: string; discount: string; line_total: string }[];
+
+      let vehicleInfo: string | undefined;
+      if (quotation.vehicle_id) {
+        const [v] = await db.select({ make: vehiclesTable.make, model: vehiclesTable.model, plate: vehiclesTable.plate })
+          .from(vehiclesTable).where(eq(vehiclesTable.id, quotation.vehicle_id)).limit(1);
+        if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
+      }
+
       const html = quotationEmailHtml({
         shopName: tenant.name ?? "Workshop",
         quoteRef: quotation.ref,
@@ -820,6 +832,13 @@ router.post("/:id/send", async (req, res) => {
         total: quotation.total ?? "0",
         currency: tenant.currency ?? "AED",
         expiresAt: quotation.expires_at?.toISOString() ?? null,
+        subtotal: quotation.subtotal ?? undefined,
+        discount: quotation.discount ?? undefined,
+        taxRate: quotation.tax_rate ?? undefined,
+        taxAmount: quotation.tax_amount ?? undefined,
+        lineItems: lines,
+        vehicleInfo,
+        notes: quotation.notes,
       });
       emailResult = await sendEmail({
         to: client.email,

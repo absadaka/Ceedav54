@@ -383,7 +383,7 @@ router.post("/:id/status", async (req, res) => {
       if (client?.email) {
         let vehicleInfo: string | undefined;
         if (booking.vehicle_id) {
-          const [v] = await db.select({ make: vehiclesTable.make, model: vehiclesTable.model, plate: vehiclesTable.plate_number })
+          const [v] = await db.select({ make: vehiclesTable.make, model: vehiclesTable.model, plate: vehiclesTable.plate })
             .from(vehiclesTable).where(eq(vehiclesTable.id, booking.vehicle_id)).limit(1);
           if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
         }

@@ -118,6 +118,54 @@ function baseTemplate(shopName: string, content: string): string {
 </body></html>`;
 }
 
+interface LineItem {
+  description: string;
+  type: string;
+  qty: string;
+  unit_price: string;
+  discount: string;
+  line_total: string;
+}
+
+function renderLineItemsTable(lines: LineItem[], currency: string): string {
+  if (!lines.length) return "";
+  const rows = lines.map(l => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;color:#3f3f46;">${l.description}${l.type !== "labour" ? ` <span style="color:#a1a1aa;font-size:11px;">(${l.type})</span>` : ""}</td>
+      <td align="center" style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;color:#3f3f46;">${parseFloat(l.qty)}</td>
+      <td align="right" style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;color:#3f3f46;">${formatCurrency(l.unit_price, currency)}</td>
+      ${parseFloat(l.discount) > 0 ? `<td align="right" style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;color:#ef4444;">-${formatCurrency(l.discount, currency)}</td>` : `<td align="right" style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;color:#a1a1aa;">—</td>`}
+      <td align="right" style="padding:8px 12px;border-bottom:1px solid #e4e4e7;font-size:13px;font-weight:600;color:#0a0a0a;">${formatCurrency(l.line_total, currency)}</td>
+    </tr>`).join("");
+
+  return `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;border:1px solid #e4e4e7;border-radius:8px;overflow:hidden;">
+      <tr style="background:#f4f4f5;">
+        <th align="left" style="padding:10px 12px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Description</th>
+        <th align="center" style="padding:10px 12px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Qty</th>
+        <th align="right" style="padding:10px 12px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Price</th>
+        <th align="right" style="padding:10px 12px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Disc.</th>
+        <th align="right" style="padding:10px 12px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Total</th>
+      </tr>
+      ${rows}
+    </table>`;
+}
+
+function renderSummaryRows(opts: { subtotal?: string; discount?: string; taxRate?: string; taxAmount?: string; total: string; currency: string }): string {
+  const rows: string[] = [];
+  if (opts.subtotal && parseFloat(opts.subtotal) > 0) {
+    rows.push(`<tr><td style="font-size:13px;color:#71717a;padding:4px 0;">Subtotal</td><td align="right" style="font-size:13px;color:#3f3f46;padding:4px 0;">${formatCurrency(opts.subtotal, opts.currency)}</td></tr>`);
+  }
+  if (opts.discount && parseFloat(opts.discount) > 0) {
+    rows.push(`<tr><td style="font-size:13px;color:#71717a;padding:4px 0;">Discount</td><td align="right" style="font-size:13px;color:#ef4444;padding:4px 0;">-${formatCurrency(opts.discount, opts.currency)}</td></tr>`);
+  }
+  if (opts.taxAmount && parseFloat(opts.taxAmount) > 0) {
+    rows.push(`<tr><td style="font-size:13px;color:#71717a;padding:4px 0;">VAT (${opts.taxRate ?? "5"}%)</td><td align="right" style="font-size:13px;color:#3f3f46;padding:4px 0;">${formatCurrency(opts.taxAmount, opts.currency)}</td></tr>`);
+  }
+  rows.push(`<tr><td style="font-size:14px;font-weight:700;color:#0a0a0a;padding:8px 0 4px;border-top:2px solid #e4e4e7;">Total</td><td align="right" style="font-size:14px;font-weight:700;color:#0a0a0a;padding:8px 0 4px;border-top:2px solid #e4e4e7;">${formatCurrency(opts.total, opts.currency)}</td></tr>`);
+  return rows.join("");
+}
+
 export function invoiceEmailHtml(opts: {
   shopName: string;
   invoiceRef: string;
@@ -125,6 +173,13 @@ export function invoiceEmailHtml(opts: {
   total: string;
   currency: string;
   dueDate?: string | null;
+  subtotal?: string;
+  discount?: string;
+  taxRate?: string;
+  taxAmount?: string;
+  lineItems?: LineItem[];
+  vehicleInfo?: string;
+  notes?: string | null;
 }): string {
   const content = `
     <h2 style="margin:0 0 8px;font-size:20px;color:#0a0a0a;">Invoice ${opts.invoiceRef}</h2>
@@ -132,7 +187,7 @@ export function invoiceEmailHtml(opts: {
     <p style="margin:0 0 16px;font-size:14px;color:#3f3f46;">
       Please find your invoice details below:
     </p>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
       <tr>
         <td style="padding:12px 16px;background:#f4f4f5;border-radius:8px;">
           <table width="100%" cellpadding="0" cellspacing="0">
@@ -140,18 +195,28 @@ export function invoiceEmailHtml(opts: {
               <td style="font-size:13px;color:#71717a;padding:4px 0;">Invoice No.</td>
               <td align="right" style="font-size:13px;font-weight:600;color:#0a0a0a;padding:4px 0;">${opts.invoiceRef}</td>
             </tr>
-            <tr>
-              <td style="font-size:13px;color:#71717a;padding:4px 0;">Total Amount</td>
-              <td align="right" style="font-size:13px;font-weight:600;color:#0a0a0a;padding:4px 0;">${formatCurrency(opts.total, opts.currency)}</td>
-            </tr>
             ${opts.dueDate ? `<tr>
               <td style="font-size:13px;color:#71717a;padding:4px 0;">Due Date</td>
               <td align="right" style="font-size:13px;font-weight:600;color:#0a0a0a;padding:4px 0;">${formatDate(opts.dueDate)}</td>
+            </tr>` : ""}
+            ${opts.vehicleInfo ? `<tr>
+              <td style="font-size:13px;color:#71717a;padding:4px 0;">Vehicle</td>
+              <td align="right" style="font-size:13px;font-weight:600;color:#0a0a0a;padding:4px 0;">${opts.vehicleInfo}</td>
             </tr>` : ""}
           </table>
         </td>
       </tr>
     </table>
+    ${opts.lineItems?.length ? `<h3 style="margin:0 0 12px;font-size:15px;color:#0a0a0a;">Items</h3>` : ""}
+    ${renderLineItemsTable(opts.lineItems ?? [], opts.currency)}
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+      <tr><td style="padding:12px 16px;background:#f4f4f5;border-radius:8px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          ${renderSummaryRows({ subtotal: opts.subtotal, discount: opts.discount, taxRate: opts.taxRate, taxAmount: opts.taxAmount, total: opts.total, currency: opts.currency })}
+        </table>
+      </td></tr>
+    </table>
+    ${opts.notes ? `<p style="margin:0 0 16px;font-size:13px;color:#71717a;font-style:italic;">Note: ${opts.notes}</p>` : ""}
     <p style="margin:0;font-size:14px;color:#3f3f46;">
       If you have any questions, please don't hesitate to reach out.
     </p>`;
@@ -165,6 +230,13 @@ export function quotationEmailHtml(opts: {
   total: string;
   currency: string;
   expiresAt?: string | null;
+  subtotal?: string;
+  discount?: string;
+  taxRate?: string;
+  taxAmount?: string;
+  lineItems?: LineItem[];
+  vehicleInfo?: string;
+  notes?: string | null;
 }): string {
   const content = `
     <h2 style="margin:0 0 8px;font-size:20px;color:#0a0a0a;">Quotation ${opts.quoteRef}</h2>
@@ -172,7 +244,7 @@ export function quotationEmailHtml(opts: {
     <p style="margin:0 0 16px;font-size:14px;color:#3f3f46;">
       We've prepared a quotation for you. Here are the details:
     </p>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
       <tr>
         <td style="padding:12px 16px;background:#f4f4f5;border-radius:8px;">
           <table width="100%" cellpadding="0" cellspacing="0">
@@ -180,18 +252,28 @@ export function quotationEmailHtml(opts: {
               <td style="font-size:13px;color:#71717a;padding:4px 0;">Quote No.</td>
               <td align="right" style="font-size:13px;font-weight:600;color:#0a0a0a;padding:4px 0;">${opts.quoteRef}</td>
             </tr>
-            <tr>
-              <td style="font-size:13px;color:#71717a;padding:4px 0;">Total Amount</td>
-              <td align="right" style="font-size:13px;font-weight:600;color:#0a0a0a;padding:4px 0;">${formatCurrency(opts.total, opts.currency)}</td>
-            </tr>
             ${opts.expiresAt ? `<tr>
               <td style="font-size:13px;color:#71717a;padding:4px 0;">Valid Until</td>
               <td align="right" style="font-size:13px;font-weight:600;color:#0a0a0a;padding:4px 0;">${formatDate(opts.expiresAt)}</td>
+            </tr>` : ""}
+            ${opts.vehicleInfo ? `<tr>
+              <td style="font-size:13px;color:#71717a;padding:4px 0;">Vehicle</td>
+              <td align="right" style="font-size:13px;font-weight:600;color:#0a0a0a;padding:4px 0;">${opts.vehicleInfo}</td>
             </tr>` : ""}
           </table>
         </td>
       </tr>
     </table>
+    ${opts.lineItems?.length ? `<h3 style="margin:0 0 12px;font-size:15px;color:#0a0a0a;">Items</h3>` : ""}
+    ${renderLineItemsTable(opts.lineItems ?? [], opts.currency)}
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+      <tr><td style="padding:12px 16px;background:#f4f4f5;border-radius:8px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          ${renderSummaryRows({ subtotal: opts.subtotal, discount: opts.discount, taxRate: opts.taxRate, taxAmount: opts.taxAmount, total: opts.total, currency: opts.currency })}
+        </table>
+      </td></tr>
+    </table>
+    ${opts.notes ? `<p style="margin:0 0 16px;font-size:13px;color:#71717a;font-style:italic;">Note: ${opts.notes}</p>` : ""}
     <p style="margin:0;font-size:14px;color:#3f3f46;">
       Please review and let us know if you'd like to proceed. We're happy to answer any questions.
     </p>`;
