@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, CreditCard, Flag, UserSearch,
   ChevronLeft, ChevronRight, Bell, LogOut, ChevronDown,
   AlertTriangle, Activity, LifeBuoy, Sun, Moon,
   Package, Tag, FileText, AlertCircle, Shield, Puzzle,
-  BarChart3, UserMinus,
+  BarChart3, UserMinus, X, Receipt,
 } from "lucide-react";
 
 function useSidebarTheme() {
@@ -39,6 +39,17 @@ interface NavSection {
   items: NavItem[];
 }
 
+const subscriptionItems: NavItem[] = [
+  { label: "Plans",            href: "/subscriptions/plans",       icon: Package },
+  { label: "Coupons",          href: "/subscriptions/coupons",     icon: Tag },
+  { label: "Invoices",         href: "/subscriptions/invoices",    icon: FileText },
+  { label: "Failed Payments",  href: "/subscriptions/failed",     icon: AlertCircle },
+  { label: "Plan Override",    href: "/subscriptions/override",   icon: Shield },
+  { label: "Add-Ons",          href: "/subscriptions/addons",     icon: Puzzle },
+  { label: "Revenue",          href: "/subscriptions/revenue",    icon: BarChart3 },
+  { label: "Churn & Renewals", href: "/subscriptions/churn",      icon: UserMinus },
+];
+
 const adminSections: NavSection[] = [
   {
     items: [
@@ -46,19 +57,6 @@ const adminSections: NavSection[] = [
       { label: "Tenants",       href: "/tenants",     icon: Building2 },
       { label: "Billing",       href: "/billing",     icon: CreditCard },
       { label: "Feature Flags", href: "/flags",       icon: Flag },
-    ],
-  },
-  {
-    title: "Subscriptions",
-    items: [
-      { label: "Plans",            href: "/subscriptions/plans",       icon: Package },
-      { label: "Coupons",          href: "/subscriptions/coupons",     icon: Tag },
-      { label: "Invoices",         href: "/subscriptions/invoices",    icon: FileText },
-      { label: "Failed Payments",  href: "/subscriptions/failed",     icon: AlertCircle },
-      { label: "Plan Override",    href: "/subscriptions/override",   icon: Shield },
-      { label: "Add-Ons",          href: "/subscriptions/addons",     icon: Puzzle },
-      { label: "Revenue",          href: "/subscriptions/revenue",    icon: BarChart3 },
-      { label: "Churn & Renewals", href: "/subscriptions/churn",      icon: UserMinus },
     ],
   },
   {
@@ -96,68 +94,121 @@ function SidebarLink({ item, collapsed, active }: {
 
 function AdminSidebar({ collapsed, onToggle, light }: { collapsed: boolean; onToggle: () => void; light: boolean }) {
   const [location] = useLocation();
+  const isSubActive = location.startsWith("/subscriptions");
+  const [subOpen, setSubOpen] = useState(isSubActive);
   const isActive = (href: string) => location === href || (href !== "/dashboard" && location.startsWith(href));
 
+  useEffect(() => {
+    if (isSubActive) setSubOpen(true);
+  }, [isSubActive]);
+
   return (
-    <aside
-      className={cn(
-        "flex flex-col h-full bg-sidebar border-r border-sidebar-border transition-all duration-200 shrink-0",
-        collapsed ? "w-14" : "w-60",
-        light && "sidebar-light",
-      )}
-    >
-      {/* Logo */}
-      <div className={cn(
-        "flex items-center h-[72px] px-4 border-b border-sidebar-border gap-2.5",
-        collapsed && "justify-center px-2",
-      )}>
-        {collapsed ? (
-          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 26, fontWeight: 700, lineHeight: 1, color: light ? "#0a0a0a" : "#ffffff" }}>c&gt;</span>
-        ) : (
-          <div className="flex flex-col min-w-0">
-            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 32, fontWeight: 700, lineHeight: 1, color: light ? "#0a0a0a" : "#ffffff" }}>ceeda&gt;</span>
-            <span className="text-[10px] text-sidebar-foreground/60 leading-tight mt-0.5">Platform Admin</span>
-          </div>
+    <div className="flex h-full shrink-0">
+      <aside
+        className={cn(
+          "flex flex-col h-full bg-sidebar border-r border-sidebar-border transition-all duration-200 shrink-0 z-20",
+          collapsed ? "w-14" : "w-60",
+          light && "sidebar-light",
         )}
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-6 px-2 space-y-4">
-        {adminSections.map((section, idx) => (
-          <div key={idx} className="space-y-0.5">
-            {section.title && !collapsed && (
-              <p className="text-[10px] font-semibold text-sidebar-foreground/40 uppercase tracking-wider px-3 py-1">
-                {section.title}
-              </p>
-            )}
-            {section.items.map((item) => (
-              <SidebarLink
-                key={item.href}
-                item={item}
-                collapsed={collapsed}
-                active={isActive(item.href)}
-              />
-            ))}
-          </div>
-        ))}
-      </nav>
-
-      {/* Collapse toggle */}
-      <div className={cn("p-2 border-t border-sidebar-border", collapsed && "flex justify-center")}>
-        <button
-          onClick={onToggle}
-          className="w-full flex items-center justify-center gap-2 h-8 rounded-md text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors text-xs"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : (
-            <>
-              <ChevronLeft className="w-4 h-4" />
-              <span>Collapse</span>
-            </>
+      >
+        <div className={cn(
+          "flex items-center h-[72px] px-4 border-b border-sidebar-border gap-2.5",
+          collapsed && "justify-center px-2",
+        )}>
+          {collapsed ? (
+            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 26, fontWeight: 700, lineHeight: 1, color: light ? "#0a0a0a" : "#ffffff" }}>c&gt;</span>
+          ) : (
+            <div className="flex flex-col min-w-0">
+              <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 32, fontWeight: 700, lineHeight: 1, color: light ? "#0a0a0a" : "#ffffff" }}>ceeda&gt;</span>
+              <span className="text-[10px] text-sidebar-foreground/60 leading-tight mt-0.5">Platform Admin</span>
+            </div>
           )}
-        </button>
-      </div>
-    </aside>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto py-6 px-2 space-y-4">
+          {adminSections.map((section, idx) => (
+            <div key={idx} className="space-y-0.5">
+              {section.title && !collapsed && (
+                <p className="text-[10px] font-semibold text-sidebar-foreground/40 uppercase tracking-wider px-3 py-1">
+                  {section.title}
+                </p>
+              )}
+              {idx === 0 && (
+                <>
+                  {section.items.map((item) => (
+                    <SidebarLink key={item.href} item={item} collapsed={collapsed} active={isActive(item.href)} />
+                  ))}
+                  <button
+                    onClick={() => setSubOpen(!subOpen)}
+                    aria-expanded={subOpen}
+                    aria-controls="subscriptions-panel"
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer select-none",
+                      collapsed ? "justify-center px-2" : "",
+                      isSubActive || subOpen
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    )}
+                    title={collapsed ? "Subscriptions" : undefined}
+                  >
+                    <Receipt className={cn("shrink-0", collapsed ? "w-5 h-5" : "w-4 h-4")} />
+                    {!collapsed && (
+                      <>
+                        <span className="truncate flex-1 text-left">Subscriptions</span>
+                        <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", subOpen && "rotate-90")} />
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+              {idx !== 0 && section.items.map((item) => (
+                <SidebarLink key={item.href} item={item} collapsed={collapsed} active={isActive(item.href)} />
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className={cn("p-2 border-t border-sidebar-border", collapsed && "flex justify-center")}>
+          <button
+            onClick={onToggle}
+            className="w-full flex items-center justify-center gap-2 h-8 rounded-md text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors text-xs"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : (
+              <>
+                <ChevronLeft className="w-4 h-4" />
+                <span>Collapse</span>
+              </>
+            )}
+          </button>
+        </div>
+      </aside>
+
+      <aside
+        id="subscriptions-panel"
+        className={cn(
+          "flex flex-col h-full bg-sidebar/95 backdrop-blur-sm border-r border-sidebar-border z-10 transition-all duration-200 ease-in-out overflow-hidden",
+          subOpen ? "w-56 opacity-100" : "w-0 opacity-0 border-r-0",
+          light && "sidebar-light",
+        )}
+      >
+        <div className="flex items-center justify-between h-[72px] px-4 border-b border-sidebar-border min-w-[14rem]">
+          <span className="text-sm font-semibold text-sidebar-foreground whitespace-nowrap">Subscriptions</span>
+          <button
+            onClick={() => setSubOpen(false)}
+            className="p-1 rounded-md text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+            aria-label="Close subscriptions panel"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-0.5 min-w-[14rem]">
+          {subscriptionItems.map((item) => (
+            <SidebarLink key={item.href} item={item} collapsed={false} active={isActive(item.href)} />
+          ))}
+        </nav>
+      </aside>
+    </div>
   );
 }
 
