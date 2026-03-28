@@ -32,7 +32,7 @@ async function getTenantEmailConfig(tenantId: string): Promise<TenantEmailConfig
 
 const VERIFIED_DOMAIN = process.env.EMAIL_FROM_DOMAIN;
 const DEFAULT_FROM_EMAIL = VERIFIED_DOMAIN
-  ? `noreply@${VERIFIED_DOMAIN}`
+  ? `info@${VERIFIED_DOMAIN}`
   : "onboarding@resend.dev";
 
 function buildFrom(shopName: string, config: TenantEmailConfig): string {
