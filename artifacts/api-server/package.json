@@ -15,7 +15,8 @@
     "cors": "^2",
     "drizzle-orm": "catalog:",
     "express": "^5",
-    "resend": "^6.9.4"
+    "resend": "^6.9.4",
+    "twilio": "^5.13.1"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

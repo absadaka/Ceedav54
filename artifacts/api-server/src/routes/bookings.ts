@@ -6,6 +6,7 @@ import {
   bookingsTable, bookingActivityTable,
 } from "@workspace/db";
 import { sendEmail, bookingConfirmationEmailHtml } from "../services/email.js";
+import { sendSms, sendWhatsApp, bookingConfirmationSmsBody } from "../services/sms.js";
 
 const router = Router();
 
@@ -377,24 +378,26 @@ router.post("/:id/status", async (req, res) => {
 
     let emailResult = null;
     if (status === "confirmed" && booking.client_id) {
-      const [client] = await db.select({ name: clientsTable.name, email: clientsTable.email })
+      const [client] = await db.select({ name: clientsTable.name, email: clientsTable.email, phone: clientsTable.phone })
         .from(clientsTable).where(eq(clientsTable.id, booking.client_id)).limit(1);
 
-      if (client?.email) {
-        let vehicleInfo: string | undefined;
-        if (booking.vehicle_id) {
-          const [v] = await db.select({ make: vehiclesTable.make, model: vehiclesTable.model, plate: vehiclesTable.plate })
-            .from(vehiclesTable).where(eq(vehiclesTable.id, booking.vehicle_id)).limit(1);
-          if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
-        }
+      let vehicleInfo: string | undefined;
+      if (booking.vehicle_id) {
+        const [v] = await db.select({ make: vehiclesTable.make, model: vehiclesTable.model, plate: vehiclesTable.plate })
+          .from(vehiclesTable).where(eq(vehiclesTable.id, booking.vehicle_id)).limit(1);
+        if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
+      }
 
-        const html = bookingConfirmationEmailHtml({
-          shopName: tenant.name ?? "Workshop",
-          bookingRef: booking.ref ?? booking.id,
-          clientName: client.name ?? "Customer",
-          scheduledAt: booking.scheduled_at?.toISOString() ?? new Date().toISOString(),
-          vehicleInfo,
-        });
+      const msgOpts = {
+        shopName: tenant.name ?? "Workshop",
+        bookingRef: booking.ref ?? booking.id,
+        clientName: client?.name ?? "Customer",
+        scheduledAt: booking.scheduled_at?.toISOString() ?? new Date().toISOString(),
+        vehicleInfo,
+      };
+
+      if (client?.email) {
+        const html = bookingConfirmationEmailHtml(msgOpts);
         emailResult = await sendEmail({
           to: client.email,
           subject: `Booking Confirmed — ${tenant.name ?? "Workshop"}`,
@@ -402,6 +405,12 @@ router.post("/:id/status", async (req, res) => {
           tenantId: tenant.id,
           shopName: tenant.name ?? "Workshop",
         });
+      }
+
+      if (client?.phone) {
+        const body = bookingConfirmationSmsBody(msgOpts);
+        await sendSms({ to: client.phone, body, tenantId: tenant.id });
+        await sendWhatsApp({ to: client.phone, body, tenantId: tenant.id });
       }
     }
 
