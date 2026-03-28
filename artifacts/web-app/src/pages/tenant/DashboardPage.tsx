@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import {
   CalendarCheck, Wrench, ReceiptText, TrendingUp, AlertCircle,
   Plus, ArrowRight, Clock, User, Car, Activity, RefreshCw,
 } from "lucide-react";
-import { getTenantSlug } from "@/lib/tenant";
+import { getTenantSlug, resolveTenant } from "@/lib/tenant";
 import { getSession } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -263,8 +263,17 @@ function DataTable({ cols, children }: { cols: string[]; children: React.ReactNo
 export default function DashboardPage() {
   const tenant = getTenantSlug();
   const session = getSession();
-  const shopName = session?.tenantName;
+  const [resolvedName, setResolvedName] = useState<string | undefined>(undefined);
+  const shopName = session?.tenantName ?? resolvedName;
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!session?.tenantName && tenant) {
+      resolveTenant(tenant).then((info) => {
+        if (info) setResolvedName(info.name);
+      });
+    }
+  }, [tenant, session?.tenantName]);
   const { data, isLoading, error, refetch, isFetching } = useQuery<DashboardData>({
     queryKey: ["dashboard", tenant],
     queryFn: async () => {
