@@ -1,26 +1,45 @@
 import { useState } from "react";
-import { Wrench, ArrowRight, Mail, Lock, AlertTriangle } from "lucide-react";
+import { ArrowRight, Mail, Lock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import SetPasswordPage from "./SetPasswordPage";
 
 export default function LoginPage() {
+  const { login } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [setupInfo, setSetupInfo] = useState<{ userId: string; email: string } | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
+    setError("");
+    try {
+      const result = await login(email, password);
+      if (result.mustSetPassword && result.userId && result.email) {
+        setSetupInfo({ userId: result.userId, email: result.email });
+      }
+    } catch (err: any) {
+      setError(err.message ?? "Login failed");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (setupInfo) {
+    return <SetPasswordPage userId={setupInfo.userId} email={setupInfo.email} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="mb-4">
-            <span className="text-foreground" style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1 }}>ceeda&gt;</span>
+            <span className="text-foreground" style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1 }}>ceeda{">"}</span>
           </div>
           <h1 className="text-lg font-semibold text-foreground">Platform Admin</h1>
           <p className="text-sm text-muted-foreground mt-1">Internal access only</p>
@@ -63,7 +82,10 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full gap-2" disabled={loading}>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
+
+            <Button type="submit" className="w-full gap-2" disabled={loading || !email || !password}>
               {loading ? "Verifying…" : "Access platform"}
               {!loading && <ArrowRight className="w-4 h-4" />}
             </Button>

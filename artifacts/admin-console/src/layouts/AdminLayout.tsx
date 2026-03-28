@@ -24,6 +24,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 
 interface NavItem {
   label: string;
@@ -146,6 +147,10 @@ function AdminSidebar({ collapsed, onToggle, light }: { collapsed: boolean; onTo
 }
 
 function AdminTopBar({ sidebarLight, onToggleTheme }: { sidebarLight: boolean; onToggleTheme: () => void }) {
+  const { user, logout } = useAdminAuth();
+  const initials = user?.name ? user.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "SA";
+  const displayName = user?.name ?? "Admin";
+
   return (
     <header className="h-[72px] flex items-center justify-between px-6 bg-background border-b border-border shrink-0">
       <div className="flex items-center gap-2">
@@ -173,16 +178,16 @@ function AdminTopBar({ sidebarLight, onToggleTheme }: { sidebarLight: boolean; o
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted transition-colors">
               <Avatar className="w-7 h-7">
-                <AvatarFallback className="text-xs font-medium bg-primary text-white">SA</AvatarFallback>
+                <AvatarFallback className="text-xs font-medium bg-primary text-white">{initials}</AvatarFallback>
               </Avatar>
-              <span className="text-sm font-medium text-foreground hidden sm:block">Super Admin</span>
+              <span className="text-sm font-medium text-foreground hidden sm:block">{displayName}</span>
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
+            <DropdownMenuLabel>{user?.email ?? "Admin"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem className="text-destructive" onClick={logout}>
               <LogOut className="w-4 h-4 mr-2" />
               Sign out
             </DropdownMenuItem>
