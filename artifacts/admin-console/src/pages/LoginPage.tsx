@@ -40,7 +40,7 @@ export default function LoginPage() {
                 <Input
                   id="admin-email"
                   type="email"
-                  placeholder="admin@ceeda.io"
+                  placeholder="admin@ceeda.me"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-9"
