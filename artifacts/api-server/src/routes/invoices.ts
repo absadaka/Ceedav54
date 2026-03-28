@@ -7,6 +7,7 @@ import {
   invoicesTable, invoiceLineItemsTable, paymentsTable,
   quotationsTable, quoteLineItemsTable,
 } from "@workspace/db";
+import { sendEmail, invoiceEmailHtml } from "../services/email.js";
 
 const router = Router();
 
@@ -512,7 +513,33 @@ router.post("/:id/send", async (req, res) => {
       .where(and(eq(invoicesTable.id, req.params.id), eq(invoicesTable.tenant_id, tenant.id)))
       .returning();
 
-    return res.json({ invoice: inv });
+    if (!inv) return res.status(404).json({ error: "Invoice not found" });
+
+    const [client] = inv.client_id
+      ? await db.select({ name: clientsTable.name, email: clientsTable.email })
+          .from(clientsTable).where(eq(clientsTable.id, inv.client_id)).limit(1)
+      : [null];
+
+    let emailResult = null;
+    if (client?.email) {
+      const html = invoiceEmailHtml({
+        shopName: tenant.name,
+        invoiceRef: inv.ref,
+        clientName: client.name ?? "Customer",
+        total: inv.total ?? "0",
+        currency: tenant.currency ?? "AED",
+        dueDate: inv.due_at?.toISOString() ?? null,
+      });
+      emailResult = await sendEmail({
+        to: client.email,
+        subject: `Invoice ${inv.ref} from ${tenant.name}`,
+        html,
+        tenantId: tenant.id,
+        shopName: tenant.name,
+      });
+    }
+
+    return res.json({ invoice: inv, emailSent: emailResult?.success ?? false });
   } catch (err) {
     console.error("POST /invoices/:id/send", err);
     return res.status(500).json({ error: "Internal server error" });
