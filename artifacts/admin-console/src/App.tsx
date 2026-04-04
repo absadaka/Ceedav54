@@ -22,6 +22,8 @@ import PlanOverridePage from "@/pages/subscriptions/PlanOverridePage";
 import AddOnsPage from "@/pages/subscriptions/AddOnsPage";
 import RevenueAnalyticsPage from "@/pages/subscriptions/RevenueAnalyticsPage";
 import ChurnPage from "@/pages/subscriptions/ChurnPage";
+import PlatformSettingsPage from "@/pages/settings/PlatformSettingsPage";
+import AdminUsersPage from "@/pages/settings/AdminUsersPage";
 import NotFoundPage from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -68,6 +70,8 @@ function ProtectedRouter() {
         <Route path="/subscriptions/addons"   component={AddOnsPage} />
         <Route path="/subscriptions/revenue"  component={RevenueAnalyticsPage} />
         <Route path="/subscriptions/churn"    component={ChurnPage} />
+        <Route path="/settings/general"       component={PlatformSettingsPage} />
+        <Route path="/settings/users"         component={AdminUsersPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </AdminLayout>
