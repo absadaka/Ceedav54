@@ -140,7 +140,7 @@ export async function sendPlatformEmail({ to, subject, html }: { to: string; sub
     return { success: false, reason: "no_api_key" };
   }
 
-  const from = `ceeda> Platform <${DEFAULT_FROM_EMAIL}>`;
+  const from = `ceeda Platform <${DEFAULT_FROM_EMAIL}>`;
 
   try {
     const result = await resend.emails.send({ from, to, subject, html });
