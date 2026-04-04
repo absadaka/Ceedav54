@@ -7,6 +7,7 @@ import {
 import {
   eq, ilike, isNull, count, desc, and, or, sql, ne, sum,
 } from "drizzle-orm";
+import { sendPlatformEmail, adminInviteEmailHtml } from "../services/email";
 
 const router = Router();
 
@@ -678,6 +679,19 @@ router.post("/admin/users", requirePlatformAdmin, async (req, res) => {
     email: usersTable.email, role: usersTable.role,
     is_active: usersTable.is_active, created_at: usersTable.created_at,
   });
+
+  const loginUrl = `https://${req.headers.host ?? "ceeda.me"}/admin-console/auth`;
+  const html = adminInviteEmailHtml({
+    userName: name,
+    role: role,
+    loginUrl,
+  });
+
+  sendPlatformEmail({
+    to: email.toLowerCase().trim(),
+    subject: "You've been invited to ceeda> Platform Admin",
+    html,
+  }).catch((err) => console.error("[admin] invite email failed:", err));
 
   return res.status(201).json({ user: created });
 });
