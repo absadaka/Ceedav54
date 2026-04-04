@@ -659,26 +659,45 @@ router.post("/admin/users", requirePlatformAdmin, async (req, res) => {
   }
 
   const existing = await db
-    .select({ id: usersTable.id })
+    .select({ id: usersTable.id, deleted_at: usersTable.deleted_at })
     .from(usersTable)
     .where(eq(usersTable.email, email.toLowerCase().trim()))
     .limit(1)
     .then((r) => r[0] ?? null);
 
-  if (existing) {
+  let created;
+
+  if (existing && !existing.deleted_at) {
     return res.status(409).json({ error: "A user with this email already exists." });
   }
 
-  const [created] = await db.insert(usersTable).values({
-    email:     email.toLowerCase().trim(),
-    name,
-    role:      role as any,
-    is_active: true,
-  }).returning({
-    id: usersTable.id, name: usersTable.name,
-    email: usersTable.email, role: usersTable.role,
-    is_active: usersTable.is_active, created_at: usersTable.created_at,
-  });
+  if (existing && existing.deleted_at) {
+    const [restored] = await db.update(usersTable).set({
+      name,
+      role:        role as any,
+      is_active:   true,
+      deleted_at:  null,
+      password_hash: null,
+      updated_at:  new Date(),
+    }).where(eq(usersTable.id, existing.id)).returning({
+      id: usersTable.id, name: usersTable.name,
+      email: usersTable.email, role: usersTable.role,
+      is_active: usersTable.is_active, created_at: usersTable.created_at,
+    });
+    created = restored;
+  } else {
+    const [inserted] = await db.insert(usersTable).values({
+      email:     email.toLowerCase().trim(),
+      name,
+      role:      role as any,
+      is_active: true,
+    }).returning({
+      id: usersTable.id, name: usersTable.name,
+      email: usersTable.email, role: usersTable.role,
+      is_active: usersTable.is_active, created_at: usersTable.created_at,
+    });
+    created = inserted;
+  }
 
   const loginUrl = `https://${req.headers.host ?? "ceeda.me"}/admin-console/auth`;
   const html = adminInviteEmailHtml({
