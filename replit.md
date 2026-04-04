@@ -63,7 +63,10 @@ ceeda/
 - Protected admin routes (in `AdminLayout`): `/dashboard`, `/tenants`, `/billing`, `/flags`, `/impersonate`, `/tickets`, `/health`
 - Auth guard: `App.tsx` `ProtectedRouter` checks `useAdminAuth().user`, redirects to `/auth` if not logged in
 - Logout: via user dropdown in `AdminLayout` top bar
-- **Subscriptions section** (sidebar group): Plans (`/subscriptions/plans`), Coupons (`/subscriptions/coupons`), Invoices (`/subscriptions/invoices`), Failed Payments (`/subscriptions/failed`), Plan Override (`/subscriptions/override`), Add-Ons (`/subscriptions/addons`), Revenue Analytics (`/subscriptions/revenue`), Churn & Renewals (`/subscriptions/churn`)
+- **Subscriptions section** (sidebar dropdown): Plans (`/subscriptions/plans`), Coupons (`/subscriptions/coupons`), Invoices (`/subscriptions/invoices`), Failed Payments (`/subscriptions/failed`), Plan Override (`/subscriptions/override`), Add-Ons (`/subscriptions/addons`), Revenue Analytics (`/subscriptions/revenue`), Churn & Renewals (`/subscriptions/churn`)
+- **Settings section** (sidebar dropdown): General (`/settings/general`), Admin Users (`/settings/users`)
+- **Admin user management**: API endpoints `GET/POST /admin/users`, `PATCH/DELETE /admin/users/:id`. Platform roles: `platform_admin`, `platform_support`, `platform_finance`, `platform_readonly`. All platform roles can log into admin console.
+- **Login accepts all platform roles** (not just `platform_admin`): any user with `tenant_id = null` and a `platform_*` role can log in
 
 ## Auth Service Abstraction
 

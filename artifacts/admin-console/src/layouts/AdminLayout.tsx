@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, Bell, LogOut, ChevronDown,
   AlertTriangle, Activity, LifeBuoy, Sun, Moon,
   Package, Tag, FileText, AlertCircle, Shield, Puzzle,
-  BarChart3, UserMinus,
+  BarChart3, UserMinus, Settings, Users, Wrench,
 } from "lucide-react";
 
 function useSidebarTheme() {
@@ -70,6 +70,19 @@ const adminSections: NavSection[] = [
       { label: "Impersonate",   href: "/impersonate", icon: UserSearch },
       { label: "Tickets",       href: "/tickets",     icon: LifeBuoy },
       { label: "System Health", href: "/health",      icon: Activity },
+    ],
+  },
+  {
+    items: [
+      {
+        label: "Settings",
+        href: "/settings/general",
+        icon: Settings,
+        children: [
+          { label: "General",     href: "/settings/general", icon: Wrench },
+          { label: "Admin Users", href: "/settings/users",   icon: Users },
+        ],
+      },
     ],
   },
 ];

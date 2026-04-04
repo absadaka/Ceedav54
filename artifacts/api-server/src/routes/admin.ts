@@ -39,6 +39,32 @@ function resolveAdminUser(req: any) {
   return req.headers["x-admin-user"] ?? "platform-admin";
 }
 
+async function requirePlatformAdmin(req: any, res: any, next: any) {
+  const adminId = req.headers["x-admin-id"] as string | undefined;
+  if (!adminId) return res.status(401).json({ error: "Not authenticated." });
+
+  const user = await db
+    .select({ id: usersTable.id, role: usersTable.role, is_active: usersTable.is_active })
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.id, adminId),
+        isNull(usersTable.tenant_id),
+        isNull(usersTable.deleted_at),
+        sql`${usersTable.role} IN ('platform_admin','platform_support','platform_readonly','platform_finance')`,
+      )
+    )
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  if (!user || !user.is_active) {
+    return res.status(401).json({ error: "Session expired." });
+  }
+
+  req.adminUser = user;
+  next();
+}
+
 function resolveAdminIp(req: any) {
   return (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim()
     ?? req.socket.remoteAddress
@@ -474,8 +500,9 @@ router.post("/admin/auth/login", async (req, res) => {
     .where(
       and(
         eq(usersTable.email, email.toLowerCase().trim()),
-        eq(usersTable.role, "platform_admin"),
+        isNull(usersTable.tenant_id),
         isNull(usersTable.deleted_at),
+        sql`${usersTable.role} IN ('platform_admin','platform_support','platform_readonly','platform_finance')`,
       )
     )
     .limit(1)
@@ -526,8 +553,9 @@ router.post("/admin/auth/set-password", async (req, res) => {
       and(
         eq(usersTable.id, userId),
         eq(usersTable.email, email.toLowerCase().trim()),
-        eq(usersTable.role, "platform_admin"),
+        isNull(usersTable.tenant_id),
         isNull(usersTable.deleted_at),
+        sql`${usersTable.role} IN ('platform_admin','platform_support','platform_readonly','platform_finance')`,
       )
     )
     .limit(1)
@@ -569,8 +597,9 @@ router.get("/admin/auth/me", async (req, res) => {
     .where(
       and(
         eq(usersTable.id, userId),
-        eq(usersTable.role, "platform_admin"),
+        isNull(usersTable.tenant_id),
         isNull(usersTable.deleted_at),
+        sql`${usersTable.role} IN ('platform_admin','platform_support','platform_readonly','platform_finance')`,
       )
     )
     .limit(1)
@@ -581,6 +610,138 @@ router.get("/admin/auth/me", async (req, res) => {
   }
 
   return res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   GET /admin/users — list all platform staff
+───────────────────────────────────────────────────────────────────────── */
+router.get("/admin/users", requirePlatformAdmin, async (_req, res) => {
+  const rows = await db
+    .select({
+      id:            usersTable.id,
+      name:          usersTable.name,
+      email:         usersTable.email,
+      role:          usersTable.role,
+      is_active:     usersTable.is_active,
+      last_login_at: usersTable.last_login_at,
+      created_at:    usersTable.created_at,
+    })
+    .from(usersTable)
+    .where(
+      and(
+        isNull(usersTable.tenant_id),
+        isNull(usersTable.deleted_at),
+        sql`${usersTable.role} IN ('platform_admin','platform_support','platform_readonly','platform_finance')`,
+      )
+    )
+    .orderBy(desc(usersTable.created_at));
+
+  return res.json({ users: rows });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   POST /admin/users — invite / create a new platform user
+   Body: { name, email, role }
+───────────────────────────────────────────────────────────────────────── */
+router.post("/admin/users", requirePlatformAdmin, async (req, res) => {
+  const { name, email, role } = req.body as {
+    name?: string; email?: string; role?: string;
+  };
+
+  if (!name || !email || !role) {
+    return res.status(400).json({ error: "name, email, and role are required." });
+  }
+
+  const validRoles = ["platform_admin", "platform_support", "platform_readonly", "platform_finance"];
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ error: `Invalid role. Must be one of: ${validRoles.join(", ")}` });
+  }
+
+  const existing = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.email, email.toLowerCase().trim()))
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  if (existing) {
+    return res.status(409).json({ error: "A user with this email already exists." });
+  }
+
+  const [created] = await db.insert(usersTable).values({
+    email:     email.toLowerCase().trim(),
+    name,
+    role:      role as any,
+    is_active: true,
+  }).returning({
+    id: usersTable.id, name: usersTable.name,
+    email: usersTable.email, role: usersTable.role,
+    is_active: usersTable.is_active, created_at: usersTable.created_at,
+  });
+
+  return res.status(201).json({ user: created });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   PATCH /admin/users/:id — update a platform user (role, is_active, name)
+───────────────────────────────────────────────────────────────────────── */
+router.patch("/admin/users/:id", requirePlatformAdmin, async (req, res) => {
+  const { id } = req.params;
+  const updates: Record<string, any> = {};
+
+  if (req.body.name !== undefined)      updates.name = req.body.name;
+  if (req.body.role !== undefined) {
+    const validRoles = ["platform_admin", "platform_support", "platform_readonly", "platform_finance"];
+    if (!validRoles.includes(req.body.role)) {
+      return res.status(400).json({ error: "Invalid role." });
+    }
+    updates.role = req.body.role;
+  }
+  if (req.body.is_active !== undefined) updates.is_active = req.body.is_active;
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: "No fields to update." });
+  }
+
+  updates.updated_at = new Date();
+
+  const [updated] = await db.update(usersTable).set(updates)
+    .where(
+      and(
+        eq(usersTable.id, id),
+        isNull(usersTable.tenant_id),
+        isNull(usersTable.deleted_at),
+      )
+    )
+    .returning({
+      id: usersTable.id, name: usersTable.name,
+      email: usersTable.email, role: usersTable.role,
+      is_active: usersTable.is_active,
+    });
+
+  if (!updated) return res.status(404).json({ error: "User not found." });
+  return res.json({ user: updated });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DELETE /admin/users/:id — soft-delete a platform user
+───────────────────────────────────────────────────────────────────────── */
+router.delete("/admin/users/:id", requirePlatformAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  const [deleted] = await db.update(usersTable)
+    .set({ deleted_at: new Date(), is_active: false, updated_at: new Date() })
+    .where(
+      and(
+        eq(usersTable.id, id),
+        isNull(usersTable.tenant_id),
+        isNull(usersTable.deleted_at),
+      )
+    )
+    .returning({ id: usersTable.id });
+
+  if (!deleted) return res.status(404).json({ error: "User not found." });
+  return res.json({ success: true });
 });
 
 /* ─────────────────────────────────────────────────────────────────────────
