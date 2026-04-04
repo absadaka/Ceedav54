@@ -1,10 +1,11 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminAuthProvider, useAdminAuth } from "@/hooks/useAdminAuth";
+import { ShieldAlert } from "lucide-react";
 
-import AdminLayout from "@/layouts/AdminLayout";
+import AdminLayout, { ROUTE_ROLES } from "@/layouts/AdminLayout";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import TenantsPage from "@/pages/TenantsPage";
@@ -32,6 +33,41 @@ const queryClient = new QueryClient({
   },
 });
 
+function AccessDeniedPage() {
+  return (
+    <div className="flex flex-col items-center justify-center py-32 text-center">
+      <ShieldAlert className="w-12 h-12 text-muted-foreground/40 mb-4" />
+      <h2 className="text-xl font-semibold text-foreground mb-1">Access Denied</h2>
+      <p className="text-sm text-muted-foreground max-w-xs">
+        You don't have permission to view this page. Contact an admin if you need access.
+      </p>
+    </div>
+  );
+}
+
+function RoleGuard({ path, children }: { path: string; children: React.ReactNode }) {
+  const { user } = useAdminAuth();
+  const exactRoles = ROUTE_ROLES[path];
+  const parentPath = "/" + path.split("/").filter(Boolean)[0];
+  const roles = exactRoles ?? ROUTE_ROLES[parentPath];
+  if (roles && user && !roles.includes(user.role as any)) {
+    return <AccessDeniedPage />;
+  }
+  return <>{children}</>;
+}
+
+function GuardedRoute({ path, component: Comp }: { path: string; component: React.ComponentType<any> }) {
+  return (
+    <Route path={path}>
+      {(params) => (
+        <RoleGuard path={path}>
+          <Comp {...params} />
+        </RoleGuard>
+      )}
+    </Route>
+  );
+}
+
 function ProtectedRouter() {
   const { user, loading } = useAdminAuth();
 
@@ -54,24 +90,24 @@ function ProtectedRouter() {
     <AdminLayout>
       <Switch>
         <Route path="/"            component={DashboardPage} />
-        <Route path="/dashboard"   component={DashboardPage} />
-        <Route path="/tenants"     component={TenantsPage} />
-        <Route path="/tenants/:id" component={TenantDetailPage} />
-        <Route path="/billing"     component={BillingPage} />
-        <Route path="/flags"       component={FlagsPage} />
-        <Route path="/impersonate" component={ImpersonatePage} />
-        <Route path="/tickets"     component={SupportTicketsPage} />
-        <Route path="/health"      component={SystemHealthPage} />
-        <Route path="/subscriptions/plans"    component={PlansPage} />
-        <Route path="/subscriptions/coupons"  component={CouponsPage} />
-        <Route path="/subscriptions/invoices" component={InvoiceHistoryPage} />
-        <Route path="/subscriptions/failed"   component={FailedPaymentsPage} />
-        <Route path="/subscriptions/override" component={PlanOverridePage} />
-        <Route path="/subscriptions/addons"   component={AddOnsPage} />
-        <Route path="/subscriptions/revenue"  component={RevenueAnalyticsPage} />
-        <Route path="/subscriptions/churn"    component={ChurnPage} />
-        <Route path="/settings/general"       component={PlatformSettingsPage} />
-        <Route path="/settings/users"         component={AdminUsersPage} />
+        <GuardedRoute path="/dashboard"   component={DashboardPage} />
+        <GuardedRoute path="/tenants"     component={TenantsPage} />
+        <GuardedRoute path="/tenants/:id" component={TenantDetailPage} />
+        <GuardedRoute path="/billing"     component={BillingPage} />
+        <GuardedRoute path="/flags"       component={FlagsPage} />
+        <GuardedRoute path="/impersonate" component={ImpersonatePage} />
+        <GuardedRoute path="/tickets"     component={SupportTicketsPage} />
+        <GuardedRoute path="/health"      component={SystemHealthPage} />
+        <GuardedRoute path="/subscriptions/plans"    component={PlansPage} />
+        <GuardedRoute path="/subscriptions/coupons"  component={CouponsPage} />
+        <GuardedRoute path="/subscriptions/invoices" component={InvoiceHistoryPage} />
+        <GuardedRoute path="/subscriptions/failed"   component={FailedPaymentsPage} />
+        <GuardedRoute path="/subscriptions/override" component={PlanOverridePage} />
+        <GuardedRoute path="/subscriptions/addons"   component={AddOnsPage} />
+        <GuardedRoute path="/subscriptions/revenue"  component={RevenueAnalyticsPage} />
+        <GuardedRoute path="/subscriptions/churn"    component={ChurnPage} />
+        <GuardedRoute path="/settings/general"       component={PlatformSettingsPage} />
+        <GuardedRoute path="/settings/users"         component={AdminUsersPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </AdminLayout>

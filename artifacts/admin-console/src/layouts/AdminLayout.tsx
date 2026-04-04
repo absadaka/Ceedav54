@@ -28,10 +28,19 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 
+type PlatformRole = "platform_admin" | "platform_support" | "platform_finance" | "platform_readonly";
+
+const ALL_ROLES: PlatformRole[] = ["platform_admin", "platform_support", "platform_finance", "platform_readonly"];
+const ADMIN_ONLY: PlatformRole[] = ["platform_admin"];
+const SUPPORT_ROLES: PlatformRole[] = ["platform_admin", "platform_support"];
+const FINANCE_ROLES: PlatformRole[] = ["platform_admin", "platform_finance"];
+const NON_SUPPORT: PlatformRole[] = ["platform_admin", "platform_finance", "platform_readonly"];
+
 interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
+  roles?: PlatformRole[];
   children?: NavItem[];
 }
 
@@ -43,14 +52,15 @@ interface NavSection {
 const adminSections: NavSection[] = [
   {
     items: [
-      { label: "Dashboard",     href: "/dashboard",   icon: LayoutDashboard },
-      { label: "Tenants",       href: "/tenants",     icon: Building2 },
-      { label: "Billing",       href: "/billing",     icon: CreditCard },
-      { label: "Feature Flags", href: "/flags",       icon: Flag },
+      { label: "Dashboard",     href: "/dashboard",   icon: LayoutDashboard, roles: ALL_ROLES },
+      { label: "Tenants",       href: "/tenants",     icon: Building2,       roles: [...SUPPORT_ROLES, "platform_readonly"] },
+      { label: "Billing",       href: "/billing",     icon: CreditCard,      roles: [...FINANCE_ROLES, "platform_readonly"] },
+      { label: "Feature Flags", href: "/flags",       icon: Flag,            roles: ADMIN_ONLY },
       {
         label: "Subscriptions",
         href: "/subscriptions/plans",
         icon: CreditCard,
+        roles: FINANCE_ROLES,
         children: [
           { label: "Plans",            href: "/subscriptions/plans",     icon: Package },
           { label: "Coupons",          href: "/subscriptions/coupons",   icon: Tag },
@@ -67,9 +77,9 @@ const adminSections: NavSection[] = [
   {
     title: "Support",
     items: [
-      { label: "Impersonate",   href: "/impersonate", icon: UserSearch },
-      { label: "Tickets",       href: "/tickets",     icon: LifeBuoy },
-      { label: "System Health", href: "/health",      icon: Activity },
+      { label: "Impersonate",   href: "/impersonate", icon: UserSearch, roles: SUPPORT_ROLES },
+      { label: "Tickets",       href: "/tickets",     icon: LifeBuoy,   roles: [...SUPPORT_ROLES, "platform_readonly"] },
+      { label: "System Health", href: "/health",      icon: Activity,   roles: [...SUPPORT_ROLES, "platform_readonly"] },
     ],
   },
   {
@@ -78,6 +88,7 @@ const adminSections: NavSection[] = [
         label: "Settings",
         href: "/settings/general",
         icon: Settings,
+        roles: ADMIN_ONLY,
         children: [
           { label: "General",     href: "/settings/general", icon: Wrench },
           { label: "Admin Users", href: "/settings/users",   icon: Users },
@@ -86,6 +97,35 @@ const adminSections: NavSection[] = [
     ],
   },
 ];
+
+function filterByRole(sections: NavSection[], role: string): NavSection[] {
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.roles || item.roles.includes(role as PlatformRole)),
+    }))
+    .filter((section) => section.items.length > 0);
+}
+
+export const ROUTE_ROLES: Record<string, PlatformRole[]> = {
+  "/dashboard":              ALL_ROLES,
+  "/tenants":                [...SUPPORT_ROLES, "platform_readonly"],
+  "/billing":                [...FINANCE_ROLES, "platform_readonly"],
+  "/flags":                  ADMIN_ONLY,
+  "/subscriptions/plans":    FINANCE_ROLES,
+  "/subscriptions/coupons":  FINANCE_ROLES,
+  "/subscriptions/invoices": FINANCE_ROLES,
+  "/subscriptions/failed":   FINANCE_ROLES,
+  "/subscriptions/override": FINANCE_ROLES,
+  "/subscriptions/addons":   FINANCE_ROLES,
+  "/subscriptions/revenue":  FINANCE_ROLES,
+  "/subscriptions/churn":    FINANCE_ROLES,
+  "/impersonate":            SUPPORT_ROLES,
+  "/tickets":                [...SUPPORT_ROLES, "platform_readonly"],
+  "/health":                 [...SUPPORT_ROLES, "platform_readonly"],
+  "/settings/general":       ADMIN_ONLY,
+  "/settings/users":         ADMIN_ONLY,
+};
 
 function SidebarLink({ item, collapsed, active }: {
   item: NavItem; collapsed: boolean; active: boolean;
@@ -183,7 +223,9 @@ function CollapsibleNavItem({ item, collapsed, location }: {
 
 function AdminSidebar({ collapsed, onToggle, light }: { collapsed: boolean; onToggle: () => void; light: boolean }) {
   const [location] = useLocation();
+  const { user } = useAdminAuth();
   const isActive = (href: string) => location === href || (href !== "/dashboard" && location.startsWith(href));
+  const visibleSections = filterByRole(adminSections, user?.role ?? "");
 
   return (
     <aside
@@ -210,7 +252,7 @@ function AdminSidebar({ collapsed, onToggle, light }: { collapsed: boolean; onTo
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-6 px-2 space-y-4">
-        {adminSections.map((section, idx) => (
+        {visibleSections.map((section, idx) => (
           <div key={idx} className="space-y-0.5">
             {section.title && !collapsed && (
               <p className="text-[10px] font-semibold text-sidebar-foreground/40 uppercase tracking-wider px-3 py-1">
