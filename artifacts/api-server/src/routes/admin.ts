@@ -716,6 +716,47 @@ router.post("/admin/users", requirePlatformAdmin, async (req, res) => {
 });
 
 /* ─────────────────────────────────────────────────────────────────────────
+   POST /admin/users/:id/reset-password — clear password & send invite email
+───────────────────────────────────────────────────────────────────────── */
+router.post("/admin/users/:id/reset-password", requirePlatformAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  const user = await db
+    .select({ id: usersTable.id, name: usersTable.name, email: usersTable.email, role: usersTable.role })
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.id, id),
+        isNull(usersTable.tenant_id),
+        isNull(usersTable.deleted_at),
+      )
+    )
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  if (!user) return res.status(404).json({ error: "User not found." });
+
+  await db.update(usersTable)
+    .set({ password_hash: null, updated_at: new Date() })
+    .where(eq(usersTable.id, id));
+
+  const loginUrl = `https://${req.headers.host ?? "ceeda.me"}/admin-console/auth`;
+  const html = adminInviteEmailHtml({
+    userName: user.name,
+    role: user.role,
+    loginUrl,
+  });
+
+  sendPlatformEmail({
+    to: user.email,
+    subject: "Reset your ceeda> Platform Admin password",
+    html,
+  }).catch((err) => console.error("[admin] reset password email failed:", err));
+
+  return res.json({ success: true });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
    PATCH /admin/users/:id — update a platform user (role, is_active, name)
 ───────────────────────────────────────────────────────────────────────── */
 router.patch("/admin/users/:id", requirePlatformAdmin, async (req, res) => {
