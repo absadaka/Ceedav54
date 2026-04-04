@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   UserPlus, Shield, Eye, HeadphonesIcon, Wallet,
-  MoreHorizontal, CheckCircle2, XCircle, Trash2, Search,
+  MoreHorizontal, CheckCircle2, XCircle, Trash2, Search, KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +96,20 @@ export default function AdminUsersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success("Role updated");
+    },
+  });
+
+  const resetPassword = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`${API}/admin/users/${id}/reset-password`, {
+        method: "POST",
+        headers: authHeaders,
+      }).then((r) => {
+        if (!r.ok) throw new Error("Failed");
+        return r.json();
+      }),
+    onSuccess: () => {
+      toast.success("Password reset email sent");
     },
   });
 
@@ -202,6 +216,9 @@ export default function AdminUsersPage() {
                         Set as {r.label}
                       </DropdownMenuItem>
                     ))}
+                    <DropdownMenuItem onClick={() => resetPassword.mutate(u.id)}>
+                      <KeyRound className="w-3.5 h-3.5 mr-2 text-violet-500" /> Send Password Reset
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => toggleActive.mutate(u)}>
                       {u.is_active ? (
                         <><XCircle className="w-3.5 h-3.5 mr-2 text-orange-500" /> Deactivate</>
