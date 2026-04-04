@@ -133,6 +133,98 @@ export async function sendEmail({ to, subject, html, tenantId, shopName }: SendE
   }
 }
 
+export async function sendPlatformEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  const resend = getResend();
+  if (!resend) {
+    console.warn("[email] RESEND_API_KEY not set — skipping email send");
+    return { success: false, reason: "no_api_key" };
+  }
+
+  const from = `ceeda> Platform <${DEFAULT_FROM_EMAIL}>`;
+
+  try {
+    const result = await resend.emails.send({ from, to, subject, html });
+
+    if (result.error) {
+      console.error("[email] Resend error:", result.error);
+      return { success: false, reason: result.error.message };
+    }
+
+    console.log(`[email] Platform email sent to ${to}: "${subject}"`);
+    return { success: true, id: result.data?.id };
+  } catch (err: any) {
+    console.error("[email] Send failed:", err.message);
+    return { success: false, reason: err.message };
+  }
+}
+
+export function adminInviteEmailHtml(opts: {
+  userName: string;
+  role: string;
+  loginUrl: string;
+}): string {
+  const roleLabels: Record<string, string> = {
+    platform_admin: "Admin",
+    platform_support: "Support",
+    platform_finance: "Finance",
+    platform_readonly: "Read-only",
+  };
+  const roleLabel = roleLabels[opts.role] ?? opts.role;
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+<tr><td style="background:#0a0a0a;padding:20px 32px;">
+  <span style="color:#ffffff;font-size:22px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">ceeda&gt;</span>
+  <span style="color:#a1a1aa;font-size:13px;margin-left:8px;">Platform Admin</span>
+</td></tr>
+<tr><td style="padding:40px 32px;">
+  <h2 style="margin:0 0 8px;font-size:22px;color:#0a0a0a;">You've been invited</h2>
+  <p style="margin:0 0 24px;font-size:15px;color:#71717a;line-height:1.6;">
+    Hi ${opts.userName},
+  </p>
+  <p style="margin:0 0 16px;font-size:15px;color:#3f3f46;line-height:1.6;">
+    You've been added to the <strong>ceeda&gt;</strong> platform admin console with the role of <strong>${roleLabel}</strong>.
+  </p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+    <tr><td style="padding:16px;background:#f4f4f5;border-radius:8px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-size:13px;color:#71717a;padding:4px 0;">Role</td>
+          <td align="right" style="font-size:13px;font-weight:600;color:#0a0a0a;padding:4px 0;">${roleLabel}</td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+  <p style="margin:0 0 24px;font-size:15px;color:#3f3f46;line-height:1.6;">
+    Click the button below to access the admin console and set your password:
+  </p>
+  <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+    <tr><td style="background:#0a0a0a;border-radius:8px;">
+      <a href="${opts.loginUrl}" style="display:inline-block;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;">
+        Access Admin Console &rarr;
+      </a>
+    </td></tr>
+  </table>
+  <p style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.6;">
+    If the button doesn't work, copy and paste this link into your browser:<br>
+    <a href="${opts.loginUrl}" style="color:#71717a;word-break:break-all;">${opts.loginUrl}</a>
+  </p>
+</td></tr>
+<tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
+  <p style="margin:0;font-size:12px;color:#a1a1aa;text-align:center;">
+    ceeda&gt; Platform Admin
+  </p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`;
+}
+
 function formatCurrency(amount: string | number, currency: string = "AED"): string {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
   return `${num.toFixed(2)} ${currency}`;

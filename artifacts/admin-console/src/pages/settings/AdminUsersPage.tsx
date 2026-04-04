@@ -252,7 +252,7 @@ function AddUserDialog({ open, onClose }: { open: boolean; onClose: () => void }
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-users"] });
-      toast.success("User added. They can set their password on first login.");
+      toast.success("User added. An invite email has been sent to set their password.");
       setName(""); setEmail(""); setRole("platform_support");
       onClose();
     },
