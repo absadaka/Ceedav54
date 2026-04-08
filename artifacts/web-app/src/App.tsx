@@ -66,7 +66,7 @@ const PUBLIC_PATHS = ["/", "/pricing", "/auth", "/register"];
 
 const LEGACY_APP_PREFIXES = [
   "dashboard", "customers", "clients", "vehicles", "bookings", "inspections", "quotations", "jobs",
-  "quick-repairs", "invoices", "team", "settings", "account",
+  "quick-repairs", "invoices", "team", "settings", "account", "logout",
 ];
 
 const TENANT_AUTH_ACTIONS = [
@@ -198,6 +198,8 @@ function AppRouter() {
           <Route path="/settings/reporting"    component={SettingsReportingPage} />
           <Route path="/settings/billing"      component={SettingsBillingPage} />
           <Route path="/settings/comms"        component={SettingsCommsPage} />
+          {/* Logout */}
+          <Route path="/logout" component={LogoutPage} />
           {/* Account sub-pages */}
           <Route path="/account/security" component={AccountSecurityPage} />
           <Route path="/account/sessions" component={AccountSessionsPage} />
