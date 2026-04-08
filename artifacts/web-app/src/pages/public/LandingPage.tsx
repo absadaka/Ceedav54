@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import screenshotDashboard from "@assets/Screenshot_2026-04-08_at_7.25.04_PM_1775662471561.png";
 import screenshotBookings from "@assets/Screenshot_2026-04-08_at_7.25.20_PM_1775662466917.png";
 import screenshotJobs from "@assets/Screenshot_2026-04-08_at_7.25.34_PM_1775662457484.png";
-import photoWorkshop1 from "@assets/photo-1615906655593-ad0386982a0f_1775662482209.avif";
-import photoWorkshop2 from "@assets/photo-1593280405106-e438ebe93f5b_1775662482209.avif";
-import photoWorkshop3 from "@assets/photo-1654167535598-86dfc149efa1_1775662482209.avif";
+import photoMechanic from "@assets/photo-1526626607369-f89fe1ed77a9_1775662796364.avif";
+import photoEngine from "@assets/photo-1615906655593-ad0386982a0f_1775662796364.avif";
+import photoBay from "@assets/photo-1702146713882-2579afb0bfba_1775662796365.avif";
+import photoUnder from "@assets/photo-1727413433599-496949ef8196_1775662796365.avif";
+import photoShop from "@assets/premium_photo-1661602003497-7e918e0259b2_1775662796365.avif";
 
 /* ─── Data ────────────────────────────────────────────────────────────────── */
 const features = [
@@ -23,6 +25,7 @@ const features = [
     bullets: ["Live booking and job counters", "Daily and monthly revenue tracking", "Technician workload overview"],
     accent: "bg-blue-50 text-blue-600",
     screenshot: screenshotDashboard,
+    photo: photoShop,
   },
   {
     icon: CalendarCheck,
@@ -32,6 +35,7 @@ const features = [
     bullets: ["Calendar and list views with status filters", "Walk-in check-in in under 30 seconds", "Online booking link you can share with customers"],
     accent: "bg-violet-50 text-violet-600",
     screenshot: screenshotBookings,
+    photo: photoBay,
   },
   {
     icon: ClipboardList,
@@ -41,6 +45,7 @@ const features = [
     bullets: ["Drag-and-drop Kanban workflow", "Priority and urgency flags", "Full job history with time tracking"],
     accent: "bg-emerald-50 text-emerald-600",
     screenshot: screenshotJobs,
+    photo: photoMechanic,
   },
   {
     icon: FileText,
@@ -50,6 +55,7 @@ const features = [
     bullets: ["Itemised line-item quotes with discounts", "One-tap customer approval via link", "Auto-generated invoices with online payment"],
     accent: "bg-amber-50 text-amber-600",
     screenshot: null,
+    photo: photoEngine,
   },
 ];
 
@@ -223,8 +229,6 @@ function StatsSection() {
 }
 
 function FeaturesSection() {
-  const workshopPhotos = [photoWorkshop1, photoWorkshop2, photoWorkshop3];
-
   return (
     <section id="features" className="py-24 bg-white">
       <div className="max-w-6xl mx-auto px-6">
@@ -268,20 +272,32 @@ function FeaturesSection() {
 
               <div className="flex-1 w-full max-w-md lg:max-w-none">
                 {feature.screenshot ? (
-                  <div className="rounded-2xl border border-border/60 bg-gray-50 p-2 shadow-xl shadow-gray-200/60">
-                    <img
-                      src={feature.screenshot}
-                      alt={`${feature.label} — ceeda screenshot`}
-                      className="w-full rounded-xl"
-                    />
+                  <div className="relative">
+                    <div className="rounded-2xl overflow-hidden h-56 lg:h-64">
+                      <img
+                        src={feature.photo}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-black/5 rounded-2xl" />
+                    </div>
+                    <div className="absolute -bottom-8 left-4 right-4 lg:left-6 lg:right-6 rounded-xl border border-border/60 bg-white p-1.5 shadow-2xl shadow-gray-300/50">
+                      <img
+                        src={feature.screenshot}
+                        alt={`${feature.label} — ceeda screenshot`}
+                        className="w-full rounded-lg"
+                      />
+                    </div>
+                    <div className="h-10" />
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-border overflow-hidden h-72 lg:h-80">
+                  <div className="rounded-2xl overflow-hidden h-72 lg:h-80 relative">
                     <img
-                      src={workshopPhotos[i % workshopPhotos.length]}
+                      src={feature.photo}
                       alt={feature.label}
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl" />
                   </div>
                 )}
               </div>
@@ -510,7 +526,7 @@ function CtaSection() {
   return (
     <section
       className="py-24 relative overflow-hidden bg-cover bg-center"
-      style={{ backgroundImage: `url('${photoWorkshop2}')` }}
+      style={{ backgroundImage: `url('${photoUnder}')` }}
     >
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative max-w-3xl mx-auto px-6 text-center">
