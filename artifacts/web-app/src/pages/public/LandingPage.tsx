@@ -2,36 +2,54 @@ import { useRef } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight, CheckCircle2, ChevronRight, ChevronLeft, CalendarCheck,
-  FileText, Wrench, Receipt, MessageSquare, BarChart3,
-  Star, TrendingUp, Clock, Shield,
+  FileText, Star, TrendingUp, Clock, Shield, LayoutDashboard, ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+import screenshotDashboard from "@assets/Screenshot_2026-04-08_at_7.25.04_PM_1775662471561.png";
+import screenshotBookings from "@assets/Screenshot_2026-04-08_at_7.25.20_PM_1775662466917.png";
+import screenshotJobs from "@assets/Screenshot_2026-04-08_at_7.25.34_PM_1775662457484.png";
+import photoWorkshop1 from "@assets/photo-1615906655593-ad0386982a0f_1775662482209.avif";
+import photoWorkshop2 from "@assets/photo-1593280405106-e438ebe93f5b_1775662482209.avif";
+import photoWorkshop3 from "@assets/photo-1654167535598-86dfc149efa1_1775662482209.avif";
 
 /* ─── Data ────────────────────────────────────────────────────────────────── */
 const features = [
   {
-    icon: CalendarCheck,
-    label: "Bookings",
-    title: "Calendar-based scheduling your team will actually use",
-    body: "Walk-in fast mode for receptionists. Online booking for customers. One shared calendar so nobody double-books a bay.",
-    bullets: ["Walk-in check-in in under 30 seconds", "Online booking link for customers", "Advisor-level calendar views"],
+    icon: LayoutDashboard,
+    label: "Real-time Dashboard",
+    title: "Your entire workshop at a glance",
+    body: "See today's bookings, active jobs, revenue and unpaid invoices in one live view. Know exactly what's happening on the floor without leaving your desk.",
+    bullets: ["Live booking and job counters", "Daily and monthly revenue tracking", "Technician workload overview"],
     accent: "bg-blue-50 text-blue-600",
+    screenshot: screenshotDashboard,
+  },
+  {
+    icon: CalendarCheck,
+    label: "Smart Scheduling",
+    title: "Bookings that fill your bays, not your inbox",
+    body: "A calendar built for workshops — not generic scheduling. Walk-ins, online bookings and advisor assignments all in one place. No double-booking, no missed appointments.",
+    bullets: ["Calendar and list views with status filters", "Walk-in check-in in under 30 seconds", "Online booking link you can share with customers"],
+    accent: "bg-violet-50 text-violet-600",
+    screenshot: screenshotBookings,
+  },
+  {
+    icon: ClipboardList,
+    label: "Job Tracking",
+    title: "Kanban boards that move cars through your shop",
+    body: "Every service job flows through a visual pipeline — from check-in to estimation, work in progress and invoicing. Your team always knows what's next.",
+    bullets: ["Drag-and-drop Kanban workflow", "Priority and urgency flags", "Full job history with time tracking"],
+    accent: "bg-emerald-50 text-emerald-600",
+    screenshot: screenshotJobs,
   },
   {
     icon: FileText,
-    label: "Quotations",
-    title: "Quotes that sell — built and sent in minutes",
-    body: "Drag-in services from your catalogue. Apply discounts. Send via WhatsApp. Collect a deposit before work starts.",
-    bullets: ["Itemised line-item quotes", "Customer approval via link", "Auto-convert to job card on approval"],
-    accent: "bg-violet-50 text-violet-600",
-  },
-  {
-    icon: Receipt,
-    label: "Invoices",
-    title: "Get paid faster with online payment links",
-    body: "Invoices are auto-generated from completed jobs. One tap to send via WhatsApp with a payment link. No chasing.",
-    bullets: ["Auto-generated from job cards", "WhatsApp delivery", "Online payment link"],
-    accent: "bg-emerald-50 text-emerald-600",
+    label: "Quotes & Invoices",
+    title: "From estimate to payment in a few clicks",
+    body: "Build itemised quotes from your service catalogue. When approved, they auto-convert to job cards. Completed jobs generate invoices instantly — send via WhatsApp with a payment link.",
+    bullets: ["Itemised line-item quotes with discounts", "One-tap customer approval via link", "Auto-generated invoices with online payment"],
+    accent: "bg-amber-50 text-amber-600",
+    screenshot: null,
   },
 ];
 
@@ -205,27 +223,29 @@ function StatsSection() {
 }
 
 function FeaturesSection() {
+  const workshopPhotos = [photoWorkshop1, photoWorkshop2, photoWorkshop3];
+
   return (
     <section id="features" className="py-24 bg-white">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">The full toolkit</p>
+        <div className="text-center mb-20">
+          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Built for workshops</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-4">
-            Everything from check-in to payment
+            Every tool your workshop needs, in one place
           </h2>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            One platform that covers every step of your workshop workflow, built for speed.
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            From the dashboard to the final invoice — ceeda{">"} replaces spreadsheets, WhatsApp groups, and paper job cards with one clean system.
           </p>
         </div>
 
-        <div className="space-y-24">
+        <div className="space-y-32">
           {features.map((feature, i) => (
             <div
               key={feature.label}
               className={`flex flex-col lg:flex-row items-center gap-12 lg:gap-16 ${i % 2 === 1 ? "lg:flex-row-reverse" : ""}`}
             >
               <div className="flex-1 space-y-5">
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${feature.accent} bg-opacity-10`}>
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${feature.accent}`}>
                   <feature.icon className="w-3.5 h-3.5" />
                   {feature.label}
                 </div>
@@ -242,24 +262,28 @@ function FeaturesSection() {
                   ))}
                 </ul>
                 <Link href="/register" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mt-2">
-                  Get started free <ChevronRight className="w-4 h-4" />
+                  Try it free <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
 
               <div className="flex-1 w-full max-w-md lg:max-w-none">
-                <div className="rounded-2xl border border-border overflow-hidden h-72 lg:h-80">
-                  <img
-                    src={
-                      i === 0
-                        ? "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80"
-                        : i === 1
-                        ? "https://images.unsplash.com/photo-1615906655593-ad0386982a0f?auto=format&fit=crop&w=800&q=80"
-                        : "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80"
-                    }
-                    alt={feature.label}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                {feature.screenshot ? (
+                  <div className="rounded-2xl border border-border/60 bg-gray-50 p-2 shadow-xl shadow-gray-200/60">
+                    <img
+                      src={feature.screenshot}
+                      alt={`${feature.label} — ceeda screenshot`}
+                      className="w-full rounded-xl"
+                    />
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-border overflow-hidden h-72 lg:h-80">
+                    <img
+                      src={workshopPhotos[i % workshopPhotos.length]}
+                      alt={feature.label}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -486,7 +510,7 @@ function CtaSection() {
   return (
     <section
       className="py-24 relative overflow-hidden bg-cover bg-center"
-      style={{ backgroundImage: "url('/cta-bg.webp')" }}
+      style={{ backgroundImage: `url('${photoWorkshop2}')` }}
     >
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative max-w-3xl mx-auto px-6 text-center">
