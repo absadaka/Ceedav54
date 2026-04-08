@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight, CheckCircle2, ChevronRight, ChevronLeft, CalendarCheck,
-  FileText, Star, TrendingUp, Clock, Shield, LayoutDashboard, ClipboardList,
+  Star, TrendingUp, Clock, Shield, LayoutDashboard, ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -10,7 +10,6 @@ import screenshotDashboard from "@assets/Screenshot_2026-04-08_at_7.25.04_PM_177
 import screenshotBookings from "@assets/Screenshot_2026-04-08_at_7.25.20_PM_1775662466917.png";
 import screenshotJobs from "@assets/Screenshot_2026-04-08_at_7.44.51_PM_1775663129834.png";
 import photoMechanic from "@assets/photo-1526626607369-f89fe1ed77a9_1775662796364.avif";
-import photoEngine from "@assets/photo-1615906655593-ad0386982a0f_1775662796364.avif";
 import photoBay from "@assets/photo-1702146713882-2579afb0bfba_1775662796365.avif";
 import photoCtaBg from "@assets/photo-1593280405106-e438ebe93f5b_1775663202911.avif";
 import photoShop from "@assets/premium_photo-1661602003497-7e918e0259b2_1775662796365.avif";
@@ -46,16 +45,6 @@ const features = [
     accent: "bg-emerald-50 text-emerald-600",
     screenshot: screenshotJobs,
     photo: photoMechanic,
-  },
-  {
-    icon: FileText,
-    label: "Quotes & Invoices",
-    title: "From estimate to payment in a few clicks",
-    body: "Build itemised quotes from your service catalogue. When approved, they auto-convert to job cards. Completed jobs generate invoices instantly — send via WhatsApp with a payment link.",
-    bullets: ["Itemised line-item quotes with discounts", "One-tap customer approval via link", "Auto-generated invoices with online payment"],
-    accent: "bg-amber-50 text-amber-600",
-    screenshot: null,
-    photo: photoEngine,
   },
 ];
 
