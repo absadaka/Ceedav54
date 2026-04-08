@@ -219,7 +219,7 @@ function Sidebar({
       <div className="shrink-0 px-2 pb-2">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href={`/${tenantSlug ?? ""}/logout`}>
+            <Link href={`${tenantSlug ? `/${tenantSlug}` : ""}/logout`}>
               <span
                 className={cn(
                   "flex items-center gap-3 rounded-lg text-[15px] font-normal transition-colors cursor-pointer select-none w-full",
