@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 import screenshotDashboard from "@assets/Screenshot_2026-04-08_at_7.25.04_PM_1775662471561.png";
 import screenshotBookings from "@assets/Screenshot_2026-04-08_at_7.25.20_PM_1775662466917.png";
-import screenshotJobs from "@assets/Screenshot_2026-04-08_at_7.25.34_PM_1775662457484.png";
+import screenshotJobs from "@assets/Screenshot_2026-04-08_at_7.44.51_PM_1775663129834.png";
 import photoMechanic from "@assets/photo-1526626607369-f89fe1ed77a9_1775662796364.avif";
 import photoEngine from "@assets/photo-1615906655593-ad0386982a0f_1775662796364.avif";
 import photoBay from "@assets/photo-1702146713882-2579afb0bfba_1775662796365.avif";
