@@ -12,7 +12,7 @@ import screenshotJobs from "@assets/Screenshot_2026-04-08_at_7.44.51_PM_17756631
 import photoMechanic from "@assets/photo-1526626607369-f89fe1ed77a9_1775662796364.avif";
 import photoEngine from "@assets/photo-1615906655593-ad0386982a0f_1775662796364.avif";
 import photoBay from "@assets/photo-1702146713882-2579afb0bfba_1775662796365.avif";
-import photoUnder from "@assets/photo-1727413433599-496949ef8196_1775662796365.avif";
+import photoCtaBg from "@assets/photo-1593280405106-e438ebe93f5b_1775663202911.avif";
 import photoShop from "@assets/premium_photo-1661602003497-7e918e0259b2_1775662796365.avif";
 
 /* ─── Data ────────────────────────────────────────────────────────────────── */
@@ -526,9 +526,9 @@ function CtaSection() {
   return (
     <section
       className="py-24 relative overflow-hidden bg-cover bg-center"
-      style={{ backgroundImage: `url('${photoUnder}')` }}
+      style={{ backgroundImage: `url('${photoCtaBg}')` }}
     >
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/60" />
       <div className="relative max-w-3xl mx-auto px-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-6">
           {[Clock, Shield, TrendingUp].map((Icon, i) => (
