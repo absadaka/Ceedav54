@@ -1,7 +1,7 @@
 import {
   ArrowLeft, Zap, User, Car, Clock, Plus,
   Edit, Trash2, Package, History, CheckCircle2,
-  Receipt, Truck, Pencil, Search,
+  Receipt, Truck, Pencil, Search, Wrench, MessageSquare,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -65,6 +65,11 @@ interface Part {
   description: string; qty: string; unit_price: string; line_total: string;
 }
 
+interface TechNote {
+  id: string; note: string; type: string;
+  created_by: string | null; created_by_name: string | null; created_at: string;
+}
+
 interface HistoryEntry {
   id: string; from_status: string | null; to_status: string;
   note: string | null; changed_by_name: string | null; created_at: string;
@@ -83,22 +88,55 @@ export default function QuickRepairDetailPage() {
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery<{
-    job: JobDetail; parts: Part[]; history: HistoryEntry[];
+    job: JobDetail; parts: Part[]; history: HistoryEntry[]; techNotes: TechNote[];
   }>({
     queryKey: ["quick-repair", id],
     queryFn: () => fetch(`${API}/api/jobs/${id}?tenant=${TENANT}`).then(r => r.json()),
   });
 
-  const job     = data?.job;
-  const parts   = data?.parts ?? [];
-  const history = data?.history ?? [];
+  const job       = data?.job;
+  const parts     = data?.parts ?? [];
+  const history   = data?.history ?? [];
+  const techNotes = data?.techNotes ?? [];
 
   const [editOpen, setEditOpen]   = useState(false);
-  const [partDialog, setPartDialog] = useState<{ open: boolean; part?: Part }>({ open: false });
+  const [partDialog, setPartDialog] = useState<{ open: boolean; part?: Part; mode?: "service" | "part" }>({ open: false });
   const [statusDialog, setStatusDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [statusNote, setStatusNote] = useState("");
+  const [noteText, setNoteText] = useState("");
   const partsRef = useRef<HTMLDivElement>(null);
+
+  const deletePartMut = useMutation({
+    mutationFn: async (partId: string) => {
+      const r = await fetch(`${API}/api/jobs/${id}/parts/${partId}?tenant=${TENANT}`, { method: "DELETE" });
+      if (!r.ok) throw new Error("Failed to delete");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["quick-repair", id] });
+      toast.success("Item removed");
+    },
+    onError: () => toast.error("Failed to remove item"),
+  });
+
+  const noteMut = useMutation({
+    mutationFn: async (note: string) => {
+      const session = getSession();
+      const r = await fetch(`${API}/api/jobs/${id}/notes?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note, created_by: session?.userId, type: "technician" }),
+      });
+      if (!r.ok) throw new Error("Failed to add note");
+      return r.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["quick-repair", id] });
+      setNoteText("");
+      toast.success("Note added");
+    },
+    onError: () => toast.error("Failed to add note"),
+  });
 
   const statusMut = useMutation({
     mutationFn: async ({ status, note }: { status: string; note?: string }) => {
@@ -267,7 +305,7 @@ export default function QuickRepairDetailPage() {
                 variant="outline"
                 className="gap-1.5"
                 onClick={() => handleStatusClick(next.key)}
-                disabled={statusMut.isPending || (job.status === "new" && parts.length === 0)}
+                disabled={statusMut.isPending || (job.status === "new" && parts.length === 0 && techNotes.length === 0)}
               >
                 {statusMut.isPending ? "Updating…" : `Mark as ${next.label}`}
               </Button>
@@ -333,58 +371,101 @@ export default function QuickRepairDetailPage() {
           <TabsTrigger value="history" className="gap-1.5"><History className="w-3.5 h-3.5" />History</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="parts" className="mt-4">
-          <div className="bg-background border border-border rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <span className="text-sm font-semibold">Parts & services ({parts.length})</span>
-              <Button size="sm" variant="outline" className="gap-1" onClick={() => setPartDialog({ open: true })}>
-                <Plus className="w-3.5 h-3.5" />Add item
-              </Button>
-            </div>
-            {parts.length === 0 ? (
-              <div className="px-4 py-12 text-center">
-                <Package className="w-8 h-8 mx-auto text-muted-foreground/20 mb-2" />
-                <p className="text-sm text-muted-foreground">No parts or services added yet.</p>
+        <TabsContent value="parts" className="mt-4 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => setPartDialog({ open: true, mode: "service" })}
+              className="flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left hover:border-primary/40 hover:shadow-sm transition-all"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <Wrench className="w-5 h-5 text-primary" />
               </div>
-            ) : (
+              <div>
+                <p className="text-sm font-semibold text-foreground">Add Service</p>
+                <p className="text-xs text-muted-foreground">From service catalog</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setPartDialog({ open: true, mode: "part" })}
+              className="flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left hover:border-amber-400/40 hover:shadow-sm transition-all"
+            >
+              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+                <Plus className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Add Parts</p>
+                <p className="text-xs text-muted-foreground">Custom or manual entry</p>
+              </div>
+            </button>
+          </div>
+
+          {parts.length > 0 && (
+            <div className="bg-background border border-border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Description</th>
-                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground w-16">Qty</th>
-                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground w-24">Unit Price</th>
-                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground w-24">Total</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Item</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground w-16">Qty</th>
                     <th className="w-10" />
                   </tr>
                 </thead>
                 <tbody>
                   {parts.map(p => (
                     <tr key={p.id} className="border-b border-border last:border-0">
-                      <td className="px-4 py-2.5">
+                      <td className="px-4 py-3">
                         <span className="font-medium">{p.description}</span>
-                        {p.part_number && <span className="text-xs text-muted-foreground ml-2">#{p.part_number}</span>}
                       </td>
-                      <td className="text-right px-4 py-2.5 tabular-nums">{parseFloat(p.qty)}</td>
-                      <td className="text-right px-4 py-2.5 tabular-nums">{fmtAed(p.unit_price)}</td>
-                      <td className="text-right px-4 py-2.5 tabular-nums font-medium">{fmtAed(p.line_total)}</td>
-                      <td className="px-2 py-2.5">
+                      <td className="text-right px-4 py-3 tabular-nums">{parseFloat(p.qty)}</td>
+                      <td className="px-2 py-3">
                         <button
-                          onClick={() => setPartDialog({ open: true, part: p })}
-                          className="p-1 hover:bg-muted rounded transition-colors"
+                          onClick={() => deletePartMut.mutate(p.id)}
+                          className="p-1 hover:bg-destructive/10 rounded transition-colors"
                         >
-                          <Pencil className="w-3 h-3 text-muted-foreground" />
+                          <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                         </button>
                       </td>
                     </tr>
                   ))}
-                  <tr className="bg-muted/30">
-                    <td colSpan={3} className="px-4 py-2.5 text-right font-semibold text-sm">Total</td>
-                    <td className="text-right px-4 py-2.5 font-semibold tabular-nums">{fmtAed(partsTotal)}</td>
-                    <td />
-                  </tr>
                 </tbody>
               </table>
+            </div>
+          )}
+
+          <div className="bg-background border border-border rounded-lg overflow-hidden">
+            <div className="px-4 py-3 border-b border-border">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Technician Notes</span>
+            </div>
+            {techNotes.length > 0 && (
+              <div className="divide-y divide-border">
+                {techNotes.map(n => (
+                  <div key={n.id} className="px-4 py-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-foreground">{n.created_by_name ?? "Technician"}</span>
+                      <span className="text-xs text-muted-foreground">{fmtDate(n.created_at)}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{n.note}</p>
+                  </div>
+                ))}
+              </div>
             )}
+            <div className="px-4 py-3 border-t border-border">
+              <Textarea
+                placeholder="Add a note about the inspection findings..."
+                value={noteText}
+                onChange={e => setNoteText(e.target.value)}
+                rows={2}
+                className="resize-none"
+              />
+              <div className="flex justify-end mt-2">
+                <Button
+                  size="sm"
+                  onClick={() => { if (noteText.trim()) noteMut.mutate(noteText.trim()); }}
+                  disabled={!noteText.trim() || noteMut.isPending}
+                >
+                  {noteMut.isPending ? "Adding…" : "Add Note"}
+                </Button>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
@@ -430,11 +511,11 @@ export default function QuickRepairDetailPage() {
             size="sm"
             className="gap-1.5"
             onClick={() => handleStatusClick("completed")}
-            disabled={statusMut.isPending || parts.length === 0}
+            disabled={statusMut.isPending || (parts.length === 0 && techNotes.length === 0)}
           >
             {statusMut.isPending ? "Updating…" : "Mark as Work Done"}
           </Button>
-          {parts.length === 0 && (
+          {parts.length === 0 && techNotes.length === 0 && (
             <p className="text-xs text-muted-foreground ml-3 self-center">Add at least one part, service or note first</p>
           )}
         </div>
@@ -471,6 +552,7 @@ export default function QuickRepairDetailPage() {
       <PartDialog
         open={partDialog.open}
         part={partDialog.part}
+        mode={partDialog.mode}
         jobId={id!}
         onClose={() => setPartDialog({ open: false })}
         onSaved={() => {
@@ -507,11 +589,12 @@ export default function QuickRepairDetailPage() {
   );
 }
 
-function PartDialog({ open, part, jobId, onClose, onSaved }: {
-  open: boolean; part?: Part; jobId: string;
+function PartDialog({ open, part, mode, jobId, onClose, onSaved }: {
+  open: boolean; part?: Part; mode?: "service" | "part"; jobId: string;
   onClose: () => void; onSaved: () => void;
 }) {
   const isEdit = !!part;
+  const showCatalog = !isEdit && mode !== "part";
   const [form, setForm] = useState({
     description: "", qty: "1", unit_price: "0.00", part_number: "",
   });
@@ -580,11 +663,11 @@ function PartDialog({ open, part, jobId, onClose, onSaved }: {
     <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit item" : "Add part or service"}</DialogTitle>
-          <DialogDescription>{isEdit ? "Update the item details." : "Add a part or service from the catalog or manually."}</DialogDescription>
+          <DialogTitle>{isEdit ? "Edit item" : mode === "service" ? "Add Service" : "Add Part"}</DialogTitle>
+          <DialogDescription>{isEdit ? "Update the item details." : mode === "service" ? "Search your service catalog or enter manually." : "Enter part details manually."}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
-          {!isEdit && (
+          {showCatalog && (
             <div className="space-y-1.5">
               <Label>Quick add from catalog</Label>
               <div className="relative">
