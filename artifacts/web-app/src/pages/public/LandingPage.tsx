@@ -180,7 +180,7 @@ function HeroSection() {
           className="font-black text-gray-950 tracking-tight leading-[0.88] mb-16 max-w-6xl mx-auto"
           style={{ fontSize: "clamp(3rem, 8.5vw, 8rem)" }}
         >
-          Run Your Auto Workshop Smarter.
+          Run Your Auto Shop Smarter.
         </h1>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
