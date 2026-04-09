@@ -29,7 +29,7 @@ const features = [
   {
     icon: CalendarCheck,
     label: "Smart Scheduling",
-    title: "Bookings that fill your bays, not your inbox",
+    title: "Bookings, inspections and estimates",
     body: "A calendar built for workshops — not generic scheduling. Walk-ins, online bookings and advisor assignments all in one place. No double-booking, no missed appointments.",
     bullets: ["Calendar and list views with status filters", "Walk-in check-in in under 30 seconds", "Online booking link you can share with customers"],
     accent: "bg-violet-50 text-violet-600",
