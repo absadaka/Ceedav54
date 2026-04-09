@@ -39,7 +39,7 @@ const features = [
   {
     icon: ClipboardList,
     label: "Job Tracking",
-    title: "Kanban boards that move cars through your shop",
+    title: "Manage your job cards",
     body: "Every service job flows through a visual pipeline — from check-in to estimation, work in progress and invoicing. Your team always knows what's next.",
     bullets: ["Drag-and-drop Kanban workflow", "Priority and urgency flags", "Full job history with time tracking"],
     accent: "bg-emerald-50 text-emerald-600",
