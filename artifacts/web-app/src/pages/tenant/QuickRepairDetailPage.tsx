@@ -1,9 +1,10 @@
 import {
-  ArrowLeft, Zap, User, Car, Clock, Plus,
+  ArrowLeft, Zap, User, Car, Plus,
   Edit, Trash2, Package, History, CheckCircle2,
-  Receipt, Truck, Pencil, Search, Wrench, MessageSquare,
+  Search, Wrench,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Button }   from "@/components/ui/button";
@@ -13,9 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input }    from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label }    from "@/components/ui/label";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -75,6 +73,204 @@ interface HistoryEntry {
   note: string | null; changed_by_name: string | null; created_at: string;
 }
 
+const TYPE_META: Record<string, { label: string; cls: string }> = {
+  labour:     { label: "Labour",     cls: "bg-blue-100 text-blue-700 border-blue-200" },
+  part:       { label: "Part",       cls: "bg-green-100 text-green-700 border-green-200" },
+  consumable: { label: "Consumable", cls: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  sublet:     { label: "Sublet",     cls: "bg-purple-100 text-purple-700 border-purple-200" },
+  package:    { label: "Package",    cls: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+  service:    { label: "Service",    cls: "bg-cyan-100 text-cyan-700 border-cyan-200" },
+};
+
+function CatalogDropdown({
+  items, anchorRef, onSelect, onClose,
+}: {
+  items: any[];
+  anchorRef: React.RefObject<HTMLDivElement>;
+  onSelect: (item: any) => void;
+  onClose: () => void;
+}) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  useEffect(() => {
+    if (anchorRef.current) setRect(anchorRef.current.getBoundingClientRect());
+  }, [anchorRef]);
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+  if (!rect) return null;
+  const style: React.CSSProperties = {
+    position: "fixed", top: rect.bottom + 6, left: rect.left, width: rect.width, zIndex: 9999,
+  };
+  return createPortal(
+    <div style={style} className="rounded-xl border border-border bg-popover shadow-2xl overflow-hidden">
+      <div className="max-h-72 overflow-y-auto">
+        {items.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-muted-foreground">No catalog items match your search</div>
+        ) : (
+          items.map((item: any) => {
+            const tm = TYPE_META[item.type] ?? { label: item.type ?? "Item", cls: "bg-gray-100 text-gray-600 border-gray-200" };
+            const price = item.unit_price ? `AED ${parseFloat(item.unit_price).toFixed(2)}` : null;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onMouseDown={e => { e.preventDefault(); onSelect(item); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent/60 text-left border-b border-border/40 last:border-0 transition-colors"
+              >
+                <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded border ${tm.cls}`}>
+                  {tm.label}
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-medium truncate">{item.name}</span>
+                  {item.sku && <span className="block text-xs text-muted-foreground font-mono mt-0.5">{item.sku}</span>}
+                </span>
+                {price && <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">{price}</span>}
+              </button>
+            );
+          })
+        )}
+      </div>
+      {items.length > 0 && (
+        <div className="px-3 py-1.5 border-t border-border bg-muted/40 text-[10px] text-muted-foreground text-right">
+          {items.length} result{items.length !== 1 ? "s" : ""}
+        </div>
+      )}
+    </div>,
+    document.body
+  );
+}
+
+function AddServiceForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<{ name: string; sku?: string; unit_price?: string } | null>(null);
+  const [qty, setQty] = useState("1");
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+
+  const { data: catData } = useQuery({
+    queryKey: ["catalog", TENANT],
+    queryFn: () => fetch(`${API}/api/settings/catalog?tenant=${TENANT}`).then(r => r.json()),
+    staleTime: 60_000,
+  });
+
+  const allCatalog: any[] = (catData?.items ?? []).filter((i: any) => i.is_active !== false);
+  const filtered = allCatalog.filter(i =>
+    !search || i.name.toLowerCase().includes(search.toLowerCase()) || (i.sku ?? "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  const pickItem = useCallback((item: any) => {
+    setSelected({ name: item.name, sku: item.sku ?? "", unit_price: item.unit_price ?? "0" });
+    setSearch(item.name);
+    setOpen(false);
+  }, []);
+
+  const closeDropdown = useCallback(() => setOpen(false), []);
+
+  const mutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/jobs/${jobId}/parts?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        description: selected?.name ?? search,
+        part_number: selected?.sku ?? "",
+        qty,
+        unit_price: selected?.unit_price ?? "0",
+      }),
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      onAdded();
+      setSearch(""); setSelected(null); setQty("1");
+      toast.success("Service added");
+    },
+    onError: () => toast.error("Failed to add service"),
+  });
+
+  return (
+    <div className="border border-dashed border-primary/30 rounded-lg p-4 mt-3 space-y-3 bg-primary/5" ref={anchorRef}>
+      <p className="text-xs font-semibold text-primary/70 uppercase tracking-wide">Add service / part</p>
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            className={cn("h-8 text-sm pl-7 pr-3", selected ? "border-green-500 ring-1 ring-green-500/20" : "")}
+            placeholder="Search catalog or type custom…"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setSelected(null); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setTimeout(() => setOpen(false), 100)}
+          />
+        </div>
+        <Input
+          type="number" min="0.01" step="0.01"
+          value={qty} onChange={e => setQty(e.target.value)}
+          className="h-8 text-sm w-16 shrink-0"
+          placeholder="Qty"
+        />
+        <Button
+          size="sm" className="h-8 shrink-0"
+          disabled={(!selected && !search.trim()) || mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending ? "Adding…" : "Add"}
+        </Button>
+      </div>
+      {open && <CatalogDropdown items={filtered} anchorRef={anchorRef} onSelect={pickItem} onClose={closeDropdown} />}
+    </div>
+  );
+}
+
+function AddManualPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
+  const [description, setDescription] = useState("");
+  const [qty, setQty] = useState("1");
+
+  const mutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/jobs/${jobId}/parts?tenant=${TENANT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description, qty, unit_price: "0", part_number: "" }),
+    }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      onAdded();
+      setDescription(""); setQty("1");
+      toast.success("Part added");
+    },
+    onError: () => toast.error("Failed to add part"),
+  });
+
+  return (
+    <div className="border border-dashed border-border rounded-lg p-4 mt-3 space-y-3 bg-muted/20">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add part manually</p>
+      <div className="grid grid-cols-4 gap-3 items-end">
+        <div className="col-span-3 space-y-1">
+          <Label className="text-xs">Part description *</Label>
+          <Input
+            className="h-8 text-sm"
+            placeholder="e.g. Engine Air Filter"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && description.trim()) mutation.mutate(); }}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Qty</Label>
+          <Input
+            type="number" min="0.01" step="0.01"
+            value={qty} onChange={e => setQty(e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="col-span-4 flex justify-end">
+          <Button size="sm" disabled={!description.trim() || mutation.isPending} onClick={() => mutation.mutate()}>
+            {mutation.isPending ? "Adding…" : "Add part"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const PRIORITY_BADGE: Record<string, string> = {
   urgent: "bg-red-100 text-red-700 border-red-300",
   high:   "bg-orange-100 text-orange-700 border-orange-300",
@@ -100,7 +296,8 @@ export default function QuickRepairDetailPage() {
   const techNotes = data?.techNotes ?? [];
 
   const [editOpen, setEditOpen]   = useState(false);
-  const [partDialog, setPartDialog] = useState<{ open: boolean; part?: Part; mode?: "service" | "part" }>({ open: false });
+  const [showAddService, setShowAddService] = useState(false);
+  const [showAddManualPart, setShowAddManualPart] = useState(false);
   const [statusDialog, setStatusDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [statusNote, setStatusNote] = useState("");
@@ -374,11 +571,14 @@ export default function QuickRepairDetailPage() {
         <TabsContent value="parts" className="mt-4 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
-              onClick={() => setPartDialog({ open: true, mode: "service" })}
-              className="flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left hover:border-primary/40 hover:shadow-sm transition-all"
+              onClick={() => { setShowAddService(true); setShowAddManualPart(false); }}
+              className={cn(
+                "flex items-center gap-3 rounded-xl border-2 px-5 py-4 text-left transition-colors",
+                showAddService ? "border-blue-600 bg-blue-50 dark:bg-blue-950/30" : "border-border hover:border-blue-400 bg-background"
+              )}
             >
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <Wrench className="w-5 h-5 text-primary" />
+              <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                <Wrench className="w-4 h-4 text-blue-600" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Add Service</p>
@@ -386,11 +586,14 @@ export default function QuickRepairDetailPage() {
               </div>
             </button>
             <button
-              onClick={() => setPartDialog({ open: true, mode: "part" })}
-              className="flex items-center gap-4 rounded-xl border border-border bg-background px-5 py-4 text-left hover:border-amber-400/40 hover:shadow-sm transition-all"
+              onClick={() => { setShowAddManualPart(true); setShowAddService(false); }}
+              className={cn(
+                "flex items-center gap-3 rounded-xl border-2 px-5 py-4 text-left transition-colors",
+                showAddManualPart ? "border-blue-600 bg-blue-50 dark:bg-blue-950/30" : "border-border hover:border-blue-400 bg-background"
+              )}
             >
-              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
-                <Plus className="w-5 h-5 text-amber-600" />
+              <div className="w-9 h-9 rounded-lg bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center shrink-0">
+                <Plus className="w-4 h-4 text-orange-600" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Add Parts</p>
@@ -398,6 +601,23 @@ export default function QuickRepairDetailPage() {
               </div>
             </button>
           </div>
+
+          {(showAddService || showAddManualPart) && (
+            <div>
+              {showAddService && (
+                <AddServiceForm jobId={id!} onAdded={() => {
+                  qc.invalidateQueries({ queryKey: ["quick-repair", id] });
+                  setShowAddService(false);
+                }} />
+              )}
+              {showAddManualPart && (
+                <AddManualPartForm jobId={id!} onAdded={() => {
+                  qc.invalidateQueries({ queryKey: ["quick-repair", id] });
+                  setShowAddManualPart(false);
+                }} />
+              )}
+            </div>
+          )}
 
           {parts.length > 0 && (
             <div className="bg-background border border-border rounded-lg overflow-hidden">
@@ -548,19 +768,6 @@ export default function QuickRepairDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Part add/edit dialog */}
-      <PartDialog
-        open={partDialog.open}
-        part={partDialog.part}
-        mode={partDialog.mode}
-        jobId={id!}
-        onClose={() => setPartDialog({ open: false })}
-        onSaved={() => {
-          setPartDialog({ open: false });
-          qc.invalidateQueries({ queryKey: ["quick-repair", id] });
-        }}
-      />
-
       {/* Edit drawer */}
       {editOpen && job && (
         <JobDrawer
@@ -589,145 +796,3 @@ export default function QuickRepairDetailPage() {
   );
 }
 
-function PartDialog({ open, part, mode, jobId, onClose, onSaved }: {
-  open: boolean; part?: Part; mode?: "service" | "part"; jobId: string;
-  onClose: () => void; onSaved: () => void;
-}) {
-  const isEdit = !!part;
-  const showCatalog = !isEdit && mode !== "part";
-  const [form, setForm] = useState({
-    description: "", qty: "1", unit_price: "0.00", part_number: "",
-  });
-
-  useEffect(() => {
-    if (open) {
-      setForm({
-        description: part?.description ?? "",
-        qty: part?.qty ? String(parseFloat(part.qty)) : "1",
-        unit_price: part?.unit_price ? String(parseFloat(part.unit_price)) : "0.00",
-        part_number: part?.part_number ?? "",
-      });
-    }
-  }, [open, part]);
-
-  const { data: catalogData } = useQuery<{ data: Array<{ id: string; name: string; type: string; unit_price: string; sku: string | null }> }>({
-    queryKey: ["catalog-items"],
-    queryFn: () => fetch(`${API}/api/settings/services?tenant=${TENANT}`).then(r => r.json()),
-    staleTime: 60_000,
-    enabled: open,
-  });
-
-  const [catalogSearch, setCatalogSearch] = useState("");
-  const catalogItems = catalogData?.data ?? [];
-  const filteredCatalog = catalogSearch
-    ? catalogItems.filter(c => c.name.toLowerCase().includes(catalogSearch.toLowerCase()))
-    : catalogItems;
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const url = isEdit
-        ? `${API}/api/jobs/${jobId}/parts/${part!.id}?tenant=${TENANT}`
-        : `${API}/api/jobs/${jobId}/parts?tenant=${TENANT}`;
-      const r = await fetch(url, {
-        method: isEdit ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!r.ok) throw new Error("Failed to save part");
-      return r.json();
-    },
-    onSuccess: onSaved,
-    onError: () => toast.error("Failed to save part"),
-  });
-
-  const deleteMut = useMutation({
-    mutationFn: async () => {
-      const r = await fetch(`${API}/api/jobs/${jobId}/parts/${part!.id}?tenant=${TENANT}`, { method: "DELETE" });
-      if (!r.ok) throw new Error("Failed to delete");
-    },
-    onSuccess: onSaved,
-    onError: () => toast.error("Failed to delete part"),
-  });
-
-  function selectCatalogItem(item: typeof catalogItems[0]) {
-    setForm({
-      description: item.name,
-      qty: "1",
-      unit_price: String(parseFloat(item.unit_price)),
-      part_number: item.sku ?? "",
-    });
-    setCatalogSearch("");
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit item" : mode === "service" ? "Add Service" : "Add Part"}</DialogTitle>
-          <DialogDescription>{isEdit ? "Update the item details." : mode === "service" ? "Search your service catalog or enter manually." : "Enter part details manually."}</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          {showCatalog && (
-            <div className="space-y-1.5">
-              <Label>Quick add from catalog</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Search catalog…"
-                  value={catalogSearch}
-                  onChange={e => setCatalogSearch(e.target.value)}
-                  className="pl-9 h-8 text-sm"
-                />
-              </div>
-              {catalogSearch && filteredCatalog.length > 0 && (
-                <div className="border border-border rounded-md max-h-32 overflow-y-auto">
-                  {filteredCatalog.slice(0, 8).map(c => (
-                    <button
-                      key={c.id}
-                      onClick={() => selectCatalogItem(c)}
-                      className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors flex justify-between"
-                    >
-                      <span>{c.name}</span>
-                      <span className="text-muted-foreground text-xs">AED {parseFloat(c.unit_price).toFixed(2)}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          <div className="space-y-1.5">
-            <Label>Description</Label>
-            <Input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Oil filter replacement" />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1.5">
-              <Label>Qty</Label>
-              <Input type="number" min="0.01" step="0.01" value={form.qty} onChange={e => setForm(p => ({ ...p, qty: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Unit price</Label>
-              <Input type="number" min="0" step="0.01" value={form.unit_price} onChange={e => setForm(p => ({ ...p, unit_price: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Part #</Label>
-              <Input value={form.part_number} onChange={e => setForm(p => ({ ...p, part_number: e.target.value }))} placeholder="Optional" />
-            </div>
-          </div>
-        </div>
-        <DialogFooter className="flex justify-between">
-          {isEdit && (
-            <Button variant="outline" className="text-destructive mr-auto" onClick={() => { if (confirm("Delete this item?")) deleteMut.mutate(); }}>
-              <Trash2 className="w-3.5 h-3.5 mr-1" />Delete
-            </Button>
-          )}
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button onClick={() => mutation.mutate()} disabled={mutation.isPending || !form.description}>
-              {mutation.isPending ? "Saving…" : isEdit ? "Update" : "Add"}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
