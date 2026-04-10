@@ -19,7 +19,7 @@ async function resolveTenant(slug: string) {
   return t ?? null;
 }
 
-const VALID_STATUSES = ["new", "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "delivered", "cancelled"] as const;
+const VALID_STATUSES = ["new", "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "invoiced", "delivered", "cancelled"] as const;
 type JobStatus = typeof VALID_STATUSES[number];
 
 /* ─── GET /jobs ───────────────────────────────────────────────────────────── */
