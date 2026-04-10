@@ -834,6 +834,13 @@ export default function QuickRepairDetailPage() {
                     </div>
                   )}
 
+                  {inv.notes && (
+                    <div className="border-t border-border px-4 py-3">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Technician Notes</p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{inv.notes}</p>
+                    </div>
+                  )}
+
                   <div className="border-t border-border px-4 py-3">
                     <div className="flex justify-end">
                       <div className="w-56 space-y-1 text-xs">

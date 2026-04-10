@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { sql, eq, and, desc, ilike, or } from "drizzle-orm";
+import { sql, eq, and, desc, asc, ilike, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
-  jobsTable, jobPartsTable,
+  jobsTable, jobPartsTable, jobNotesTable,
   invoicesTable, invoiceLineItemsTable, paymentsTable,
   quotationsTable, quoteLineItemsTable,
 } from "@workspace/db";
@@ -254,6 +254,17 @@ router.post("/from-job/:jobId", async (req, res) => {
     const ref = makeRef(seq);
     const taxRate = parseFloat((req.body as any).tax_rate ?? "5");
 
+    const techNotes = await db
+      .select({ note: jobNotesTable.note, created_at: jobNotesTable.created_at })
+      .from(jobNotesTable)
+      .where(and(eq(jobNotesTable.job_id, job.id), eq(jobNotesTable.tenant_id, tenant.id), eq(jobNotesTable.type, "technician")))
+      .orderBy(asc(jobNotesTable.created_at));
+
+    const notesText = (req.body as any).notes
+      ?? (techNotes.length > 0
+        ? techNotes.map(n => n.note).join("\n")
+        : null);
+
     const [inv] = await db.insert(invoicesTable).values({
       tenant_id:    tenant.id,
       seq,
@@ -264,7 +275,7 @@ router.post("/from-job/:jobId", async (req, res) => {
       vehicle_id:   job.vehicle_id ?? undefined,
       status:       "draft",
       tax_rate:     taxRate.toFixed(2),
-      notes:        (req.body as any).notes ?? null,
+      notes:        notesText,
       due_at:       (req.body as any).due_at ? new Date((req.body as any).due_at) : null,
     }).returning();
 
