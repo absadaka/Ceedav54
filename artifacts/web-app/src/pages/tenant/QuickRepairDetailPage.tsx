@@ -533,23 +533,24 @@ export default function QuickRepairDetailPage() {
               const hasInvoice = !!inv;
               const isSent = hasInvoice && inv.status !== "draft";
               return (
-                <Button
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => {
-                    if (isSent) return;
-                    if (hasInvoice) {
-                      setShareChannels({ sms: false, whatsapp: false, email: false });
-                      setShowShareInvoice(true);
-                    } else {
-                      createInvoiceMutation.mutate();
-                    }
-                  }}
-                  disabled={isSent || createInvoiceMutation.isPending || sendInvoiceMutation.isPending}
-                >
-                  {isSent ? <CheckCircle2 className="w-4 h-4" /> : hasInvoice ? <Send className="w-4 h-4" /> : <Receipt className="w-4 h-4" />}
-                  {createInvoiceMutation.isPending ? "Creating…" : sendInvoiceMutation.isPending ? "Sending…" : isSent ? "Invoice Shared" : hasInvoice ? "Send Invoice" : "Create Invoice"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      if (hasInvoice) {
+                        setShareChannels({ sms: false, whatsapp: false, email: false });
+                        setShowShareInvoice(true);
+                      } else {
+                        createInvoiceMutation.mutate();
+                      }
+                    }}
+                    disabled={createInvoiceMutation.isPending || sendInvoiceMutation.isPending}
+                  >
+                    {hasInvoice ? <Send className="w-4 h-4" /> : <Receipt className="w-4 h-4" />}
+                    {createInvoiceMutation.isPending ? "Creating…" : sendInvoiceMutation.isPending ? "Sending…" : isSent ? "Resend Invoice" : hasInvoice ? "Send Invoice" : "Create Invoice"}
+                  </Button>
+                </div>
               );
             })() : (
               <Button

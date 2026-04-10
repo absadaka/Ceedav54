@@ -1399,7 +1399,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       return (
                         <button
                           onClick={() => {
-                            if (isSent) return;
                             if (hasInvoice) {
                               setShareChannels({ sms: false, whatsapp: false, email: false });
                               setShowShareInvoice(true);
@@ -1407,17 +1406,15 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                               createInvoiceMutation.mutate();
                             }
                           }}
-                          disabled={isSent || createInvoiceMutation.isPending || sendInvoiceMutation.isPending}
+                          disabled={createInvoiceMutation.isPending || sendInvoiceMutation.isPending}
                           className={cn(
                             "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                            isSent
-                              ? "border-green-500 bg-green-500 text-white cursor-default"
-                              : "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
+                            "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
                           )}
                         >
-                          {isSent ? <CheckCircle2 className="w-4 h-4" /> : hasInvoice ? <Send className="w-4 h-4" /> : <Receipt className="w-4 h-4" />}
+                          {hasInvoice ? <Send className="w-4 h-4" /> : <Receipt className="w-4 h-4" />}
                           <span className="text-xs font-bold">
-                            {createInvoiceMutation.isPending ? "Creating…" : sendInvoiceMutation.isPending ? "Sending…" : isSent ? "Invoice Shared" : hasInvoice ? "Send Invoice" : "Create Invoice"}
+                            {createInvoiceMutation.isPending ? "Creating…" : sendInvoiceMutation.isPending ? "Sending…" : isSent ? "Resend Invoice" : hasInvoice ? "Send Invoice" : "Create Invoice"}
                           </span>
                         </button>
                       );
