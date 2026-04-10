@@ -1569,7 +1569,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   {showInvoices && (
                     <TabsTrigger value="invoices">Invoices</TabsTrigger>
                   )}
-                  <TabsTrigger value="history">History</TabsTrigger>
                 </TabsList>
               );
             })()}
@@ -2451,51 +2450,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               )}
             </TabsContent>
 
-            {/* ── History tab ─────────────────────────────────────────── */}
-            <TabsContent value="history" className="mt-0">
-              <div className="border border-border rounded-lg bg-background overflow-hidden">
-                {statusHistory.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-muted-foreground/50">No history yet</div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {statusHistory.map((h, i) => (
-                      <div key={h.id} className="flex gap-3 px-4 py-3">
-                        <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
-                          <div className={cn(
-                            "w-2.5 h-2.5 rounded-full border-2",
-                            h.to_status === "delivered" ? "border-teal-500 bg-teal-500"
-                              : h.to_status === "completed" ? "border-green-500 bg-green-500"
-                              : h.to_status === "in_progress" ? "border-orange-500 bg-orange-500"
-                              : h.to_status === "qc" ? "border-blue-500 bg-blue-500"
-                              : "border-muted-foreground/40 bg-muted",
-                          )} />
-                          {i < statusHistory.length - 1 && <div className="w-0.5 flex-1 bg-border min-h-[16px]" />}
-                        </div>
-                        <div className="pb-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {h.from_status && (
-                              <>
-                                <Badge variant="outline" className={cn("text-[10px] border", statusClass(h.from_status))}>
-                                  {jobStatusLabel(h.from_status, isInspection)}
-                                </Badge>
-                                <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                              </>
-                            )}
-                            <Badge variant="outline" className={cn("text-[10px] border", statusClass(h.to_status))}>
-                              {jobStatusLabel(h.to_status, isInspection)}
-                            </Badge>
-                          </div>
-                          {h.note && <p className="text-xs text-muted-foreground mt-1">{h.note}</p>}
-                          <p className="text-[11px] text-muted-foreground/60 mt-1">
-                            {h.changed_by_name && <>{h.changed_by_name} · </>}{fmtDate(h.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
           </Tabs>
         </div>
 

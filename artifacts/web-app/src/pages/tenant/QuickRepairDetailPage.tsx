@@ -1,6 +1,6 @@
 import {
   ArrowLeft, Zap, User, Car, Plus,
-  Edit, Trash2, Package, History, CheckCircle2,
+  Edit, Trash2, Package, CheckCircle2,
   Search, Wrench, Receipt, Send, MessageSquare, Phone, Mail,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -615,7 +615,7 @@ export default function QuickRepairDetailPage() {
         </div>
       )}
 
-      {/* Tabs: Parts & History */}
+      {/* Tabs */}
       <div ref={partsRef}>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -623,7 +623,6 @@ export default function QuickRepairDetailPage() {
           {["completed", "invoiced", "delivered"].includes(job.status) && (
             <TabsTrigger value="invoices" className="gap-1.5"><Receipt className="w-3.5 h-3.5" />Invoices</TabsTrigger>
           )}
-          <TabsTrigger value="history" className="gap-1.5"><History className="w-3.5 h-3.5" />History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="parts" className="mt-4 space-y-5">
@@ -905,40 +904,6 @@ export default function QuickRepairDetailPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="history" className="mt-4">
-          <div className="bg-background border border-border rounded-lg p-4">
-            {history.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No history yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {history.map(h => (
-                  <div key={h.id} className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 text-sm">
-                        {h.from_status && (
-                          <>
-                            <Badge variant="outline" className={cn("text-[10px] border", statusClass(h.from_status))}>
-                              {statusLabel(h.from_status)}
-                            </Badge>
-                            <span className="text-muted-foreground">→</span>
-                          </>
-                        )}
-                        <Badge variant="outline" className={cn("text-[10px] border", statusClass(h.to_status))}>
-                          {statusLabel(h.to_status)}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {h.changed_by_name ?? "System"} · {fmtDate(h.created_at)}
-                        {h.note && ` — ${h.note}`}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </TabsContent>
       </Tabs>
 
       {job.status === "new" && (
