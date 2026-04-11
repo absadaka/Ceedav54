@@ -1933,6 +1933,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       <tr className="border-b border-border bg-muted/30">
                         <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Item</th>
                         <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground w-20">Qty</th>
+                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground w-28">Unit Price</th>
+                        <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground w-24">Total</th>
                         <th className="w-10 px-2 py-2" />
                       </tr>
                     </thead>
@@ -1941,6 +1943,24 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/20 group/part">
                           <td className="px-4 py-2.5 text-sm font-medium">{p.description}</td>
                           <td className="px-4 py-2.5 text-right text-sm tabular-nums">{parseFloat(p.qty).toFixed(0)}</td>
+                          <td className="px-4 py-2.5 text-right">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              defaultValue={parseFloat(p.unit_price).toFixed(2)}
+                              className="w-24 text-right text-sm bg-transparent border border-transparent rounded px-2 py-1 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 tabular-nums"
+                              onBlur={e => {
+                                const val = e.target.value.trim();
+                                if (val === "" || isNaN(Number(val))) { e.target.value = parseFloat(p.unit_price).toFixed(2); return; }
+                                if (parseFloat(val).toFixed(2) !== parseFloat(p.unit_price).toFixed(2)) {
+                                  updatePartPriceMutation.mutate({ partId: p.id, unit_price: val });
+                                }
+                              }}
+                              onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                            />
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-sm tabular-nums font-medium">{parseFloat(p.line_total).toFixed(2)}</td>
                           <td className="px-2 py-2.5">
                             <button onClick={() => removePartMutation.mutate(p.id)}
                               className="opacity-0 group-hover/part:opacity-100 transition-opacity text-muted-foreground hover:text-red-500 p-1">
@@ -1976,36 +1996,30 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       <tbody>
                         {parts.map(p => {
                           const needsPrice = parseFloat(p.unit_price) === 0;
-                          const isCatalogItem = catalogSet.has(p.description.toLowerCase()) || (p.part_number && catalogSet.has(p.part_number.toLowerCase()));
-                          const priceEditable = isEstimationStage && !isCatalogItem;
                           return (
-                          <tr key={p.id} className={cn("border-b border-border last:border-0", needsPrice && isEstimationStage ? "bg-amber-50 dark:bg-amber-950/20" : "")}>
+                          <tr key={p.id} className={cn("border-b border-border last:border-0", needsPrice ? "bg-amber-50 dark:bg-amber-950/20" : "")}>
                             <td className="px-4 py-2.5 text-sm">{p.description}</td>
                             <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono hidden sm:table-cell">{p.part_number ?? "—"}</td>
                             <td className="px-4 py-2.5 text-right text-sm">{parseFloat(p.qty).toFixed(2)}</td>
                             <td className="px-4 py-2.5 text-right text-sm">
-                              {priceEditable ? (
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  defaultValue={parseFloat(p.unit_price).toFixed(2)}
-                                  className={cn(
-                                    "w-24 text-right text-sm bg-transparent border border-transparent rounded px-2 py-1 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
-                                    needsPrice ? "text-amber-600" : ""
-                                  )}
-                                  onBlur={e => {
-                                    const val = e.target.value.trim();
-                                    if (val === "" || isNaN(Number(val))) { e.target.value = parseFloat(p.unit_price).toFixed(2); return; }
-                                    if (parseFloat(val).toFixed(2) !== parseFloat(p.unit_price).toFixed(2)) {
-                                      updatePartPriceMutation.mutate({ partId: p.id, unit_price: val });
-                                    }
-                                  }}
-                                  onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                                />
-                              ) : (
-                                <span>{parseFloat(p.unit_price).toFixed(2)}</span>
-                              )}
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                defaultValue={parseFloat(p.unit_price).toFixed(2)}
+                                className={cn(
+                                  "w-24 text-right text-sm bg-transparent border border-transparent rounded px-2 py-1 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+                                  needsPrice ? "text-amber-600" : ""
+                                )}
+                                onBlur={e => {
+                                  const val = e.target.value.trim();
+                                  if (val === "" || isNaN(Number(val))) { e.target.value = parseFloat(p.unit_price).toFixed(2); return; }
+                                  if (parseFloat(val).toFixed(2) !== parseFloat(p.unit_price).toFixed(2)) {
+                                    updatePartPriceMutation.mutate({ partId: p.id, unit_price: val });
+                                  }
+                                }}
+                                onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                              />
                             </td>
                             <td className="px-4 py-2.5 text-right text-sm font-medium">{parseFloat(p.line_total).toFixed(2)}</td>
                             <td className="px-2 py-2">
