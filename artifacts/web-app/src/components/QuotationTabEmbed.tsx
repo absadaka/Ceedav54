@@ -404,6 +404,11 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
                 </span>
                 <span className="font-semibold tabular-nums">{fmtAed(qt.advance_amount)}</span>
               </div>
+              {qt.advance_paid === "true" && qt.advance_paid_at && (
+                <div className="text-xs text-green-700 mt-0.5">
+                  Paid on {new Date(qt.advance_paid_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short", year: "numeric" })}
+                </div>
+              )}
               {qt.advance_paid !== "true" && qt.advance_stripe_url && (
                 <a href={qt.advance_stripe_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline hover:text-blue-800">
                   Payment link
