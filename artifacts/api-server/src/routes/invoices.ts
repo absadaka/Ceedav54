@@ -62,7 +62,7 @@ async function recalcPaid(invoiceId: string) {
   const paid = payments.reduce((s, p) => s + parseFloat(p.amount), 0);
 
   const [inv] = await db
-    .select({ total: invoicesTable.total })
+    .select({ total: invoicesTable.total, job_id: invoicesTable.job_id })
     .from(invoicesTable)
     .where(eq(invoicesTable.id, invoiceId))
     .limit(1);
@@ -82,6 +82,19 @@ async function recalcPaid(invoiceId: string) {
       updated_at: new Date(),
     })
     .where(eq(invoicesTable.id, invoiceId));
+
+  if (status === "paid" && inv.job_id) {
+    const [job] = await db.select({ status: jobsTable.status })
+      .from(jobsTable)
+      .where(eq(jobsTable.id, inv.job_id))
+      .limit(1);
+    if (job && job.status === "invoiced") {
+      await db.update(jobsTable).set({
+        status: "paid",
+        updated_at: new Date(),
+      }).where(eq(jobsTable.id, inv.job_id));
+    }
+  }
 }
 
 /* ─── sync invoice line items from quotation ─────────────────────────────── */
