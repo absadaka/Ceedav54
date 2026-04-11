@@ -99,8 +99,8 @@ ceeda/
 - `GET /stats` — dashboard KPIs (draft/sent/partial/paid/overdue/void counts + totals)
 - `GET /` — paginated list with status/search filter
 - `POST /` — create blank invoice
-- `POST /from-job/:jobId` — create invoice pre-populated from job's parts list
-- `GET /:id` — full detail (invoice + line items + payments), uses Drizzle `alias()` for cashier joins
+- `POST /from-job/:jobId` — create invoice pre-populated from job's parts list; includes technician notes + report notes (divider `--- Job Report ---`) in `notes` field
+- `GET /:id` — full detail (invoice + line items + payments + jobReport[]), uses Drizzle `alias()` for cashier joins
 - `PATCH /:id` — update fields (triggers recalc)
 - `DELETE /:id` — delete (draft/void only)
 - `GET /:id/lines` — list line items
@@ -108,7 +108,7 @@ ceeda/
 - `PATCH /:id/lines/:lineId` — update line item (auto-recalcs)
 - `DELETE /:id/lines/:lineId` — remove line item (auto-recalcs)
 - `POST /:id/payments` — record payment (auto-updates paid_amount, sets partial/paid status)
-- `POST /:id/send` — draft → sent
+- `POST /:id/send` — draft → sent; email includes job report section if report notes exist
 - `POST /:id/void` — void invoice
 
 **Key patterns**: `vehiclesTable.plate` (not `plate_number`), `alias(usersTable, "inv_cashier")` for multi-user joins

@@ -79,10 +79,15 @@ interface Payment {
   id: string; method: string; amount: string; reference: string | null;
   notes: string | null; paid_at: string; created_at: string; cashier_name: string | null;
 }
+interface JobReportNote {
+  note: string;
+  created_at: string;
+}
 interface InvoiceData {
   invoice: InvoiceDetail;
   lineItems: LineItem[];
   payments: Payment[];
+  jobReport?: JobReportNote[];
 }
 
 /* ─── AddLineForm ────────────────────────────────────────────────────────── */
@@ -366,7 +371,7 @@ export default function InvoiceDetailPage() {
     );
   }
 
-  const { invoice, lineItems, payments } = data;
+  const { invoice, lineItems, payments, jobReport = [] } = data;
   const subtotal   = parseFloat(invoice.subtotal ?? "0");
   const discount   = parseFloat(invoice.discount ?? "0");
   const taxAmt     = parseFloat(invoice.tax_amount ?? "0");
@@ -559,6 +564,23 @@ export default function InvoiceDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Job Report */}
+          {jobReport.length > 0 && (
+            <div className="border border-blue-200 rounded-lg bg-blue-50/50 p-4 space-y-2">
+              <p className="text-xs font-semibold text-blue-800 uppercase tracking-wide flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5" />Job Report
+              </p>
+              <ul className="space-y-1.5">
+                {jobReport.map((r, i) => (
+                  <li key={i} className="text-sm text-foreground flex items-start gap-2">
+                    <span className="text-blue-400 mt-1">•</span>
+                    <span>{r.note}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Notes */}
           {invoice.notes && (

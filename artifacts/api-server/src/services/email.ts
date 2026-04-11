@@ -324,6 +324,7 @@ export function invoiceEmailHtml(opts: {
   vehicleInfo?: string;
   notes?: string | null;
   paymentUrl?: string | null;
+  jobReport?: string[];
 }): string {
   const payNowButton = opts.paymentUrl ? `
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
@@ -370,6 +371,15 @@ export function invoiceEmailHtml(opts: {
       </td></tr>
     </table>
     ${payNowButton}
+    ${opts.jobReport?.length ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+      <tr>
+        <td style="padding:12px 16px;background:#f0f9ff;border-radius:8px;border-left:4px solid #3b82f6;">
+          <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#1e40af;">Job Report</p>
+          ${opts.jobReport.map(n => `<p style="margin:0 0 6px;font-size:13px;color:#3f3f46;">• ${n}</p>`).join("")}
+        </td>
+      </tr>
+    </table>` : ""}
     ${opts.notes ? `<p style="margin:0 0 16px;font-size:13px;color:#71717a;font-style:italic;">Note: ${opts.notes}</p>` : ""}
     <p style="margin:0;font-size:14px;color:#3f3f46;">
       If you have any questions, please don't hesitate to reach out.
