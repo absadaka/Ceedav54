@@ -45,6 +45,7 @@ export async function handleStripeWebhook(req: Request, res: Response) {
             status: "paid",
             paid_amount: amountPaid,
             paid_at: new Date(),
+            stripe_payment_url: null,
             updated_at: new Date(),
           }).where(eq(invoicesTable.id, invoiceId));
 

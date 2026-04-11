@@ -1007,7 +1007,7 @@ export default function QuickRepairDetailPage() {
                     </div>
                   </div>
 
-                  {inv.stripe_payment_url && (
+                  {inv.stripe_payment_url && inv.status !== "paid" && inv.status !== "void" && (
                     <div className="border-t border-border px-4 py-3 flex items-center gap-2">
                       <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">Payment link:</span>

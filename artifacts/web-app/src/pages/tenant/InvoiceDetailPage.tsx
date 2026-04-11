@@ -456,9 +456,11 @@ export default function InvoiceDetailPage() {
               <Send className="w-3.5 h-3.5" />{sendMutation.isPending ? "Marking…" : "Mark sent"}
             </Button>
           )}
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setSendOpen(true)}>
-            <ExternalLink className="w-3.5 h-3.5" />Payment link
-          </Button>
+          {!isPaid && !isVoid && (
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setSendOpen(true)}>
+              <ExternalLink className="w-3.5 h-3.5" />Payment link
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline" className="px-2"><MoreHorizontal className="w-4 h-4" /></Button>
