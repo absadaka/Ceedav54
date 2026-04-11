@@ -9,7 +9,7 @@ import {
 
 function useSidebarTheme() {
   const [dark, setDark] = useState(() =>
-    typeof window !== "undefined" && localStorage.getItem("workspace-sidebar") === "dark"
+    typeof window === "undefined" || localStorage.getItem("workspace-sidebar") !== "light"
   );
   const toggle = () => setDark((v) => {
     const next = !v;
