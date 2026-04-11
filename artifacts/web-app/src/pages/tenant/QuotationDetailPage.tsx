@@ -5,6 +5,7 @@ import {
   ArrowLeft, FileText, Edit, Trash2, Send, CheckCircle2, XCircle,
   ArrowRight, Plus, X, User, Car, Clock, Loader2,
   MoreHorizontal, AlertTriangle, Download,
+  CreditCard, Percent, BadgeDollarSign,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
@@ -293,6 +294,9 @@ export default function QuotationDetailPage() {
   const [addDiscountOpen,setAddDiscountOpen]= useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [deleteOpen,  setDeleteOpen]  = useState(false);
+  const [advOpen,     setAdvOpen]     = useState(false);
+  const [advType,     setAdvType]     = useState<"value" | "percentage">("percentage");
+  const [advValue,    setAdvValue]    = useState("");
   const { data, isLoading } = useQuery({
     queryKey: ["quotation", id],
     queryFn: () => fetch(`${API}/api/quotations/${id}?tenant=${TENANT}`).then(r => r.json()),
@@ -337,6 +341,22 @@ export default function QuotationDetailPage() {
     mutationFn: () =>
       fetch(`${API}/api/quotations/${id}?tenant=${TENANT}`, { method: "DELETE" }).then(r => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["quotations"] }); toast.success("Deleted"); navigate("/quotations"); },
+  });
+
+  const setAdvance = useMutation({
+    mutationFn: (body: { advance_type: string; advance_value?: string }) =>
+      fetch(`${API}/api/quotations/${id}/set-advance?tenant=${TENANT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["quotation", id] });
+      setAdvOpen(false);
+      setAdvValue("");
+      toast.success("Advance payment updated");
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   if (isLoading) {
@@ -502,6 +522,117 @@ export default function QuotationDetailPage() {
                 <dd className="tabular-nums">{fmtAed(qt.total)}</dd>
               </div>
             </dl>
+
+            {qt.advance_type && qt.advance_type !== "none" && qt.advance_amount && (
+              <div className={`mt-3 rounded-md p-3 text-sm space-y-1 ${qt.advance_paid === "true" ? "bg-green-50 border border-green-200" : "bg-blue-50 border border-blue-200"}`}>
+                <div className="flex items-center gap-1.5 font-semibold text-xs uppercase tracking-wide">
+                  <CreditCard className="w-3.5 h-3.5" />
+                  Advance Payment
+                  {qt.advance_paid === "true" && (
+                    <span className="ml-auto inline-flex items-center gap-1 text-green-700 bg-green-100 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">
+                      <CheckCircle2 className="w-3 h-3" /> Paid
+                    </span>
+                  )}
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    {qt.advance_type === "percentage" ? `${parseFloat(qt.advance_value ?? "0").toFixed(0)}% of total` : "Fixed amount"}
+                  </span>
+                  <span className="font-semibold tabular-nums">{fmtAed(qt.advance_amount)}</span>
+                </div>
+                {qt.advance_paid !== "true" && qt.advance_stripe_url && (
+                  <a href={qt.advance_stripe_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline hover:text-blue-800">
+                    Payment link
+                  </a>
+                )}
+              </div>
+            )}
+
+            {editable && !advOpen && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full mt-2 gap-1.5 h-8 text-xs"
+                onClick={() => {
+                  setAdvOpen(true);
+                  if (qt.advance_type && qt.advance_type !== "none") {
+                    setAdvType(qt.advance_type === "percentage" ? "percentage" : "value");
+                    setAdvValue(parseFloat(qt.advance_value ?? "0").toString());
+                  }
+                }}
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                {qt.advance_type && qt.advance_type !== "none" ? "Edit advance payment" : "Set advance payment"}
+              </Button>
+            )}
+
+            {advOpen && (
+              <div className="mt-2 p-3 rounded-md border border-border bg-muted/30 space-y-2">
+                <p className="text-xs font-semibold">Advance Payment</p>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={advType === "percentage" ? "default" : "outline"}
+                    className="h-7 text-xs gap-1 flex-1"
+                    onClick={() => setAdvType("percentage")}
+                  >
+                    <Percent className="w-3 h-3" /> Percentage
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={advType === "value" ? "default" : "outline"}
+                    className="h-7 text-xs gap-1 flex-1"
+                    onClick={() => setAdvType("value")}
+                  >
+                    <BadgeDollarSign className="w-3 h-3" /> Value
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    step={advType === "percentage" ? "1" : "0.01"}
+                    max={advType === "percentage" ? "100" : undefined}
+                    placeholder={advType === "percentage" ? "e.g. 25" : "e.g. 500.00"}
+                    className="h-8 text-sm tabular-nums"
+                    value={advValue}
+                    onChange={e => setAdvValue(e.target.value)}
+                  />
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {advType === "percentage" ? "%" : "AED"}
+                  </span>
+                </div>
+                {advType === "percentage" && advValue && parseFloat(qt.total) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    = AED {(parseFloat(qt.total) * parseFloat(advValue || "0") / 100).toFixed(2)}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs flex-1"
+                    disabled={!advValue || parseFloat(advValue) <= 0 || setAdvance.isPending}
+                    onClick={() => setAdvance.mutate({ advance_type: advType, advance_value: advValue })}
+                  >
+                    {setAdvance.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Apply"}
+                  </Button>
+                  {qt.advance_type && qt.advance_type !== "none" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                      disabled={setAdvance.isPending}
+                      onClick={() => setAdvance.mutate({ advance_type: "none" })}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setAdvOpen(false)}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

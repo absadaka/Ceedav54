@@ -46,6 +46,13 @@ export const quotationsTable = pgTable("quotations", {
   approved_at:      timestamp("approved_at", { withTimezone: true }),
   rejected_at:      timestamp("rejected_at", { withTimezone: true }),
   converted_job_id: uuid("converted_job_id"),
+  advance_type:  text("advance_type").notNull().default("none"),
+  advance_value: numeric("advance_value", { precision: 12, scale: 2 }),
+  advance_amount: numeric("advance_amount", { precision: 12, scale: 2 }),
+  advance_stripe_url: text("advance_stripe_url"),
+  advance_stripe_session_id: text("advance_stripe_session_id"),
+  advance_paid: text("advance_paid").notNull().default("false"),
+  advance_paid_at: timestamp("advance_paid_at", { withTimezone: true }),
   // Audit
   created_at:  timestamp("created_at",  { withTimezone: true }).defaultNow().notNull(),
   updated_at:  timestamp("updated_at",  { withTimezone: true }).defaultNow().notNull(),

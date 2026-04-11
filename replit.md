@@ -127,7 +127,8 @@ ceeda/
 - `DELETE /:id/lines/:lineId` — delete line item (auto-recalcs)
 - `POST /:id/advance` — record advance payment
 - `DELETE /:id/advance/:paymentId` — remove advance payment
-- `POST /:id/send` — draft → sent
+- `POST /:id/set-advance` — set advance payment (type: none/value/percentage, value)
+- `POST /:id/send` — draft → sent; email includes advance payment info if set
 - `POST /:id/approve` — sent/viewed → approved
 - `POST /:id/reject` — sent/viewed → rejected
 - `POST /:id/convert` — approved only → creates job card, sets `converted_job_id`
