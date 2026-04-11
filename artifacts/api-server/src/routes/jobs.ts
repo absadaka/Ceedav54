@@ -599,7 +599,7 @@ router.put("/:id", async (req, res) => {
     const {
       advisor_id, technician_id, priority, bay,
       customer_concern, technician_note, qc_note, internal_note,
-      mileage_in, mileage_out,
+      mileage_in, mileage_out, scheduled_date,
     } = req.body as Record<string, string>;
 
     const [job] = await db
@@ -615,6 +615,7 @@ router.put("/:id", async (req, res) => {
         internal_note:    internal_note    ?? undefined,
         mileage_in:       mileage_in       ?? undefined,
         mileage_out:      mileage_out      ?? undefined,
+        scheduled_date:   scheduled_date === "" ? null : scheduled_date ?? undefined,
         updated_at:       new Date(),
       })
       .where(and(eq(jobsTable.id, req.params.id), eq(jobsTable.tenant_id, tenant.id)))

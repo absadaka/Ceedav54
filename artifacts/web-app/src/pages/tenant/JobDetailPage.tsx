@@ -1606,6 +1606,40 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 </p>
               </div>
 
+              {/* Estimated completion */}
+              <div className="border border-border rounded-lg bg-background p-4 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />Estimated Completion
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="datetime-local"
+                    className="text-sm w-auto"
+                    value={job.scheduled_date ? (() => {
+                      const d = new Date(job.scheduled_date);
+                      const pad = (n: number) => String(n).padStart(2, "0");
+                      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                    })() : ""}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val) {
+                        patchJobMutation.mutate({ scheduled_date: new Date(val).toISOString() });
+                      } else {
+                        patchJobMutation.mutate({ scheduled_date: "" });
+                      }
+                    }}
+                  />
+                  {job.scheduled_date && (
+                    <button
+                      className="text-xs text-muted-foreground hover:text-red-500 transition-colors"
+                      onClick={() => patchJobMutation.mutate({ scheduled_date: "" })}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Add more details */}
               <div className="border border-border rounded-lg bg-background overflow-hidden">
                 <button
