@@ -327,6 +327,7 @@ export function invoiceEmailHtml(opts: {
   notes?: string | null;
   paymentUrl?: string | null;
   jobReport?: string[];
+  advanceFromQuotation?: string;
 }): string {
   const payNowButton = opts.paymentUrl ? `
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
@@ -369,6 +370,15 @@ export function invoiceEmailHtml(opts: {
       <tr><td style="padding:12px 16px;background:#f4f4f5;border-radius:8px;">
         <table width="100%" cellpadding="0" cellspacing="0">
           ${renderSummaryRows({ subtotal: opts.subtotal, discount: opts.discount, taxRate: opts.taxRate, taxAmount: opts.taxAmount, total: opts.total, currency: opts.currency })}
+          ${opts.advanceFromQuotation && parseFloat(opts.advanceFromQuotation) > 0 ? `
+          <tr>
+            <td style="font-size:13px;color:#16a34a;padding:4px 0;">Advance Paid</td>
+            <td align="right" style="font-size:13px;font-weight:600;color:#16a34a;padding:4px 0;">−${formatCurrency(opts.advanceFromQuotation, opts.currency)}</td>
+          </tr>
+          <tr>
+            <td style="font-size:14px;font-weight:700;color:#0a0a0a;padding:8px 0 4px;border-top:1px solid #e4e4e7;">Balance Due</td>
+            <td align="right" style="font-size:14px;font-weight:700;color:#0a0a0a;padding:8px 0 4px;border-top:1px solid #e4e4e7;">${formatCurrency(String(Math.max(0, parseFloat(opts.total) - parseFloat(opts.advanceFromQuotation))), opts.currency)}</td>
+          </tr>` : ""}
         </table>
       </td></tr>
     </table>

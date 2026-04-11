@@ -51,6 +51,7 @@ interface DocData {
   taxAmount?: string;
   total?: string;
   paidAmount?: string;
+  advanceFromQuotation?: string;
   notes?: string | null;
   jobReport?: string[];
 }
@@ -219,7 +220,9 @@ function documentHtml(docType: "QUOTATION" | "INVOICE", shop: ShopInfo, doc: Doc
         ${doc.discount && parseFloat(doc.discount) > 0 ? `<div class="totals-row"><span>Discount</span><span style="color:#ef4444">-${fmtNum(doc.discount)}</span></div>` : ""}
         ${doc.taxRate && parseFloat(doc.taxRate) > 0 ? `<div class="totals-row"><span>VAT (${doc.taxRate}%)</span><span>${fmtNum(doc.taxAmount)}</span></div>` : ""}
         <div class="totals-row grand"><span>${totalLabel}</span><span>${esc(shop.currency)} ${fmtNum(doc.total)}</span></div>
-        ${docType === "INVOICE" && doc.paidAmount && parseFloat(doc.paidAmount) > 0 && !isPaid ? `<div class="totals-row"><span>Paid</span><span style="color:#16a34a">${fmtNum(doc.paidAmount)}</span></div><div class="totals-row" style="font-weight:700"><span>Balance</span><span>${esc(shop.currency)} ${fmtNum(String(parseFloat(doc.total ?? "0") - parseFloat(doc.paidAmount)))}</span></div>` : ""}
+        ${docType === "INVOICE" && doc.advanceFromQuotation && parseFloat(doc.advanceFromQuotation) > 0 ? `<div class="totals-row"><span>Advance Paid</span><span style="color:#16a34a">−${fmtNum(doc.advanceFromQuotation)}</span></div>` : ""}
+        ${docType === "INVOICE" && doc.paidAmount && parseFloat(doc.paidAmount) > 0 && !isPaid ? `<div class="totals-row"><span>Paid</span><span style="color:#16a34a">${fmtNum(doc.paidAmount)}</span></div>` : ""}
+        ${docType === "INVOICE" && !isPaid ? (() => { const adv = parseFloat(doc.advanceFromQuotation ?? "0"); const paid = parseFloat(doc.paidAmount ?? "0"); const bal = parseFloat(doc.total ?? "0") - adv - paid; return (adv > 0 || paid > 0) ? `<div class="totals-row" style="font-weight:700"><span>Balance Due</span><span>${esc(shop.currency)} ${fmtNum(String(Math.max(0, bal)))}</span></div>` : ""; })() : ""}
       </div>
     </div>
 

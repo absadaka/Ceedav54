@@ -36,6 +36,7 @@ export const invoicesTable = pgTable("invoices", {
   tax_amount:   numeric("tax_amount",  { precision: 12, scale: 2 }).notNull().default("0.00"),
   total:        numeric("total",       { precision: 12, scale: 2 }).notNull().default("0.00"),
   paid_amount:  numeric("paid_amount", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  advance_from_quotation: numeric("advance_from_quotation", { precision: 12, scale: 2 }).notNull().default("0.00"),
   notes:        text("notes"),
   stripe_payment_url: text("stripe_payment_url"),
   stripe_session_id:  text("stripe_session_id"),

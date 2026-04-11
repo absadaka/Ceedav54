@@ -62,16 +62,18 @@ async function recalcPaid(invoiceId: string) {
   const paid = payments.reduce((s, p) => s + parseFloat(p.amount), 0);
 
   const [inv] = await db
-    .select({ total: invoicesTable.total, job_id: invoicesTable.job_id })
+    .select({ total: invoicesTable.total, job_id: invoicesTable.job_id, advance_from_quotation: invoicesTable.advance_from_quotation })
     .from(invoicesTable)
     .where(eq(invoicesTable.id, invoiceId))
     .limit(1);
   if (!inv) return;
 
   const total = parseFloat(inv.total ?? "0");
+  const advance = parseFloat(inv.advance_from_quotation ?? "0");
+  const netDue = Math.max(0, total - advance);
   const status = paid <= 0
     ? undefined
-    : paid >= total
+    : paid >= netDue
     ? "paid"
     : "partial";
 
@@ -246,7 +248,7 @@ router.get("/stats", async (req, res) => {
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
     const rows = await db
-      .select({ status: invoicesTable.status, total: invoicesTable.total, paid_amount: invoicesTable.paid_amount })
+      .select({ status: invoicesTable.status, total: invoicesTable.total, paid_amount: invoicesTable.paid_amount, advance_from_quotation: invoicesTable.advance_from_quotation })
       .from(invoicesTable)
       .where(and(eq(invoicesTable.tenant_id, tenant.id)));
 
@@ -257,8 +259,9 @@ router.get("/stats", async (req, res) => {
       if (typeof stats[key] === "number") (stats[key] as number)++;
       const amt  = parseFloat(r.total ?? "0");
       const paid = parseFloat(r.paid_amount ?? "0");
+      const adv  = parseFloat(r.advance_from_quotation ?? "0");
       if (r.status === "paid") stats.total_paid += amt;
-      else if (r.status !== "void") stats.total_outstanding += (amt - paid);
+      else if (r.status !== "void") stats.total_outstanding += Math.max(0, amt - adv - paid);
     }
 
     return res.json({ stats });
@@ -375,6 +378,18 @@ router.post("/from-job/:jobId", async (req, res) => {
     const notesText = (req.body as any).notes
       ?? (allNotes.length > 0 ? allNotes.join("\n") : null);
 
+    let advanceFromQuotation = "0.00";
+    if (job.quotation_id) {
+      const [qt] = await db.select({
+        advance_type: quotationsTable.advance_type,
+        advance_amount: quotationsTable.advance_amount,
+        advance_paid: quotationsTable.advance_paid,
+      }).from(quotationsTable).where(eq(quotationsTable.id, job.quotation_id)).limit(1);
+      if (qt && qt.advance_paid === "true" && qt.advance_amount) {
+        advanceFromQuotation = qt.advance_amount;
+      }
+    }
+
     const [inv] = await db.insert(invoicesTable).values({
       tenant_id:    tenant.id,
       seq,
@@ -387,6 +402,7 @@ router.post("/from-job/:jobId", async (req, res) => {
       tax_rate:     taxRate.toFixed(2),
       notes:        notesText,
       due_at:       (req.body as any).due_at ? new Date((req.body as any).due_at) : null,
+      advance_from_quotation: advanceFromQuotation,
     }).returning();
 
     // Prefer quotation line items if a quotation is linked; otherwise fall back to job parts
@@ -439,7 +455,9 @@ router.post("/from-job/:jobId", async (req, res) => {
           .from(clientsTable).where(eq(clientsTable.id, job.client_id)).limit(1)
       : [null];
 
-    const totalCents = Math.round(parseFloat(recalced?.total ?? "0") * 100);
+    const advancePaid = parseFloat(recalced?.advance_from_quotation ?? "0");
+    const balanceDue = Math.max(0, parseFloat(recalced?.total ?? "0") - advancePaid);
+    const totalCents = Math.round(balanceDue * 100);
     const tenantCurrency = tenant.currency ?? "AED";
 
     if (totalCents > 0) {
@@ -494,6 +512,7 @@ router.get("/:id", async (req, res) => {
         tax_amount:   invoicesTable.tax_amount,
         total:        invoicesTable.total,
         paid_amount:  invoicesTable.paid_amount,
+        advance_from_quotation: invoicesTable.advance_from_quotation,
         notes:        invoicesTable.notes,
         due_at:       invoicesTable.due_at,
         sent_at:      invoicesTable.sent_at,
@@ -617,6 +636,7 @@ router.get("/:id/pdf", async (req, res) => {
         subtotal: inv.subtotal ?? undefined, discount: inv.discount ?? undefined,
         taxRate: inv.tax_rate ?? undefined, taxAmount: inv.tax_amount ?? undefined,
         total: inv.total ?? undefined, paidAmount: String(totalPaid),
+        advanceFromQuotation: inv.advance_from_quotation ?? undefined,
         notes: inv.notes, jobReport,
       },
     );
@@ -805,7 +825,9 @@ router.post("/:id/send", async (req, res) => {
     }
 
     if (!inv.stripe_payment_url) {
-      const totalCents = Math.round(parseFloat(inv.total ?? "0") * 100);
+      const sendAdvance = parseFloat(inv.advance_from_quotation ?? "0");
+      const sendBalance = Math.max(0, parseFloat(inv.total ?? "0") - sendAdvance);
+      const totalCents = Math.round(sendBalance * 100);
       if (totalCents > 0) {
         const paymentResult = await createStripePaymentLink({
           invoiceId: inv.id,
@@ -854,6 +876,7 @@ router.post("/:id/send", async (req, res) => {
         notes: inv.notes,
         paymentUrl: inv.stripe_payment_url ?? null,
         jobReport: jobReportNotes.length > 0 ? jobReportNotes : undefined,
+        advanceFromQuotation: inv.advance_from_quotation ?? undefined,
       });
       emailResult = await sendEmail({
         to: client.email,
@@ -873,6 +896,7 @@ router.post("/:id/send", async (req, res) => {
         currency: tenant.currency ?? "AED",
         dueDate: inv.due_at?.toISOString() ?? null,
         paymentUrl: inv.stripe_payment_url ?? null,
+        advanceFromQuotation: inv.advance_from_quotation ?? null,
       });
       await sendSms({ to: client.phone, body: smsBody, tenantId: tenant.id });
       await sendWhatsApp({ to: client.phone, body: smsBody, tenantId: tenant.id });
