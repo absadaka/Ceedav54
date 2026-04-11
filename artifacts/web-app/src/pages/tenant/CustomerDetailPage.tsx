@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import CustomerDrawer, { type ClientRow } from "@/components/CustomerDrawer";
 import VehicleDrawer, { type VehicleRow } from "@/components/VehicleDrawer";
+import BookingDrawer from "@/components/BookingDrawer";
 import { statusClass, statusLabel } from "@/lib/status";
 import { cn } from "@/lib/utils";
 
@@ -206,6 +207,7 @@ export default function CustomerDetailPage() {
   const [editVeh,     setEditVeh]     = useState<VehicleRow | null>(null);
   const [delOpen,     setDelOpen]     = useState(false);
   const [delVeh,      setDelVeh]      = useState<VehicleRow | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery<DetailData>({
     queryKey: ["client", id],
@@ -303,6 +305,9 @@ export default function CustomerDetailPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
+            <Button size="sm" onClick={() => setBookingOpen(true)}>
+              <CalendarCheck className="w-3.5 h-3.5 mr-1.5" />New Booking
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
               <Pencil className="w-3.5 h-3.5 mr-1.5" />Edit
             </Button>
@@ -535,6 +540,13 @@ export default function CustomerDetailPage() {
           </Tabs>
         </div>
       </div>
+
+      {/* Booking drawer */}
+      <BookingDrawer
+        open={bookingOpen}
+        onClose={() => setBookingOpen(false)}
+        defaultClientId={id}
+      />
 
       {/* Edit Customer drawer */}
       <CustomerDrawer
