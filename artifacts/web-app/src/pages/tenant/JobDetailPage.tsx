@@ -1337,8 +1337,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         }}
                         disabled={moveStatusMutation.isPending || createQuotationMutation.isPending}
                         className={cn(
-                          "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                          isReady ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
+                          "w-full h-10 rounded-xl border-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                          isReady ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "bg-transparent border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
                         )}
                       >
                         <Calculator className="w-4 h-4" />
@@ -1359,8 +1359,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           }}
                           disabled={moveStatusMutation.isPending}
                           className={cn(
-                            "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                            qApproved ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
+                            "w-full h-10 rounded-xl border-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                            qApproved ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "bg-transparent border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
                           )}
                         >
                           {qApproved ? <Hammer className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
@@ -1381,8 +1381,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           }}
                           disabled={moveStatusMutation.isPending}
                           className={cn(
-                            "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                            hasReport ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
+                            "w-full h-10 rounded-xl border-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                            hasReport ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "bg-transparent border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
                           )}
                         >
                           {hasReport ? <CheckCircle2 className="w-4 h-4" /> : <Hammer className="w-4 h-4" />}
@@ -1404,10 +1404,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                             }
                           }}
                           disabled={createInvoiceMutation.isPending || sendInvoiceMutation.isPending}
-                          className={cn(
-                            "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                            "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
-                          )}
+                          className="w-full h-10 rounded-xl border-2 border-[#161aff] bg-[#161aff] text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
                         >
                           {hasInvoice ? <Send className="w-4 h-4" /> : <Receipt className="w-4 h-4" />}
                           <span className="text-xs font-bold">
@@ -1435,7 +1432,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           <button
                             onClick={() => moveToNext()}
                             disabled={moveStatusMutation.isPending}
-                            className="w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50 border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
+                            className="w-full h-10 rounded-xl border-2 border-[#161aff] bg-[#161aff] text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
                           >
                             <Truck className="w-4 h-4" />
                             <span className="text-xs font-bold">{moveStatusMutation.isPending ? "Updating…" : "Mark as Delivered"}</span>
@@ -1447,8 +1444,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                         onClick={() => moveToNext()}
                         disabled={moveStatusMutation.isPending}
                         className={cn(
-                          "w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
-                          isReady ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
+                          "w-full h-10 rounded-xl border-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-50",
+                          isReady ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]" : "bg-transparent border-[#161aff]/40 text-[#161aff]/60 hover:border-[#161aff]/70 hover:text-[#161aff]/80"
                         )}
                       >
                         {action.icon}
