@@ -575,7 +575,7 @@ function MonthlyRevenueCard({ data, isLoading, cur }: { data?: DashboardData; is
             <Skeleton className="h-full w-full rounded-lg" />
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartData} barGap={2} barCategoryGap="20%">
               <XAxis
                 dataKey="name"
@@ -751,9 +751,9 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* ── Row 2: Monthly Revenue Chart + Jobs by Category + Top Technicians */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-1">
+      {/* ── Row 2: Monthly Revenue Chart (half) + Jobs by Category + Top Technicians */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+        <div className="xl:col-span-2">
           <MonthlyRevenueCard data={data} isLoading={isLoading} cur={cur} />
         </div>
         <div className="xl:col-span-1">
