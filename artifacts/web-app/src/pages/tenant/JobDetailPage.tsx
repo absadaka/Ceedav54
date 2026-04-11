@@ -1,5 +1,5 @@
 import {
-  ArrowLeft, Wrench, User, Car, Clock, AlertTriangle, Plus,
+  ArrowLeft, Wrench, User, Car as CarIcon, Clock, AlertTriangle, Plus,
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
   Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil, ArrowRight,
@@ -35,6 +35,7 @@ import { JOB_STATUSES, INSPECTION_STATUSES } from "@/components/StatusTransition
 
 import { getSession } from "@/hooks/useAuth";
 import { useDistanceUnit } from "@/hooks/useSettings";
+import CarBrandLogo from "@/components/CarBrandLogo";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -1177,7 +1178,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               style={isInspection ? { backgroundColor: "#fff0ef", borderColor: "#ffd0ce" } : undefined}>
               {isInspection
                 ? <ClipboardList className="w-7 h-7" style={{ color: "#ff5349" }} />
-                : <Car className="w-7 h-7 text-blue-500" />}
+                : <CarBrandLogo make={job.make} size={32} />}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-1">
