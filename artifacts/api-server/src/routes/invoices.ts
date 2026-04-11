@@ -211,8 +211,8 @@ async function createStripePaymentLink(opts: {
         invoice_ref: opts.invoiceRef,
       },
       ...(opts.customerEmail ? { customer_email: opts.customerEmail } : {}),
-      success_url: `https://${process.env.REPLIT_DOMAINS?.split(",")[0] ?? "localhost"}/invoices/${opts.invoiceId}?payment=success`,
-      cancel_url: `https://${process.env.REPLIT_DOMAINS?.split(",")[0] ?? "localhost"}/invoices/${opts.invoiceId}?payment=cancelled`,
+      success_url: `https://${process.env.REPLIT_DOMAINS?.split(",")[0] ?? "localhost"}/api/payment-success/${opts.invoiceId}`,
+      cancel_url: `https://${process.env.REPLIT_DOMAINS?.split(",")[0] ?? "localhost"}/api/payment-success/${opts.invoiceId}`,
     });
 
     return { url: session.url!, sessionId: session.id };
