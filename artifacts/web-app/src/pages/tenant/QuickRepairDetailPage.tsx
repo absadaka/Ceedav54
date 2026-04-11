@@ -653,7 +653,7 @@ export default function QuickRepairDetailPage() {
       <div ref={partsRef}>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="parts" className="gap-1.5"><Package className="w-3.5 h-3.5" />Parts & Services</TabsTrigger>
+          <TabsTrigger value="parts" className="gap-1.5"><Package className="w-3.5 h-3.5" />Quotation</TabsTrigger>
           {["completed", "invoiced", "delivered"].includes(job.status) && (
             <TabsTrigger value="invoices" className="gap-1.5"><Receipt className="w-3.5 h-3.5" />Invoices</TabsTrigger>
           )}
