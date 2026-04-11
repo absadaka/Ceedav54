@@ -1571,7 +1571,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               const showInvoices   = !["new", "waiting", "on_hold"].includes(s);
               return (
                 <TabsList className="mb-4 flex-wrap h-auto gap-1">
-                  <TabsTrigger value="work">Customer Concerns</TabsTrigger>
+                  <TabsTrigger value="work">Check-in</TabsTrigger>
                   {showInspection && isInspection && (
                     <TabsTrigger value="parts">Diagnosis</TabsTrigger>
                   )}
