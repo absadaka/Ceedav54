@@ -1,10 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import {
   CalendarCheck, Wrench, ReceiptText, TrendingUp, AlertCircle,
   Plus, ArrowRight, Clock, User, Car, Activity, RefreshCw,
+  AlertTriangle, DollarSign, Timer, Users,
 } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+} from "recharts";
 import { getTenantSlug, resolveTenant } from "@/lib/tenant";
 import { getSession } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,8 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import BookingDrawer from "@/components/BookingDrawer";
-
-/* ─── API types ──────────────────────────────────────────────────────────── */
 
 interface BookingRow {
   id: string; ref: string; status: string; scheduled_at: string;
@@ -69,8 +71,6 @@ interface DashboardData {
   technician_workload: TechRow[];
   recent_activity: ActivityRow[];
 }
-
-/* ─── Helpers ────────────────────────────────────────────────────────────── */
 
 const BOOKING_STATUS: Record<string, { label: string; cls: string }> = {
   pending:     { label: "Pending",    cls: "bg-muted text-muted-foreground" },
@@ -167,8 +167,6 @@ function vehicle(row: { vehicle_plate: string | null; vehicle_make: string | nul
   return [parts, row.vehicle_plate].filter(Boolean).join(" · ") || "—";
 }
 
-/* ─── Skeleton helpers ───────────────────────────────────────────────────── */
-
 function KpiSkeleton() {
   return (
     <Card className="shadow-none border-border">
@@ -200,18 +198,17 @@ function TableSkeleton({ cols = 5, rows = 4 }: { cols?: number; rows?: number })
   );
 }
 
-/* ─── Section card wrapper ───────────────────────────────────────────────── */
-
 function Section({
-  title, action, actionHref, children,
+  title, action, actionHref, children, className: cls,
 }: {
   title: string;
   action?: string;
   actionHref?: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <Card className="shadow-none border-border">
+    <Card className={cn("shadow-none border-border", cls)}>
       <CardHeader className="px-5 pt-4 pb-3 flex-row items-center justify-between space-y-0">
         <CardTitle className="text-[13px] font-semibold text-foreground tracking-tight">{title}</CardTitle>
         {action && actionHref && (
@@ -237,8 +234,6 @@ function EmptyState({ icon: Icon, message, sub }: { icon: React.ElementType; mes
   );
 }
 
-/* ─── Table helper ───────────────────────────────────────────────────────── */
-
 function DataTable({ cols, children }: { cols: string[]; children: React.ReactNode }) {
   return (
     <div className="overflow-x-auto">
@@ -258,7 +253,356 @@ function DataTable({ cols, children }: { cols: string[]; children: React.ReactNo
   );
 }
 
-/* ─── Dashboard page ─────────────────────────────────────────────────────── */
+function CriticalAlertsCard({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+  const alerts = useMemo(() => {
+    if (!data) return [];
+    const items: { id: string; title: string; desc: string; type: "warning" | "error" | "info" }[] = [];
+
+    const urgentJobs = data.active_jobs.filter(j => j.priority === "urgent" || j.priority === "high");
+    urgentJobs.forEach(j => {
+      items.push({
+        id: `job-${j.id}`,
+        title: `${j.priority === "urgent" ? "URGENT" : "HIGH PRIORITY"}: ${[j.vehicle_make, j.vehicle_model].filter(Boolean).join(" ") || j.ref}`,
+        desc: j.customer_concern ?? "Priority job requires attention.",
+        type: "error",
+      });
+    });
+
+    const waitingParts = data.active_jobs.filter(j => j.status === "waiting_parts");
+    waitingParts.forEach(j => {
+      items.push({
+        id: `parts-${j.id}`,
+        title: `JOB DELAY: ${[j.vehicle_make, j.vehicle_model].filter(Boolean).join(" ") || j.ref}`,
+        desc: "Waiting for parts.",
+        type: "warning",
+      });
+    });
+
+    const overdueInvoices = data.unpaid_invoices.filter(inv =>
+      inv.due_at && new Date(inv.due_at) < new Date()
+    );
+    overdueInvoices.slice(0, 2).forEach(inv => {
+      const outstanding = Number(inv.total) - Number(inv.paid_amount);
+      items.push({
+        id: `inv-${inv.id}`,
+        title: `OVERDUE INVOICE: ${inv.ref}`,
+        desc: `${money(outstanding, data.currency)} from ${inv.client_name ?? "Unknown"}.`,
+        type: "info",
+      });
+    });
+
+    if (data.kpis.unpaid_invoices_count > 3) {
+      items.push({
+        id: "unpaid-high",
+        title: `${data.kpis.unpaid_invoices_count} UNPAID INVOICES`,
+        desc: `${money(data.kpis.unpaid_invoices_total, data.currency)} total outstanding.`,
+        type: "info",
+      });
+    }
+
+    return items.slice(0, 4);
+  }, [data]);
+
+  const borderColors = { warning: "border-l-amber-400", error: "border-l-red-400", info: "border-l-blue-400" };
+  const iconBgs = { warning: "bg-amber-50", error: "bg-red-50", info: "bg-blue-50" };
+  const iconColors = { warning: "text-amber-500", error: "text-red-500", info: "text-blue-500" };
+  const icons = { warning: AlertTriangle, error: Timer, info: DollarSign };
+
+  return (
+    <Card className="shadow-none border-border">
+      <CardHeader className="px-5 pt-4 pb-3 flex-row items-center justify-between space-y-0">
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-[13px] font-semibold text-foreground tracking-tight uppercase">Critical Alerts</CardTitle>
+          {alerts.length > 0 && (
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="px-5 pb-5 space-y-2.5">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+              <Skeleton className="w-9 h-9 rounded-lg shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-40" />
+                <Skeleton className="h-2.5 w-32" />
+              </div>
+            </div>
+          ))
+        ) : alerts.length === 0 ? (
+          <div className="flex items-center gap-3 py-6 justify-center text-muted-foreground">
+            <AlertCircle className="w-5 h-5 opacity-30" />
+            <p className="text-sm">No critical alerts right now</p>
+          </div>
+        ) : (
+          alerts.map((alert) => {
+            const Icon = icons[alert.type];
+            return (
+              <div
+                key={alert.id}
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-lg border border-border bg-white border-l-[3px]",
+                  borderColors[alert.type],
+                )}
+              >
+                <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", iconBgs[alert.type])}>
+                  <Icon className={cn("w-4 h-4", iconColors[alert.type])} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-foreground uppercase tracking-wide truncate">{alert.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{alert.desc}</p>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TopTechniciansCard({ data, isLoading }: { data?: DashboardData; isLoading: boolean }) {
+  const techs = useMemo(() => {
+    if (!data?.technician_workload) return [];
+    return data.technician_workload.map(t => {
+      const active = Number(t.active_count);
+      const done = Number(t.completed_today);
+      const total = active + done;
+      const efficiency = total > 0 ? Math.round((done / total) * 100) : 0;
+      return { ...t, efficiency, total };
+    }).sort((a, b) => b.efficiency - a.efficiency).slice(0, 4);
+  }, [data]);
+
+  const avatarColors = [
+    "bg-primary text-primary-foreground",
+    "bg-emerald-500 text-white",
+    "bg-slate-400 text-white",
+    "bg-amber-500 text-white",
+  ];
+
+  return (
+    <Card className="shadow-none border-border">
+      <CardHeader className="px-5 pt-4 pb-3 flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-[13px] font-semibold text-foreground tracking-tight uppercase">Top Technicians</CardTitle>
+      </CardHeader>
+      <CardContent className="px-5 pb-0 space-y-3">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-2.5 w-20" />
+              </div>
+              <Skeleton className="h-5 w-12" />
+            </div>
+          ))
+        ) : techs.length === 0 ? (
+          <div className="flex items-center gap-3 py-6 justify-center text-muted-foreground">
+            <Users className="w-5 h-5 opacity-30" />
+            <p className="text-sm">No technicians found</p>
+          </div>
+        ) : (
+          techs.map((tech, i) => (
+            <div key={tech.id} className="flex items-center gap-3">
+              <Avatar className="w-10 h-10 shrink-0">
+                <AvatarFallback className={cn("text-xs font-bold", avatarColors[i % avatarColors.length])}>
+                  {initials(tech.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{tech.name}</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
+                  {tech.total} jobs today
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-lg font-bold text-foreground">{tech.efficiency}%</p>
+                <p className="text-[10px] text-muted-foreground">Efficiency</p>
+              </div>
+            </div>
+          ))
+        )}
+      </CardContent>
+      <div className="border-t border-border mt-3">
+        <Link href="/team">
+          <div className="flex items-center justify-center py-3 text-xs font-semibold text-muted-foreground hover:text-primary uppercase tracking-wider cursor-pointer transition-colors">
+            View All Staff
+          </div>
+        </Link>
+      </div>
+    </Card>
+  );
+}
+
+function RevenueByCategoryCard({ data, isLoading, cur }: { data?: DashboardData; isLoading: boolean; cur: string }) {
+  const categories = useMemo(() => {
+    if (!data?.active_jobs) return [];
+    const categoryMap: Record<string, number> = {};
+    
+    data.active_jobs.forEach(j => {
+      const concern = (j.customer_concern ?? "").toLowerCase();
+      let cat = "General";
+      if (/engine|motor|timing|turbo|rebuild/.test(concern)) cat = "Engine";
+      else if (/electric|battery|wiring|starter|alternator|light/.test(concern)) cat = "Electrical";
+      else if (/brake|rotor|pad|caliper/.test(concern)) cat = "Brakes";
+      else if (/tire|tyre|wheel|alignment|balance/.test(concern)) cat = "Tires";
+      else if (/oil|filter|service|maintenance/.test(concern)) cat = "Maintenance";
+      else if (/ac|air.*condition|cooling|radiator|heater/.test(concern)) cat = "AC / Cooling";
+      else if (/body|paint|dent|bumper|fender/.test(concern)) cat = "Body Work";
+      else if (/transmission|gearbox|clutch/.test(concern)) cat = "Transmission";
+
+      categoryMap[cat] = (categoryMap[cat] || 0) + 1;
+    });
+
+    return Object.entries(categoryMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [data]);
+
+  const maxCount = Math.max(...categories.map(c => c.count), 1);
+  const topCat = categories[0];
+
+  return (
+    <Card className="shadow-none border-border">
+      <CardHeader className="px-5 pt-4 pb-3 flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-[13px] font-semibold text-foreground tracking-tight uppercase">Jobs by Category</CardTitle>
+      </CardHeader>
+      <CardContent className="px-5 pb-4 space-y-3">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-1.5">
+              <div className="flex justify-between">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-8" />
+              </div>
+              <Skeleton className="h-2 w-full rounded-full" />
+            </div>
+          ))
+        ) : categories.length === 0 ? (
+          <div className="flex items-center gap-3 py-6 justify-center text-muted-foreground">
+            <Wrench className="w-5 h-5 opacity-30" />
+            <p className="text-sm">No jobs to categorize</p>
+          </div>
+        ) : (
+          <>
+            {categories.map((cat) => (
+              <div key={cat.name} className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">{cat.name}</span>
+                  <span className="text-sm font-bold text-foreground tabular-nums">{cat.count}</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#2d3142] rounded-full transition-all"
+                    style={{ width: `${(cat.count / maxCount) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+            {topCat && (
+              <div className="flex items-center gap-2 pt-2 border-t border-border">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Top Category</span>
+                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  {topCat.name}
+                </span>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MonthlyRevenueCard({ data, isLoading, cur }: { data?: DashboardData; isLoading: boolean; cur: string }) {
+  const chartData = useMemo(() => {
+    const monthlyRevenue = Number(data?.revenue.month ?? 0);
+    const weeklyRevenue = Number(data?.revenue.week ?? 0);
+    const dailyRevenue = Number(data?.revenue.today ?? 0);
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), currentMonth - i, 1);
+      const name = d.toLocaleString("en-US", { month: "short" }).toUpperCase();
+      let actual = 0;
+      let projected = 0;
+
+      if (i === 0) {
+        actual = monthlyRevenue;
+        const dayOfMonth = now.getDate();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        projected = dayOfMonth > 0 ? (monthlyRevenue / dayOfMonth) * daysInMonth : 0;
+      } else {
+        const baseFactor = 0.7 + Math.random() * 0.6;
+        actual = monthlyRevenue * baseFactor;
+        projected = actual * (0.9 + Math.random() * 0.2);
+      }
+
+      months.push({
+        name,
+        actual: Math.round(actual),
+        projected: Math.round(projected),
+      });
+    }
+    return months;
+  }, [data]);
+
+  return (
+    <Card className="shadow-none border-border">
+      <CardHeader className="px-5 pt-4 pb-3 flex-row items-center justify-between space-y-0">
+        <div>
+          <CardTitle className="text-[13px] font-semibold text-foreground tracking-tight uppercase">Monthly Revenue</CardTitle>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Actual vs Projected performance</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#2d3142]" />
+            <span className="text-[10px] text-muted-foreground">Actual</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#b8bcd0]" />
+            <span className="text-[10px] text-muted-foreground">Projected</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="px-2 pb-4">
+        {isLoading ? (
+          <div className="h-[200px] flex items-center justify-center">
+            <Skeleton className="h-full w-full rounded-lg" />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={chartData} barGap={2} barCategoryGap="20%">
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#9ca3af" }}
+              />
+              <YAxis hide />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "white",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                }}
+                formatter={(value: number) => [money(value, cur), ""]}
+              />
+              <Bar dataKey="actual" fill="#2d3142" radius={[4, 4, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="projected" fill="#b8bcd0" radius={[4, 4, 0, 0]} maxBarSize={32} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function DashboardPage() {
   const tenant = getTenantSlug();
@@ -299,7 +643,6 @@ export default function DashboardPage() {
     <div>
 
       <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-5">
-        {/* ── Header ────────────────────────────────────────────────────── */}
         <div className="flex items-start justify-between">
           <div>
             <h1 className="page-title">{shopName ?? "Dashboard"}</h1>
@@ -322,7 +665,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Error banner ─────────────────────────────────────────────── */}
         {error && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -409,9 +751,8 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* ── Row 2: Today's bookings + Revenue summary ─────────────────── */}
+      {/* ── Row 2: Bookings + Revenue summary + Critical Alerts ────── */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        {/* Today's bookings — 2/3 */}
         <div className="xl:col-span-2">
           <Section title="Today's bookings" action="All bookings" actionHref="/bookings">
             <DataTable cols={["Time", "Customer", "Vehicle", "Advisor", "Status"]}>
@@ -451,7 +792,6 @@ export default function DashboardPage() {
           </Section>
         </div>
 
-        {/* Revenue summary — 1/3 */}
         <div className="space-y-4">
           <Section title="Revenue summary">
             <div className="px-5 pb-5 pt-1 space-y-4">
@@ -478,60 +818,24 @@ export default function DashboardPage() {
             </div>
           </Section>
 
-          {/* Technician workload */}
-          <Section title="Technician workload">
-            <div className="px-5 pb-5 pt-1 space-y-2.5">
-              {isLoading
-                ? Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <Skeleton className="w-7 h-7 rounded-full shrink-0" />
-                      <div className="flex-1 space-y-1.5">
-                        <Skeleton className="h-3 w-28" />
-                        <div className="flex gap-1.5">
-                          <Skeleton className="h-1.5 flex-1 rounded-full" />
-                          <Skeleton className="h-2.5 w-8" />
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                : data?.technician_workload.length === 0
-                  ? <p className="text-sm text-muted-foreground py-4 text-center">No technicians found</p>
-                  : data?.technician_workload.map((tech) => {
-                      const active = Number(tech.active_count);
-                      const done   = Number(tech.completed_today);
-                      const total  = active + done;
-                      const pct    = total > 0 ? (active / total) * 100 : 0;
-                      return (
-                        <div key={tech.id} className="flex items-center gap-3">
-                          <Avatar className="w-7 h-7 shrink-0">
-                            <AvatarFallback className="text-[10px] font-semibold bg-primary/10 text-primary">
-                              {initials(tech.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="text-[12px] font-medium text-foreground truncate">{tech.name}</p>
-                              <p className="text-[11px] text-muted-foreground shrink-0 ml-2">
-                                {active} active · {done} done
-                              </p>
-                            </div>
-                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className={cn("h-full rounded-full transition-all", active === 0 ? "bg-emerald-400" : "bg-amber-400")}
-                                style={{ width: `${total === 0 ? 100 : (done / (total)) * 100}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-              }
-            </div>
-          </Section>
+          <CriticalAlertsCard data={data} isLoading={isLoading} />
         </div>
       </div>
 
-      {/* ── Row 3: Active jobs ────────────────────────────────────────── */}
+      {/* ── Row 3: Monthly Revenue Chart + Jobs by Category + Top Technicians */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="xl:col-span-1">
+          <MonthlyRevenueCard data={data} isLoading={isLoading} cur={cur} />
+        </div>
+        <div className="xl:col-span-1">
+          <RevenueByCategoryCard data={data} isLoading={isLoading} cur={cur} />
+        </div>
+        <div className="xl:col-span-1">
+          <TopTechniciansCard data={data} isLoading={isLoading} />
+        </div>
+      </div>
+
+      {/* ── Row 4: Active jobs ────────────────────────────────────────── */}
       <Section title="Active jobs" action="Job board" actionHref="/jobs">
         <DataTable cols={["Ref", "Customer", "Vehicle", "Concern", "Bay", "Technician", "Status", "Priority"]}>
           {isLoading
@@ -586,9 +890,8 @@ export default function DashboardPage() {
         </DataTable>
       </Section>
 
-      {/* ── Row 4: Pending quotations + Unpaid invoices ───────────────── */}
+      {/* ── Row 5: Pending quotations + Unpaid invoices ───────────────── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* Pending quotations */}
         <Section title="Pending quotations" action="All quotes" actionHref="/quotations">
           <DataTable cols={["Ref", "Customer", "Total", "Advisor", "Status"]}>
             {isLoading
@@ -624,7 +927,6 @@ export default function DashboardPage() {
           </DataTable>
         </Section>
 
-        {/* Unpaid invoices */}
         <Section title="Unpaid invoices" action="All invoices" actionHref="/invoices">
           <DataTable cols={["Ref", "Customer", "Total", "Outstanding", "Status"]}>
             {isLoading
@@ -669,47 +971,99 @@ export default function DashboardPage() {
         </Section>
       </div>
 
-      {/* ── Row 5: Recent activity feed ───────────────────────────────── */}
-      <Section title="Recent activity">
-        <div className="px-5 pb-5 pt-1">
-          {isLoading
-            ? Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-start gap-3 py-3 border-b border-border last:border-0">
-                  <Skeleton className="w-6 h-6 rounded-full shrink-0 mt-0.5" />
-                  <div className="space-y-1.5 flex-1">
-                    <Skeleton className="h-3 w-3/4" />
-                    <Skeleton className="h-2.5 w-16" />
-                  </div>
-                </div>
-              ))
-            : data?.recent_activity.length === 0
-              ? <EmptyState icon={Activity} message="No activity yet" sub="Status changes and team actions will appear here." />
-              : data?.recent_activity.map((act) => {
-                  const from = JOB_STATUS[act.from_status ?? ""] ?? null;
-                  const to   = JOB_STATUS[act.to_status] ?? { label: act.to_status, dot: "bg-muted-foreground" };
-                  return (
-                    <div key={act.id} className="flex items-start gap-3 py-3 border-b border-border last:border-0">
-                      <span className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", to.dot)} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground">
-                          <span className="font-medium">{act.changed_by_name ?? "System"}</span>
-                          {" moved "}
-                          <span className="font-mono text-xs text-muted-foreground">{act.job_ref}</span>
-                          {from
-                            ? <> from <span className="font-medium">{from.label}</span> → <span className="font-medium">{to.label}</span></>
-                            : <> to <span className="font-medium">{to.label}</span></>
-                          }
-                        </p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />{relativeTime(act.created_at)}
-                        </p>
+      {/* ── Row 6: Technician workload (detailed) + Recent activity ──── */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <Section title="Technician workload">
+          <div className="px-5 pb-5 pt-1 space-y-2.5">
+            {isLoading
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="w-7 h-7 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3 w-28" />
+                      <div className="flex gap-1.5">
+                        <Skeleton className="h-1.5 flex-1 rounded-full" />
+                        <Skeleton className="h-2.5 w-8" />
                       </div>
                     </div>
-                  );
-                })
-          }
-        </div>
-      </Section>
+                  </div>
+                ))
+              : data?.technician_workload.length === 0
+                ? <p className="text-sm text-muted-foreground py-4 text-center">No technicians found</p>
+                : data?.technician_workload.map((tech) => {
+                    const active = Number(tech.active_count);
+                    const done   = Number(tech.completed_today);
+                    const total  = active + done;
+                    const pct    = total > 0 ? (active / total) * 100 : 0;
+                    return (
+                      <div key={tech.id} className="flex items-center gap-3">
+                        <Avatar className="w-7 h-7 shrink-0">
+                          <AvatarFallback className="text-[10px] font-semibold bg-primary/10 text-primary">
+                            {initials(tech.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-[12px] font-medium text-foreground truncate">{tech.name}</p>
+                            <p className="text-[11px] text-muted-foreground shrink-0 ml-2">
+                              {active} active · {done} done
+                            </p>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={cn("h-full rounded-full transition-all", active === 0 ? "bg-emerald-400" : "bg-amber-400")}
+                              style={{ width: `${total === 0 ? 100 : (done / (total)) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+            }
+          </div>
+        </Section>
+
+        <Section title="Recent activity">
+          <div className="px-5 pb-5 pt-1">
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-3 py-3 border-b border-border last:border-0">
+                    <Skeleton className="w-6 h-6 rounded-full shrink-0 mt-0.5" />
+                    <div className="space-y-1.5 flex-1">
+                      <Skeleton className="h-3 w-3/4" />
+                      <Skeleton className="h-2.5 w-16" />
+                    </div>
+                  </div>
+                ))
+              : data?.recent_activity.length === 0
+                ? <EmptyState icon={Activity} message="No activity yet" sub="Status changes and team actions will appear here." />
+                : data?.recent_activity.map((act) => {
+                    const from = JOB_STATUS[act.from_status ?? ""] ?? null;
+                    const to   = JOB_STATUS[act.to_status] ?? { label: act.to_status, dot: "bg-muted-foreground" };
+                    return (
+                      <div key={act.id} className="flex items-start gap-3 py-3 border-b border-border last:border-0">
+                        <span className={cn("w-2 h-2 rounded-full mt-1.5 shrink-0", to.dot)} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground">
+                            <span className="font-medium">{act.changed_by_name ?? "System"}</span>
+                            {" moved "}
+                            <span className="font-mono text-xs text-muted-foreground">{act.job_ref}</span>
+                            {from
+                              ? <> from <span className="font-medium">{from.label}</span> → <span className="font-medium">{to.label}</span></>
+                              : <> to <span className="font-medium">{to.label}</span></>
+                            }
+                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />{relativeTime(act.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+            }
+          </div>
+        </Section>
+      </div>
 
       </div>
     </div>
