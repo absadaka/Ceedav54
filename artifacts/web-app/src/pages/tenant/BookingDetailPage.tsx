@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSession } from "@/hooks/useAuth";
+import { useDistanceUnit } from "@/hooks/useSettings";
 import {
   ArrowLeft, CalendarCheck, Edit, User, Car, Clock, Calendar,
   ChevronRight, FileText, MoreHorizontal, XCircle, CalendarClock,
@@ -57,6 +58,7 @@ export default function BookingDetailPage() {
   const [, navigate] = useLocation();
   const id  = params?.id ?? "";
   const qc  = useQueryClient();
+  const distanceUnit = useDistanceUnit();
 
   const [editOpen,    setEditOpen]    = useState(false);
   const [quoteOpen,   setQuoteOpen]   = useState(false);
@@ -317,7 +319,7 @@ export default function BookingDetailPage() {
             {bk.mileage_in && (
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Mileage in</dt>
-                <dd className="font-mono">{parseInt(bk.mileage_in).toLocaleString()} km</dd>
+                <dd className="font-mono">{parseInt(bk.mileage_in).toLocaleString()} {distanceUnit}</dd>
               </div>
             )}
             <div className="flex justify-between">

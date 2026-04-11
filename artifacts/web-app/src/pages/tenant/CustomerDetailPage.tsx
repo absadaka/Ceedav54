@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
+import { useDistanceUnit } from "@/hooks/useSettings";
 import {
   ArrowLeft, Phone, Mail, MessageCircle, CreditCard, Car, FileText,
   Wrench, ReceiptText, CalendarCheck, Plus, Pencil, Trash2, User,
@@ -149,7 +150,7 @@ function VehicleCard({
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          {v.mileage    && <span>🛣 {Number(v.mileage).toLocaleString()} km</span>}
+          {v.mileage    && <span>🛣 {Number(v.mileage).toLocaleString()} {distanceUnit}</span>}
           {v.fuel_type  && <span className="capitalize">⛽ {v.fuel_type}</span>}
           {v.vin        && <span className="font-mono truncate col-span-2">VIN {v.vin}</span>}
         </div>
@@ -201,6 +202,7 @@ export default function CustomerDetailPage() {
   const id        = params.id ?? "";
   const [, navigate] = useLocation();
   const qc        = useQueryClient();
+  const distanceUnit = useDistanceUnit();
 
   const [editOpen,    setEditOpen]    = useState(false);
   const [vehDrawer,   setVehDrawer]   = useState(false);

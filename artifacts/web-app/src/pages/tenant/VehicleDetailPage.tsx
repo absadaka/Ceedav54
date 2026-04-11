@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
+import { useDistanceUnit } from "@/hooks/useSettings";
 import {
   ArrowLeft, Car, CalendarCheck, FileText, Wrench, ReceiptText,
   Pencil, Trash2, User, Hash, Fuel, Gauge,
@@ -98,6 +99,7 @@ export default function VehicleDetailPage() {
   const id        = params.id ?? "";
   const [, navigate] = useLocation();
   const qc        = useQueryClient();
+  const distanceUnit = useDistanceUnit();
 
   const [editOpen, setEditOpen] = useState(false);
   const [delOpen,  setDelOpen]  = useState(false);
@@ -232,7 +234,7 @@ export default function VehicleDetailPage() {
               <DetailItem icon={Car}   label="Make / Model" value={[vehicle.make, vehicle.model].filter(Boolean).join(" ") || null} />
               <DetailItem icon={Hash}  label="Year"         value={vehicle.year} />
               <DetailItem icon={Hash}  label="VIN"          value={vehicle.vin ? <span className="font-mono text-xs">{vehicle.vin}</span> : null} />
-              <DetailItem icon={Gauge} label="Mileage"      value={vehicle.mileage ? `${Number(vehicle.mileage).toLocaleString()} km` : null} />
+              <DetailItem icon={Gauge} label="Mileage"      value={vehicle.mileage ? `${Number(vehicle.mileage).toLocaleString()} ${distanceUnit}` : null} />
               <DetailItem icon={Fuel}  label="Fuel type"    value={vehicle.fuel_type ? <span className="capitalize">{vehicle.fuel_type}</span> : null} />
               <DetailItem icon={Car}   label="Transmission" value={vehicle.transmission ? <span className="capitalize">{vehicle.transmission.replace("_", "-")}</span> : null} />
               {vehicle.notes && (
