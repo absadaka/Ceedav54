@@ -1174,11 +1174,11 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         <div className="px-6 py-5 flex flex-col lg:flex-row lg:items-center gap-5">
           {/* Vehicle + customer info */}
           <div className="flex items-start gap-4 flex-1 min-w-0">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0"
+            <div className="w-20 h-20 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0"
               style={isInspection ? { backgroundColor: "#fff0ef", borderColor: "#ffd0ce" } : undefined}>
               {isInspection
-                ? <ClipboardList className="w-7 h-7" style={{ color: "#ff5349" }} />
-                : <CarBrandLogo make={job.make} size={32} />}
+                ? <ClipboardList className="w-9 h-9" style={{ color: "#ff5349" }} />
+                : <CarBrandLogo make={job.make} size={48} />}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-1">
