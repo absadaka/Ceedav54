@@ -195,10 +195,12 @@ router.get("/email-action", async (req, res) => {
     }
 
     if (existing.status === "approved" || existing.status === "rejected") {
+      const shopName = tenant.name ?? "Workshop";
       const alreadyMsg = existing.status === "approved"
-        ? `Quotation <strong>${existing.ref}</strong> has already been approved.`
-        : `Quotation <strong>${existing.ref}</strong> has already been rejected.`;
-      return res.send(quoteActionResultHtml(tenant.name ?? "Workshop", parsed.action, existing.ref, true, alreadyMsg));
+        ? `Quotation <strong>${existing.ref}</strong> has already been approved. If you need to make any changes, kindly contact <strong>${shopName}</strong>.`
+        : `Quotation <strong>${existing.ref}</strong> has already been rejected. If you need to make any changes, kindly contact <strong>${shopName}</strong>.`;
+      const alreadyAction = existing.status === "approved" ? "approve" : "reject";
+      return res.send(quoteActionResultHtml(shopName, alreadyAction as "approve" | "reject", existing.ref, true, alreadyMsg));
     }
 
     const now = new Date();

@@ -36,11 +36,13 @@ export function quoteActionResultHtml(shopName: string, action: "approve" | "rej
   const title = success
     ? (action === "approve" ? "Quotation Approved" : "Quotation Rejected")
     : "Action Failed";
-  const body = success
-    ? (action === "approve"
-        ? `You have approved quotation <strong>${quoteRef}</strong>. The workshop will proceed with the work.`
-        : `You have rejected quotation <strong>${quoteRef}</strong>. The workshop has been notified.`)
-    : (message ?? "Something went wrong. Please contact the workshop.");
+  const body = message
+    ? message
+    : success
+      ? (action === "approve"
+          ? `You have approved quotation <strong>${quoteRef}</strong>. The workshop will proceed with the work.`
+          : `You have rejected quotation <strong>${quoteRef}</strong>. The workshop has been notified.`)
+      : "Something went wrong. Please contact the workshop.";
 
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
