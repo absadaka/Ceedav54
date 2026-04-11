@@ -198,7 +198,7 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 | `/customers`     | ClientsPage — live table: search, All/Individual/Company filter, vehicle count, last visit, kebab menu (view/edit/delete), pagination |
 | `/customers/:id` | CustomerDetailPage — stats strip, contact card, Vehicles/Bookings/Quotes/Jobs/Invoices tabs, edit/delete actions |
 | `/vehicles/:id`  | VehicleDetailPage — plate/make/year header, details card (VIN/mileage/fuel/transmission), owner card, history tabs |
-| `/jobs/:id`      | JobDetailPage — full job card: stats strip, customer/vehicle/team cards, mileage, timeline, 5-tab panel (Work/Parts/Time/Photos/History), status transition modal, technician notes, parts CRUD, time logs table, photo gallery |
+| `/jobs/:id`      | JobDetailPage — full job card: stats strip, customer/vehicle/team cards, mileage, timeline, 5-tab panel (Work/Parts/Time/Photos/History), status transition modal, technician notes, parts CRUD, time logs table, photo gallery, Mark as Paid two-step dialog (note → payment method → record payment via invoices API) |
 | `/bookings` | BookingsPage — table with filter toolbar |
 | `/quotations` | QuotationsPage — table with filter toolbar |
 | `/jobs`          | JobsPage — live Kanban (6-lane) + List toggle, real-time lane counts, job cards with priority badges/elapsed time/tech initials, debounced search, New job drawer |
@@ -217,6 +217,12 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 | `/settings/integrations` | IntegrationsPage — Stripe / WhatsApp / Twilio cards with enable+config dialogs |
 
 **Routing**: `/clients` kept as backward-compat alias for `/customers`.
+
+### Shared Hooks
+- `useSettings()` / `useDistanceUnit()` — `artifacts/web-app/src/hooks/useSettings.ts` — fetches `/api/settings` and extracts `settings.distance_unit` (km/mi). Used across all pages that display mileage. 5-min stale time.
+
+### Job Status Enum
+`new → waiting → on_hold → qc → in_progress → completed → invoiced → paid → delivered` (+ `waiting_parts`, `cancelled`). The `paid` status is set automatically when an invoice payment is recorded via `POST /api/invoices/:id/payments` (triggers `recalcPaid`). The "Mark as Paid" button on JobDetailPage opens a two-step dialog: note → payment method → records payment against the linked invoice.
 
 ## Onboarding API
 

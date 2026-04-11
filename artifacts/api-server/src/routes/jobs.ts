@@ -418,6 +418,7 @@ router.get("/:id", async (req, res) => {
             tax_amount:         invoicesTable.tax_amount,
             total:              invoicesTable.total,
             paid_amount:        invoicesTable.paid_amount,
+            advance_from_quotation: invoicesTable.advance_from_quotation,
             notes:              invoicesTable.notes,
             due_at:             invoicesTable.due_at,
             sent_at:            invoicesTable.sent_at,

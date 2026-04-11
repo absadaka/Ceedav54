@@ -3,7 +3,7 @@ import {
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
   Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil, ArrowRight,
-  Loader2, DollarSign, Wallet, CircleX, ClipboardCheck, Eye, Calculator, Hammer, Send, Truck,
+  Loader2, DollarSign, Wallet, CircleX, ClipboardCheck, Eye, Calculator, Hammer, Send, Truck, Building2, CreditCard,
   MessageSquare, Mail, Phone, RefreshCw, Download,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -716,6 +716,11 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [detailsSavePending, setDetailsSavePending] = useState(false);
   const [showShareInvoice, setShowShareInvoice] = useState(false);
   const [shareChannels, setShareChannels] = useState<{ sms: boolean; whatsapp: boolean; email: boolean }>({ sms: false, whatsapp: false, email: false });
+  const [markPaidOpen, setMarkPaidOpen] = useState(false);
+  const [markPaidStep, setMarkPaidStep] = useState<1 | 2>(1);
+  const [markPaidNote, setMarkPaidNote] = useState("");
+  const [markPaidMethod, setMarkPaidMethod] = useState("cash");
+  const [markPaidPending, setMarkPaidPending] = useState(false);
   const [activeTab, setActiveTab] = useState("work");
   const tabsRef = useRef<HTMLDivElement>(null);
 
@@ -1463,12 +1468,16 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                             </button>
                           )}
                           <button
-                            onClick={() => moveToNext()}
-                            disabled={moveStatusMutation.isPending}
+                            onClick={() => {
+                              setMarkPaidNote("");
+                              setMarkPaidMethod("cash");
+                              setMarkPaidStep(1);
+                              setMarkPaidOpen(true);
+                            }}
                             className="w-full h-10 rounded-xl border-2 border-[#161aff] bg-[#161aff] text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
                           >
                             <DollarSign className="w-4 h-4" />
-                            <span className="text-xs font-bold">{moveStatusMutation.isPending ? "Updating…" : "Mark as Paid"}</span>
+                            <span className="text-xs font-bold">Mark as Paid</span>
                           </button>
                         </div>
                       );
@@ -2556,6 +2565,119 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {detailsSavePending ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={markPaidOpen} onOpenChange={v => { if (!markPaidPending) setMarkPaidOpen(v); }}>
+        <DialogContent className="sm:max-w-md">
+          {markPaidStep === 1 ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Mark as Paid</DialogTitle>
+                <DialogDescription>
+                  Record an offline payment received for this job. Add an optional note about the payment.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                <div className="space-y-1.5">
+                  <Label>Payment note <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Textarea
+                    placeholder="e.g. Customer paid at reception, Cheque #4521…"
+                    value={markPaidNote}
+                    onChange={e => setMarkPaidNote(e.target.value)}
+                    rows={3}
+                    className="resize-none text-sm"
+                  />
+                </div>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setMarkPaidOpen(false)}>Cancel</Button>
+                <Button onClick={() => setMarkPaidStep(2)}>
+                  Next
+                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Payment Method</DialogTitle>
+                <DialogDescription>
+                  How was the payment received?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-2 py-2">
+                {[
+                  { value: "cash", label: "Cash", icon: <Wallet className="w-5 h-5" /> },
+                  { value: "card", label: "Card (in shop)", icon: <CreditCard className="w-5 h-5" /> },
+                  { value: "bank_transfer", label: "Bank Transfer", icon: <Building2 className="w-5 h-5" /> },
+                  { value: "online_link", label: "Online", icon: <LinkIcon className="w-5 h-5" /> },
+                  { value: "insurance", label: "Insurance", icon: <FileText className="w-5 h-5" /> },
+                ].map(m => (
+                  <button
+                    key={m.value}
+                    onClick={() => setMarkPaidMethod(m.value)}
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all text-sm font-medium",
+                      markPaidMethod === m.value
+                        ? "border-[#161aff] bg-[#161aff]/5 text-[#161aff]"
+                        : "border-border bg-background text-muted-foreground hover:border-[#161aff]/40 hover:text-foreground"
+                    )}
+                  >
+                    {m.icon}
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setMarkPaidStep(1)}>Back</Button>
+                <Button
+                  disabled={markPaidPending}
+                  onClick={async () => {
+                    const inv = (invoices as any[])[0];
+                    if (!inv) {
+                      toast.error("No invoice found — please create an invoice first");
+                      setMarkPaidOpen(false);
+                      return;
+                    }
+                    const total = parseFloat(inv.total ?? "0");
+                    const advPaid = parseFloat(inv.advance_from_quotation ?? "0");
+                    const alreadyPaid = parseFloat(inv.paid_amount ?? "0");
+                    const balance = Math.max(0, total - advPaid - alreadyPaid);
+                    if (balance <= 0) {
+                      toast.error("Invoice already fully paid — no balance remaining");
+                      setMarkPaidOpen(false);
+                      return;
+                    }
+                    setMarkPaidPending(true);
+                    try {
+                      const res = await fetch(`${API}/api/invoices/${inv.id}/payments?tenant=${TENANT}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          method: markPaidMethod,
+                          amount: balance.toFixed(2),
+                          notes: markPaidNote || null,
+                          paid_at: new Date().toISOString().split("T")[0],
+                        }),
+                      });
+                      if (!res.ok) throw new Error();
+                      qc.invalidateQueries({ queryKey: ["job", id] });
+                      qc.invalidateQueries({ queryKey: ["invoices"] });
+                      toast.success("Payment recorded — job marked as paid");
+                      setMarkPaidOpen(false);
+                    } catch {
+                      toast.error("Failed to record payment");
+                    } finally {
+                      setMarkPaidPending(false);
+                    }
+                  }}
+                >
+                  {markPaidPending ? "Recording…" : "Confirm Payment"}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
