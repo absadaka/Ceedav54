@@ -134,28 +134,34 @@ export default function JobsPage() {
   }, [kanbanData, q]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="page-title">Service Jobs</h1>
+    <div>
+      <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-5">
+        <div className="flex items-center justify-between">
+          <h1 className="page-title">Service Jobs</h1>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input placeholder="Search service jobs…" value={q} onChange={e => setQ(e.target.value)} className="pl-9 h-8 text-sm" />
+          </div>
+          <div className="ml-auto flex items-center border border-border rounded-md overflow-hidden">
+            {(["board", "list"] as const).map((v, i) => (
+              <button key={v} onClick={() => setView(v)} className={cn(
+                "px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium transition-colors",
+                i > 0 && "border-l border-border",
+                view === v ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",
+              )}>
+                {v === "board" ? <><LayoutGrid className="w-3.5 h-3.5" />Board</> : <><List className="w-3.5 h-3.5" />List</>}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input placeholder="Search service jobs…" value={q} onChange={e => setQ(e.target.value)} className="pl-9 h-8 text-sm" />
-        </div>
-        <div className="ml-auto flex items-center border border-border rounded-md overflow-hidden">
-          {(["board", "list"] as const).map((v, i) => (
-            <button key={v} onClick={() => setView(v)} className={cn(
-              "px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium transition-colors",
-              i > 0 && "border-l border-border",
-              view === v ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",
-            )}>
-              {v === "board" ? <><LayoutGrid className="w-3.5 h-3.5" />Board</> : <><List className="w-3.5 h-3.5" />List</>}
-            </button>
-          ))}
-        </div>
-      </div>
+      <div className="-mx-6 h-6 bg-gradient-to-b from-white to-[#f2f3ff]" />
+
+      <div className="-mx-6 -mb-6 px-6 pb-6 bg-[#f2f3ff] min-h-[60vh]">
 
       {view === "board" && (
         kanbanLoading ? <KanbanSkeleton /> : (() => {
@@ -310,6 +316,7 @@ export default function JobsPage() {
           currentStatus={movingJob.status}
         />
       )}
+      </div>
     </div>
   );
 }
