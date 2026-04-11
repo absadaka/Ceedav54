@@ -79,27 +79,27 @@ function elapsed(d: string) {
 
 function KanbanCard({ job, onClick }: { job: KanbanJob; onClick: () => void }) {
   return (
-    <div onClick={onClick} className="bg-background border border-border rounded-lg px-3.5 py-3 flex flex-col gap-2 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all group">
-      <div className="flex items-center justify-between gap-1.5">
+    <div onClick={onClick} className="bg-background border border-border rounded-lg px-4 py-3.5 flex flex-col gap-2.5 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all group">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Wrench className="w-3.5 h-3.5 shrink-0" style={{ color: "#1418ff" }} />
-          <span className="text-xs font-mono font-semibold text-muted-foreground">{job.ref}</span>
+          <Wrench className="w-4 h-4 shrink-0" style={{ color: "#1418ff" }} />
+          <span className="text-sm font-mono font-semibold text-muted-foreground">{job.ref}</span>
         </div>
         {job.priority !== "normal" && (
-          <span className={cn("text-[11px] font-medium border rounded px-1.5 py-0.5 shrink-0", PRIORITY_COLORS[job.priority])}>{job.priority}</span>
+          <span className={cn("text-xs font-medium border rounded px-1.5 py-0.5 shrink-0", PRIORITY_COLORS[job.priority])}>{job.priority}</span>
         )}
       </div>
-      <div className="flex items-center gap-1.5 text-sm text-foreground min-w-0">
-        <User className="w-3.5 h-3.5 shrink-0" style={{ color: "#1418ff" }} />
+      <div className="flex items-center gap-1.5 text-[15px] text-foreground min-w-0">
+        <User className="w-4 h-4 shrink-0" style={{ color: "#1418ff" }} />
         <span className="truncate font-medium">{job.client_name ?? "—"}</span>
       </div>
       <div className="flex items-center justify-between gap-1">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-          <Car className="w-3.5 h-3.5 shrink-0" />
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground min-w-0">
+          <Car className="w-4 h-4 shrink-0" />
           <span className="font-mono truncate">{job.plate_number ?? "—"}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-          <Clock className="w-3.5 h-3.5" />{elapsed(job.started_at ?? job.created_at)}
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground shrink-0">
+          <Clock className="w-4 h-4" />{elapsed(job.started_at ?? job.created_at)}
         </div>
       </div>
     </div>
