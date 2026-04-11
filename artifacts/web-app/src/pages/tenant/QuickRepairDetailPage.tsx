@@ -533,7 +533,7 @@ export default function QuickRepairDetailPage() {
           <div className="flex items-center gap-2">
             <div className={cn("w-1 h-4 rounded-full", isFinal ? "bg-[#00d492]" : "bg-primary/60")} />
             <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Service Flow Tracker
+              Quick Repair Flow
             </span>
           </div>
         </div>
