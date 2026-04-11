@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { sql, eq, and, desc, asc, ilike, or } from "drizzle-orm";
+import { sql, eq, and, desc, asc, ilike, or, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
@@ -114,12 +114,15 @@ export async function syncInvoiceFromQuotation(invoiceId: string, quotationId: s
 }
 
 export async function syncDraftInvoicesForQuotation(quotationId: string) {
-  const draftInvoices = await db
+  const syncableInvoices = await db
     .select({ id: invoicesTable.id })
     .from(invoicesTable)
-    .where(and(eq(invoicesTable.quotation_id, quotationId), eq(invoicesTable.status, "draft")));
+    .where(and(
+      eq(invoicesTable.quotation_id, quotationId),
+      inArray(invoicesTable.status, ["draft", "sent"]),
+    ));
 
-  for (const inv of draftInvoices) {
+  for (const inv of syncableInvoices) {
     await syncInvoiceFromQuotation(inv.id, quotationId);
   }
 }
@@ -151,12 +154,16 @@ async function syncInvoiceFromJobParts(invoiceId: string, jobId: string, tenantI
 }
 
 export async function syncDraftInvoicesForJob(jobId: string, tenantId: string) {
-  const draftInvoices = await db
+  const syncableInvoices = await db
     .select({ id: invoicesTable.id, quotation_id: invoicesTable.quotation_id })
     .from(invoicesTable)
-    .where(and(eq(invoicesTable.job_id, jobId), eq(invoicesTable.tenant_id, tenantId), eq(invoicesTable.status, "draft")));
+    .where(and(
+      eq(invoicesTable.job_id, jobId),
+      eq(invoicesTable.tenant_id, tenantId),
+      inArray(invoicesTable.status, ["draft", "sent"]),
+    ));
 
-  for (const inv of draftInvoices) {
+  for (const inv of syncableInvoices) {
     await syncInvoiceFromJobParts(inv.id, jobId, tenantId);
   }
 }
