@@ -495,7 +495,7 @@ function RevenueByCategoryCard({ data, isLoading, cur }: { data?: DashboardData;
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#2d3142] rounded-full transition-all"
+                    className="h-full bg-primary rounded-full transition-all"
                     style={{ width: `${(cat.count / maxCount) * 100}%` }}
                   />
                 </div>
@@ -560,11 +560,11 @@ function MonthlyRevenueCard({ data, isLoading, cur }: { data?: DashboardData; is
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#2d3142]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#161aff]" />
             <span className="text-[10px] text-muted-foreground">Actual</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#b8bcd0]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#c5c6ff]" />
             <span className="text-[10px] text-muted-foreground">Projected</span>
           </div>
         </div>
@@ -594,8 +594,8 @@ function MonthlyRevenueCard({ data, isLoading, cur }: { data?: DashboardData; is
                 }}
                 formatter={(value: number) => [money(value, cur), ""]}
               />
-              <Bar dataKey="actual" fill="#2d3142" radius={[4, 4, 0, 0]} maxBarSize={32} />
-              <Bar dataKey="projected" fill="#b8bcd0" radius={[4, 4, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="actual" fill="#161aff" radius={[4, 4, 0, 0]} maxBarSize={32} />
+              <Bar dataKey="projected" fill="#c5c6ff" radius={[4, 4, 0, 0]} maxBarSize={32} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -751,7 +751,20 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* ── Row 2: Bookings + Revenue summary + Critical Alerts ────── */}
+      {/* ── Row 2: Monthly Revenue Chart + Jobs by Category + Top Technicians */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="xl:col-span-1">
+          <MonthlyRevenueCard data={data} isLoading={isLoading} cur={cur} />
+        </div>
+        <div className="xl:col-span-1">
+          <RevenueByCategoryCard data={data} isLoading={isLoading} cur={cur} />
+        </div>
+        <div className="xl:col-span-1">
+          <TopTechniciansCard data={data} isLoading={isLoading} />
+        </div>
+      </div>
+
+      {/* ── Row 3: Bookings + Revenue summary + Critical Alerts ────── */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2">
           <Section title="Today's bookings" action="All bookings" actionHref="/bookings">
@@ -819,19 +832,6 @@ export default function DashboardPage() {
           </Section>
 
           <CriticalAlertsCard data={data} isLoading={isLoading} />
-        </div>
-      </div>
-
-      {/* ── Row 3: Monthly Revenue Chart + Jobs by Category + Top Technicians */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-1">
-          <MonthlyRevenueCard data={data} isLoading={isLoading} cur={cur} />
-        </div>
-        <div className="xl:col-span-1">
-          <RevenueByCategoryCard data={data} isLoading={isLoading} cur={cur} />
-        </div>
-        <div className="xl:col-span-1">
-          <TopTechniciansCard data={data} isLoading={isLoading} />
         </div>
       </div>
 
