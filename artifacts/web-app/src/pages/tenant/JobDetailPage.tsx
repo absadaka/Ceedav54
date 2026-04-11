@@ -34,6 +34,7 @@ import JobDrawer, { type JobRow } from "@/components/JobDrawer";
 import { JOB_STATUSES, INSPECTION_STATUSES } from "@/components/StatusTransitionModal";
 
 import { getSession } from "@/hooks/useAuth";
+import { useDistanceUnit } from "@/hooks/useSettings";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -688,6 +689,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const qc = useQueryClient();
+  const distanceUnit = useDistanceUnit();
 
   const [editOpen,       setEditOpen]       = useState(false);
   const [cancelOpen,     setCancelOpen]     = useState(false);
@@ -1209,7 +1211,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               <div className="text-center min-w-[70px]">
                 <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Mileage</p>
                 <p className="text-sm font-semibold text-foreground">
-                  {(() => { const val = job.mileage_in ?? (job as any).vehicle_mileage; if (!val) return "—"; const n = parseInt(String(val).replace(/,/g, "")); return isNaN(n) ? String(val) : `${n.toLocaleString()} mi`; })()}
+                  {(() => { const val = job.mileage_in ?? (job as any).vehicle_mileage; if (!val) return "—"; const n = parseInt(String(val).replace(/,/g, "")); return isNaN(n) ? String(val) : `${n.toLocaleString()} ${distanceUnit}`; })()}
                 </p>
               </div>
             </div>
@@ -1721,7 +1723,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsMileage && "border-red-300 bg-red-50/50")}>
                     <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsMileage ? "text-red-600" : "text-muted-foreground")}>Mileage{needsMileage ? " *" : ""}</p>
                     <p className={cn("text-sm font-semibold", job.mileage_in ? "text-foreground" : "text-muted-foreground/50 italic")}>
-                      {(() => { const v = job.mileage_in ?? (job as any).vehicle_mileage; if (!v) return "Not set"; const n = parseInt(String(v).replace(/,/g, "")); return isNaN(n) ? String(v) : `${n.toLocaleString()} mi`; })()}
+                      {(() => { const v = job.mileage_in ?? (job as any).vehicle_mileage; if (!v) return "Not set"; const n = parseInt(String(v).replace(/,/g, "")); return isNaN(n) ? String(v) : `${n.toLocaleString()} ${distanceUnit}`; })()}
                     </p>
                   </div>
                   <div className="border border-border rounded-lg bg-background p-3 space-y-1.5">

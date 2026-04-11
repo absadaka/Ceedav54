@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
+import { useDistanceUnit } from "@/hooks/useSettings";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, FileText, Edit, Trash2, Send, CheckCircle2, XCircle,
@@ -288,6 +289,7 @@ export default function QuotationDetailPage() {
   const [, navigate] = useLocation();
   const id  = params?.id ?? "";
   const qc  = useQueryClient();
+  const distanceUnit = useDistanceUnit();
 
   const [editOpen,       setEditOpen]       = useState(false);
   const [addLineOpen,    setAddLineOpen]    = useState(false);
@@ -490,7 +492,7 @@ export default function QuotationDetailPage() {
                     <p className="font-medium text-sm font-mono group-hover:text-primary transition-colors">{qt.plate_number}</p>
                     <p className="text-xs text-muted-foreground">{qt.vehicle_year} {qt.vehicle_make} {qt.vehicle_model}</p>
                     {qt.vehicle_mileage && (
-                      <p className="text-xs text-muted-foreground">{parseInt(qt.vehicle_mileage).toLocaleString()} km</p>
+                      <p className="text-xs text-muted-foreground">{parseInt(qt.vehicle_mileage).toLocaleString()} {distanceUnit}</p>
                     )}
                   </div>
                 </button>

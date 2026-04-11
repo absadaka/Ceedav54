@@ -4,6 +4,7 @@ import {
   Search, Wrench, Receipt, Send, MessageSquare, Phone, Mail, CreditCard, RefreshCw, Download,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useDistanceUnit } from "@/hooks/useSettings";
 import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
@@ -291,6 +292,7 @@ export default function QuickRepairDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const qc = useQueryClient();
+  const distanceUnit = useDistanceUnit();
 
   const { data, isLoading } = useQuery<{
     job: JobDetail; parts: Part[]; history: HistoryEntry[]; techNotes: TechNote[]; invoices: any[];
@@ -704,7 +706,7 @@ export default function QuickRepairDetailPage() {
             {[job.make, job.model, job.year].filter(Boolean).join(" ") || "—"}
             {job.color && ` · ${job.color}`}
           </p>
-          {job.mileage_in && <p className="text-xs text-muted-foreground">Mileage: {job.mileage_in} km</p>}
+          {job.mileage_in && <p className="text-xs text-muted-foreground">Mileage: {job.mileage_in} {distanceUnit}</p>}
         </div>
 
         {/* Assignment */}
