@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import {
   Users, Plus, Search, MoreHorizontal, Building2, User, Car,
-  ChevronLeft, ChevronRight, Pencil, Trash2, ExternalLink,
+  ChevronLeft, ChevronRight, Pencil, Trash2, ExternalLink, CalendarCheck,
 } from "lucide-react";
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import CustomerDrawer, { type ClientRow } from "@/components/CustomerDrawer";
+import BookingDrawer from "@/components/BookingDrawer";
 import { cn } from "@/lib/utils";
 
 import { getTenantSlug } from "@/lib/tenant";
@@ -80,6 +81,8 @@ export default function ClientsPage() {
   const [drawerOpen, setDrawer] = useState(false);
   const [editing, setEditing]   = useState<ClientListRow | null>(null);
   const [delTarget, setDelTarget] = useState<ClientListRow | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingClientId, setBookingClientId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => { setDeb(search); setPage(1); }, 300);
@@ -258,6 +261,9 @@ export default function ClientsPage() {
                         <DropdownMenuItem onClick={() => openEdit(c)}>
                           <Pencil className="w-3.5 h-3.5 mr-2" />Edit
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { setBookingClientId(c.id); setBookingOpen(true); }}>
+                          <CalendarCheck className="w-3.5 h-3.5 mr-2" />New Booking
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
@@ -317,6 +323,12 @@ export default function ClientsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BookingDrawer
+        open={bookingOpen}
+        onClose={() => { setBookingOpen(false); setBookingClientId(null); }}
+        defaultClientId={bookingClientId}
+      />
     </div>
   );
 }

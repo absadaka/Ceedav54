@@ -43,6 +43,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   booking?: BookingRow | null;
+  defaultClientId?: string | null;
 }
 
 const SOURCES = [
@@ -53,7 +54,7 @@ const SOURCES = [
   { value: "referral", label: "Referral" },
 ];
 
-export default function BookingDrawer({ open, onClose, booking }: Props) {
+export default function BookingDrawer({ open, onClose, booking, defaultClientId }: Props) {
   const qc = useQueryClient();
   const isEdit = !!booking?.id;
 
@@ -83,10 +84,10 @@ export default function BookingDrawer({ open, onClose, booking }: Props) {
       now.setHours(now.getHours() + 1);
       setDate(now.toISOString().slice(0, 10));
       setTime(now.toTimeString().slice(0, 5));
-      setClientId(""); setVehicleId("");
+      setClientId(defaultClientId ?? ""); setVehicleId("");
       setSource("phone"); setNotes("");
     }
-  }, [booking, open]);
+  }, [booking, open, defaultClientId]);
 
   /* ── Data fetching ──────────────────────────────────────────────────── */
 
