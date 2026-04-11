@@ -110,8 +110,9 @@ function EmptyState({ icon: Icon, message }: { icon: React.ElementType; message:
 
 /* ─── Vehicle card ───────────────────────────────────────────────────────── */
 function VehicleCard({
-  v, jobs, onEdit, onDelete,
+  v, jobs, onEdit, onDelete, distanceUnit,
 }: {
+  distanceUnit: string;
   v: VehicleRow;
   jobs: JobRow[];
   onEdit: (v: VehicleRow) => void;
@@ -394,6 +395,7 @@ export default function CustomerDetailPage() {
                   {vehicles.map(v => (
                     <VehicleCard
                       key={v.id} v={v}
+                      distanceUnit={distanceUnit}
                       jobs={history.jobs.filter(j => j.vehicle_id === v.id)}
                       onEdit={openEditVehicle}
                       onDelete={v => setDelVeh(v)}

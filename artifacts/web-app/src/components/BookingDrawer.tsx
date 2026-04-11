@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { SearchableSelect, type SelectOption } from "@/components/ui/searchable-select";
 import { toast } from "sonner";
-import { Zap, Wrench } from "lucide-react";
+import { Zap, Wrench, UserPlus, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { getTenantSlug } from "@/lib/tenant";
@@ -66,6 +66,16 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
   const [source,      setSource]      = useState("phone");
   const [notes,       setNotes]       = useState("");
 
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [newName,       setNewName]       = useState("");
+  const [newPhone,      setNewPhone]      = useState("");
+  const [newEmail,      setNewEmail]      = useState("");
+  const [newPlate,      setNewPlate]      = useState("");
+  const [newMake,       setNewMake]       = useState("");
+  const [newModel,      setNewModel]      = useState("");
+  const [newYear,       setNewYear]       = useState("");
+  const [newColor,      setNewColor]      = useState("");
+
   useEffect(() => {
     if (!open) return;
     if (booking) {
@@ -77,6 +87,7 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
       setTime(dt.toTimeString().slice(0, 5));
       setSource(booking.source ?? "phone");
       setNotes(booking.notes ?? "");
+      setIsNewCustomer(false);
     } else {
       setBookingType("");
       const now = new Date();
@@ -86,17 +97,18 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
       setTime(now.toTimeString().slice(0, 5));
       setClientId(defaultClientId ?? ""); setVehicleId("");
       setSource("phone"); setNotes("");
+      setIsNewCustomer(false);
+      setNewName(""); setNewPhone(""); setNewEmail("");
+      setNewPlate(""); setNewMake(""); setNewModel(""); setNewYear(""); setNewColor("");
     }
   }, [booking, open, defaultClientId]);
-
-  /* ── Data fetching ──────────────────────────────────────────────────── */
 
   const { data: clientsRaw = [] } = useQuery({
     queryKey: ["clients-list", TENANT],
     queryFn: () =>
       fetch(`${API}/api/clients?tenant=${TENANT}&limit=200`)
         .then(r => r.json())
-        .then(d => d.data ?? d.rows ?? []),   // API returns { data: [...] }
+        .then(d => d.data ?? d.rows ?? []),
     enabled: open,
   });
 
@@ -106,10 +118,8 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
       fetch(`${API}/api/vehicles?tenant=${TENANT}&client_id=${clientId}&limit=50`)
         .then(r => r.json())
         .then(d => d.rows ?? d.data ?? []),
-    enabled: open && !!clientId,
+    enabled: open && !!clientId && !isNewCustomer,
   });
-
-  /* ── Normalise to SelectOption[] ────────────────────────────────────── */
 
   const clientOptions: SelectOption[] = useMemo(
     () => (clientsRaw as any[]).map(c => ({
@@ -127,26 +137,79 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
     [vehiclesRaw],
   );
 
-  /* ── Handlers ───────────────────────────────────────────────────────── */
-
   function handleClientChange(id: string) {
     setClientId(id);
-    setVehicleId("");   // reset vehicle when customer changes
+    setVehicleId("");
   }
 
-  /* ── Submit ─────────────────────────────────────────────────────────── */
+  function switchToNewCustomer() {
+    setIsNewCustomer(true);
+    setClientId("");
+    setVehicleId("");
+  }
+
+  function switchToExisting() {
+    setIsNewCustomer(false);
+    setNewName(""); setNewPhone(""); setNewEmail("");
+    setNewPlate(""); setNewMake(""); setNewModel(""); setNewYear(""); setNewColor("");
+  }
 
   const save = useMutation({
     mutationFn: async () => {
+      let finalClientId  = clientId  || null;
+      let finalVehicleId = vehicleId || null;
+
+      if (isNewCustomer) {
+        if (!newName.trim()) throw new Error("Customer name is required");
+
+        const clientRes = await fetch(`${API}/api/clients?tenant=${TENANT}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "individual",
+            name: newName.trim(),
+            phone: newPhone.trim() || null,
+            email: newEmail.trim() || null,
+          }),
+        });
+        if (!clientRes.ok) {
+          const e = await clientRes.json();
+          throw new Error(e.error ?? "Failed to create customer");
+        }
+        const newClient = await clientRes.json();
+        finalClientId = newClient.id;
+
+        if (newPlate.trim()) {
+          const vehicleRes = await fetch(`${API}/api/vehicles?tenant=${TENANT}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              client_id: finalClientId,
+              plate: newPlate.trim(),
+              make: newMake.trim() || null,
+              model: newModel.trim() || null,
+              year: newYear.trim() || null,
+              color: newColor.trim() || null,
+            }),
+          });
+          if (!vehicleRes.ok) {
+            const e = await vehicleRes.json();
+            throw new Error(e.error ?? "Failed to create vehicle");
+          }
+          const newVehicle = await vehicleRes.json();
+          finalVehicleId = newVehicle.id;
+        }
+      }
+
       const scheduled_at = new Date(`${date}T${time}:00`).toISOString();
       const body = {
-        client_id:    clientId   || null,
-        vehicle_id:   vehicleId  || null,
+        client_id:    finalClientId,
+        vehicle_id:   finalVehicleId,
         advisor_id:   null,
         scheduled_at,
         duration_min: null,
         source,
-        notes:        notes      || null,
+        notes:        notes || null,
         mileage_in:   null,
         booking_type: bookingType || null,
       };
@@ -163,6 +226,7 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
     onSuccess: () => {
       toast.success(isEdit ? "Booking updated" : "Booking created");
       qc.invalidateQueries({ queryKey: ["bookings"] });
+      qc.invalidateQueries({ queryKey: ["clients-list"] });
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
@@ -240,7 +304,6 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
             </div>
           )}
 
-          {/* Date & Time */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Date *</Label>
@@ -252,7 +315,6 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
             </div>
           </div>
 
-          {/* Source */}
           <div className="space-y-1.5">
             <Label>Source</Label>
             <Select value={source} onValueChange={setSource}>
@@ -265,43 +327,149 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
             </Select>
           </div>
 
-          {/* Customer */}
-          <div className="space-y-1.5">
-            <Label>Customer</Label>
-            <SearchableSelect
-              value={clientId}
-              onValueChange={handleClientChange}
-              options={clientOptions}
-              placeholder={clientOptions.length === 0 ? "No customers yet" : "Search customer…"}
-              searchPlaceholder="Search by name or phone…"
-            />
-            {clientOptions.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Add a customer first from the Customers page.
-              </p>
-            )}
-          </div>
+          {!isEdit && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={switchToExisting}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
+                  !isNewCustomer
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                )}
+              >
+                <User className="w-3 h-3" />Existing
+              </button>
+              <button
+                type="button"
+                onClick={switchToNewCustomer}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
+                  isNewCustomer
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                )}
+              >
+                <UserPlus className="w-3 h-3" />New Customer
+              </button>
+            </div>
+          )}
 
-          {/* Vehicle */}
-          <div className="space-y-1.5">
-            <Label>Vehicle</Label>
-            <SearchableSelect
-              value={vehicleId}
-              onValueChange={setVehicleId}
-              options={vehicleOptions}
-              placeholder={
-                !clientId
-                  ? "Select a customer first"
-                  : vehicleOptions.length === 0
-                  ? "No vehicles for this customer"
-                  : "Search vehicle…"
-              }
-              searchPlaceholder="Search by plate or model…"
-              disabled={!clientId}
-            />
-          </div>
+          {!isNewCustomer ? (
+            <>
+              <div className="space-y-1.5">
+                <Label>Customer</Label>
+                <SearchableSelect
+                  value={clientId}
+                  onValueChange={handleClientChange}
+                  options={clientOptions}
+                  placeholder={clientOptions.length === 0 ? "No customers yet" : "Search customer…"}
+                  searchPlaceholder="Search by name or phone…"
+                />
+              </div>
 
-          {/* Notes */}
+              <div className="space-y-1.5">
+                <Label>Vehicle</Label>
+                <SearchableSelect
+                  value={vehicleId}
+                  onValueChange={setVehicleId}
+                  options={vehicleOptions}
+                  placeholder={
+                    !clientId
+                      ? "Select a customer first"
+                      : vehicleOptions.length === 0
+                      ? "No vehicles for this customer"
+                      : "Search vehicle…"
+                  }
+                  searchPlaceholder="Search by plate or model…"
+                  disabled={!clientId}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Customer Details</p>
+                <div className="space-y-1.5">
+                  <Label>Name *</Label>
+                  <Input
+                    placeholder="e.g. Ahmed Al-Rashidi"
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Phone</Label>
+                    <Input
+                      placeholder="e.g. +971 50 123 4567"
+                      value={newPhone}
+                      onChange={e => setNewPhone(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      placeholder="e.g. ahmed@email.com"
+                      value={newEmail}
+                      onChange={e => setNewEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vehicle Details</p>
+                <div className="space-y-1.5">
+                  <Label>Plate Number *</Label>
+                  <Input
+                    placeholder="e.g. DXB-A-12345"
+                    value={newPlate}
+                    onChange={e => setNewPlate(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Make</Label>
+                    <Input
+                      placeholder="e.g. Toyota"
+                      value={newMake}
+                      onChange={e => setNewMake(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Model</Label>
+                    <Input
+                      placeholder="e.g. Land Cruiser"
+                      value={newModel}
+                      onChange={e => setNewModel(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Year</Label>
+                    <Input
+                      placeholder="e.g. 2024"
+                      value={newYear}
+                      onChange={e => setNewYear(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Color</Label>
+                    <Input
+                      placeholder="e.g. White"
+                      value={newColor}
+                      onChange={e => setNewColor(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="space-y-1.5">
             <Label>Notes / Service request</Label>
             <Textarea
@@ -319,7 +487,7 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
             onClick={() => save.mutate()}
-            disabled={save.isPending || !date || !time}
+            disabled={save.isPending || !date || !time || (isNewCustomer && !newName.trim())}
           >
             {save.isPending ? "Saving…" : isEdit ? "Save changes" : "Create booking"}
           </Button>
