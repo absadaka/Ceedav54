@@ -1,7 +1,7 @@
 import {
   ArrowLeft, Zap, User, Car, Plus,
   Edit, Trash2, Package, CheckCircle2,
-  Search, Wrench, Receipt, Send, MessageSquare, Phone, Mail, CreditCard, RefreshCw,
+  Search, Wrench, Receipt, Send, MessageSquare, Phone, Mail, CreditCard, RefreshCw, Download,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -928,6 +928,15 @@ export default function QuickRepairDetailPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => { const w = window.open(`${API}/api/invoices/${inv.id}/pdf?tenant=${TENANT}`, "_blank"); if (!w) toast.error("Popup blocked — please allow popups for this site"); }}
+                      >
+                        <Download className="w-3 h-3" />
+                        PDF
+                      </Button>
                       {inv.status !== "paid" && inv.status !== "void" && (
                         <Button
                           variant="ghost"

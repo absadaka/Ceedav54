@@ -1,7 +1,7 @@
 import {
   ArrowLeft, Receipt, User, Car, Edit, Trash2, Send, CheckCircle2,
   CreditCard, Plus, X, MoreHorizontal, ExternalLink, AlertTriangle,
-  Clock, FileText, RefreshCw,
+  Clock, FileText, RefreshCw, Download,
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -466,6 +466,9 @@ export default function InvoiceDetailPage() {
               <Button size="sm" variant="outline" className="px-2"><MoreHorizontal className="w-4 h-4" /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => { const w = window.open(`${API}/api/invoices/${id}/pdf?tenant=${TENANT}`, "_blank"); if (!w) toast.error("Popup blocked — please allow popups for this site"); }}>
+                <Download className="w-3.5 h-3.5 mr-2" />Download PDF
+              </DropdownMenuItem>
               {canEdit && <DropdownMenuItem onClick={() => setEditOpen(true)}><Edit className="w-3.5 h-3.5 mr-2" />Edit invoice</DropdownMenuItem>}
               {(invoice.job_id || invoice.quotation_id) && !isPaid && !isVoid && (
                 <DropdownMenuItem onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>

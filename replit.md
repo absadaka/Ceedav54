@@ -110,6 +110,8 @@ ceeda/
 - `POST /:id/payments` — record payment (auto-updates paid_amount, sets partial/paid status)
 - `POST /:id/send` — draft → sent; email includes job report section if report notes exist
 - `POST /:id/void` — void invoice
+- `GET /:id/pdf` — server-rendered printable HTML page (use browser Print → Save as PDF)
+- `POST /:id/sync` — sync draft/sent invoice line items from linked quotation/job
 
 **Key patterns**: `vehiclesTable.plate` (not `plate_number`), `alias(usersTable, "inv_cashier")` for multi-user joins
 
@@ -129,6 +131,7 @@ ceeda/
 - `POST /:id/approve` — sent/viewed → approved
 - `POST /:id/reject` — sent/viewed → rejected
 - `POST /:id/convert` — approved only → creates job card, sets `converted_job_id`
+- `GET /:id/pdf` — server-rendered printable HTML page (use browser Print → Save as PDF)
 
 ### Booking API Endpoints (`/api/bookings?tenant=<slug>`)
 - `GET /` — paginated list with date/status filter
