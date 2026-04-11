@@ -79,38 +79,24 @@ function KanbanCard({ job, onClick }: { job: KanbanJob; onClick: () => void }) {
   );
 }
 
-function KanbanSkeletonCol({ wide }: { wide?: boolean }) {
-  return (
-    <div className="min-w-0">
-      <div className="flex items-center justify-between mb-3">
-        <Skeleton className="h-3.5 w-24" /><Skeleton className="h-4 w-5 rounded-full" />
-      </div>
-      <div className="space-y-2">
-        {Array.from({ length: wide ? 2 : 1 }).map((_, i) => (
-          <div key={i} className="bg-background border border-border rounded-lg p-3 space-y-2.5">
-            <Skeleton className="h-3 w-full" /><Skeleton className="h-2.5 w-3/4" />
-            <div className="flex items-center justify-between pt-1">
-              <Skeleton className="h-5 w-14 rounded-full" /><Skeleton className="w-6 h-6 rounded-full" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function KanbanSkeleton() {
   return (
-    <div className="space-y-6 pb-4">
-      <div className="grid grid-cols-2 gap-4">
-        <KanbanSkeletonCol wide />
-        <KanbanSkeletonCol />
-      </div>
-      <div className="border-t border-dashed border-border" />
-      <div className="grid grid-cols-2 gap-4">
-        <KanbanSkeletonCol />
-        <KanbanSkeletonCol />
-      </div>
+    <div className="grid grid-cols-4 gap-4 pb-4">
+      {QR_STATUSES.map(lane => (
+        <div key={lane.key} className="min-w-0">
+          <div className="flex items-center justify-between mb-3">
+            <Skeleton className="h-3.5 w-24" /><Skeleton className="h-4 w-5 rounded-full" />
+          </div>
+          <div className="space-y-2">
+            <div className="bg-background border border-border rounded-lg p-3 space-y-2.5">
+              <Skeleton className="h-3 w-full" /><Skeleton className="h-2.5 w-3/4" />
+              <div className="flex items-center justify-between pt-1">
+                <Skeleton className="h-5 w-14 rounded-full" /><Skeleton className="w-6 h-6 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -180,9 +166,6 @@ export default function QuickRepairsPage() {
     );
   };
 
-  const row1 = QR_STATUSES.slice(0, 2);
-  const row2 = QR_STATUSES.slice(2);
-
   return (
     <div>
       <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-5">
@@ -215,10 +198,8 @@ export default function QuickRepairsPage() {
 
       {view === "board" && (
         kanbanLoading ? <KanbanSkeleton /> : (
-          <div className="space-y-6 pb-6">
-            <div className="grid grid-cols-2 gap-4">{row1.map(renderLane)}</div>
-            <div className="border-t border-dashed border-border" />
-            <div className="grid grid-cols-2 gap-4">{row2.map(renderLane)}</div>
+          <div className="grid grid-cols-4 gap-4 pb-6">
+            {QR_STATUSES.map(renderLane)}
           </div>
         )
       )}
