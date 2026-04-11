@@ -69,7 +69,7 @@ function KanbanCard({ job, onClick }: { job: KanbanJob; onClick: () => void }) {
       </div>
       <div className="flex items-center justify-between gap-1">
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground min-w-0">
-          <CarBrandLogo make={job.make} size={16} />
+          <CarBrandLogo make={job.make} size={22} />
           <span className="font-mono truncate">{job.plate_number ?? "—"}</span>
         </div>
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground shrink-0">
