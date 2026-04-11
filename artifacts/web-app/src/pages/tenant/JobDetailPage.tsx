@@ -1866,55 +1866,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 </p>
               )}
 
-              {/* QC review */}
-              {!isInspection && (job.status === "qc" || job.status === "completed" || job.status === "delivered" || job.qc_note) && (
-                <div className="border border-blue-200 rounded-lg bg-blue-50/50 p-4 space-y-2">
-                  <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />QC review / completion check
-                  </p>
-                  {job.qc_by_name && (
-                    <p className="text-xs text-muted-foreground">By {job.qc_by_name} · {fmtDate(job.qc_at)}</p>
-                  )}
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {job.qc_note ?? <span className="text-muted-foreground/50 italic">No QC note yet</span>}
-                  </p>
-                  {job.status !== "qc" && job.status !== "completed" && job.status !== "delivered" && job.status !== "cancelled" && (
-                    <Button size="sm" variant="outline" className="text-blue-700 border-blue-300" disabled={moveStatusMutation.isPending} onClick={() => moveStatusMutation.mutate("qc")}>
-                      Send to QC
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              {/* Completion checklist hint */}
-              {(job.status === "completed" || job.status === "delivered") && (
-                <div className="border border-green-200 rounded-lg bg-green-50/50 p-4 space-y-1.5">
-                  <p className="text-xs font-semibold text-green-800 uppercase tracking-wide flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />Completion summary
-                  </p>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
-                    {[
-                      ["Mileage in",   job.mileage_in  ? `${parseInt(job.mileage_in).toLocaleString()} km`  : "—"],
-                      ["Mileage out",  job.mileage_out ? `${parseInt(job.mileage_out).toLocaleString()} km` : "—"],
-                      ["Labor time",   fmtMinutes(totalMinutes)],
-                      ["Parts",        `${parts.length} item(s) · ${partsTotal.toFixed(2)} AED`],
-                    ].map(([k, v]) => (
-                      <div key={k as string}>
-                        <span className="text-muted-foreground">{k}: </span>
-                        <span className="font-medium">{v}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    {job.status === "completed" && (
-                      <Button size="sm" className="bg-teal-600 hover:bg-teal-700" disabled={moveStatusMutation.isPending} onClick={() => moveStatusMutation.mutate("delivered")}>
-                        Mark as delivered
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-
               {/* Internal note */}
               {job.internal_note && (
                 <div className="border border-border rounded-lg bg-muted/30 p-4 space-y-2">
