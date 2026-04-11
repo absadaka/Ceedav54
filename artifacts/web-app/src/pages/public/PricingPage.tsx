@@ -34,7 +34,7 @@ function planColor(p: Plan) {
 }
 
 export default function PricingPage() {
-  const [annual, setAnnual] = useState(true);
+  const [annual, setAnnual] = useState(false);
 
   const { data, isLoading } = useQuery<{ plans: Plan[] }>({
     queryKey: ["public-plans"],
