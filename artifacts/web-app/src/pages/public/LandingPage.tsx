@@ -181,7 +181,7 @@ function HeroSection() {
           style={{ fontSize: "clamp(3rem, 8.5vw, 8rem)" }}
         >
           <span className="block sm:text-base font-semibold uppercase tracking-widest mb-4 text-[#050505] text-[20px]">The #1 Software for Auto Shops</span>
-          Run Your Auto Shop Smarter.
+          Run Your Garage Smarter.
         </h1>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
