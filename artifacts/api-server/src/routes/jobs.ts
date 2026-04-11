@@ -575,6 +575,36 @@ router.post("/", async (req, res) => {
       });
     }
 
+    if (type === "quick_repair" && !quotation_id) {
+      const [{ qSeq }] = await db
+        .select({ qSeq: sql<number>`cast(coalesce(max(seq), 0) + 1 as int)` })
+        .from(quotationsTable)
+        .where(eq(quotationsTable.tenant_id, tenant.id));
+      const qYear = new Date().getFullYear();
+      const qRef  = `QT-${qYear}-${String(qSeq).padStart(4, "0")}`;
+
+      const [quotation] = await db
+        .insert(quotationsTable)
+        .values({
+          tenant_id:  tenant.id,
+          seq:        qSeq,
+          ref:        qRef,
+          client_id:  client_id  || undefined,
+          vehicle_id: vehicle_id || undefined,
+          advisor_id: advisor_id || undefined,
+          tax_rate:   "5.00",
+          status:     "draft",
+          notes:      customer_concern ?? null,
+        })
+        .returning();
+
+      await db.update(jobsTable)
+        .set({ quotation_id: quotation.id, updated_at: new Date() })
+        .where(eq(jobsTable.id, job.id));
+
+      job.quotation_id = quotation.id;
+    }
+
     return res.status(201).json({ job });
   } catch (err) {
     console.error("POST /jobs", err);

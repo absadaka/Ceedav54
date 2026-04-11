@@ -295,6 +295,7 @@ export default function QuickRepairDetailPage() {
 
   const { data, isLoading } = useQuery<{
     job: JobDetail; parts: Part[]; history: HistoryEntry[]; techNotes: TechNote[]; invoices: any[];
+    quotation?: { id: string; ref: string; status: string } | null;
   }>({
     queryKey: ["quick-repair", id],
     queryFn: () => fetch(`${API}/api/jobs/${id}?tenant=${TENANT}`).then(r => r.json()),
@@ -305,6 +306,7 @@ export default function QuickRepairDetailPage() {
   const history   = data?.history ?? [];
   const techNotes = data?.techNotes ?? [];
   const invoices  = data?.invoices ?? [];
+  const quotation = data?.quotation ?? null;
 
   const [editOpen, setEditOpen]   = useState(false);
   const [showAddService, setShowAddService] = useState(false);
@@ -504,6 +506,7 @@ export default function QuickRepairDetailPage() {
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
+              {quotation && <><span className="font-medium text-foreground">{quotation.ref}</span> · </>}
               Created {fmtDate(job.created_at)}
               {job.completed_at && ` · Completed ${fmtDate(job.completed_at)}`}
             </p>
