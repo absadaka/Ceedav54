@@ -185,6 +185,7 @@ function ServiceFlowTracker({
   }
   const currentIdx  = stages.findIndex((s) => s.key === currentStatus);
   const isCancelled = currentStatus === "cancelled";
+  const isDelivered = currentStatus === "delivered";
 
   const [celebrating, setCelebrating] = useState(false);
   const prevIdxRef = useRef(currentIdx);
@@ -200,11 +201,14 @@ function ServiceFlowTracker({
   }, [currentIdx]);
 
   return (
-    <div className="rounded-xl border border-border bg-gradient-to-br from-background via-background to-muted/20 px-5 pt-4 pb-5 shadow-sm overflow-hidden relative">
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(circle_at_60%_50%,_hsl(var(--primary))_0%,_transparent_70%)]" />
+    <div className={cn(
+      "rounded-xl border bg-gradient-to-br px-5 pt-4 pb-5 shadow-sm overflow-hidden relative",
+      isDelivered ? "border-[#00d492]/30 from-[#00d492]/5 via-background to-[#00d492]/5" : "border-border from-background via-background to-muted/20"
+    )}>
+      <div className={cn("absolute inset-0 pointer-events-none opacity-[0.03]", isDelivered ? "bg-[radial-gradient(circle_at_60%_50%,_#00d492_0%,_transparent_70%)]" : "bg-[radial-gradient(circle_at_60%_50%,_hsl(var(--primary))_0%,_transparent_70%)]")} />
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-1 h-4 rounded-full bg-primary/60" />
+          <div className={cn("w-1 h-4 rounded-full", isDelivered ? "bg-[#00d492]" : "bg-primary/60")} />
           <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Service Flow Tracker
           </span>
@@ -232,7 +236,7 @@ function ServiceFlowTracker({
                     <div
                       className={cn(
                         "flex-1 h-[2px] rounded-full transition-colors duration-500",
-                        isPast ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-border"
+                        isDelivered ? "bg-[#00d492]" : isPast ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-border"
                       )}
                     />
                   )}
@@ -241,7 +245,9 @@ function ServiceFlowTracker({
                     onClick={() => isClickable && onStepClick?.(stage.key)}
                     className={cn(
                       "w-8 h-8 rounded-full flex items-center justify-center border-2 shrink-0 transition-all duration-300",
-                      isPast
+                      isDelivered
+                        ? "bg-[#00d492] border-[#00d492] text-white shadow-sm"
+                        : isPast
                         ? "bg-primary border-primary text-primary-foreground shadow-sm"
                         : isCurrent
                         ? "bg-background border-primary text-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.12)]"
@@ -264,7 +270,7 @@ function ServiceFlowTracker({
                     <div
                       className={cn(
                         "flex-1 h-[2px] rounded-full transition-colors duration-500",
-                        isPast ? "bg-primary" : "bg-border"
+                        isDelivered ? "bg-[#00d492]" : isPast ? "bg-primary" : "bg-border"
                       )}
                     />
                   )}
@@ -276,7 +282,9 @@ function ServiceFlowTracker({
                     onClick={() => isClickable && onStepClick?.(stage.key)}
                     className={cn(
                       "text-[10px] font-semibold text-center leading-tight truncate w-full transition-colors",
-                      isCurrent
+                      isDelivered
+                        ? "text-[#00d492]"
+                        : isCurrent
                         ? "text-primary"
                         : isPast
                         ? "text-foreground/70"
