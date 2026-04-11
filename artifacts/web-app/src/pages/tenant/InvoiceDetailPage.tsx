@@ -1,7 +1,7 @@
 import {
   ArrowLeft, Receipt, User, Car, Edit, Trash2, Send, CheckCircle2,
   CreditCard, Plus, X, MoreHorizontal, ExternalLink, AlertTriangle,
-  Clock, FileText,
+  Clock, FileText, RefreshCw,
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -316,6 +316,17 @@ export default function InvoiceDetailPage() {
     onError: () => toast.error("Failed to void invoice"),
   });
 
+  const syncMutation = useMutation({
+    mutationFn: () => fetch(`${API}/api/invoices/${id}/sync?tenant=${TENANT}`, { method: "POST" })
+      .then(async r => { if (!r.ok) { const e = await r.json(); throw new Error(e.error ?? "Failed"); } return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["invoice", id] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Invoice synced with quotation");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to sync invoice"),
+  });
+
   const deleteLineMutation = useMutation({
     mutationFn: (lineId: string) => fetch(`${API}/api/invoices/${id}/lines/${lineId}?tenant=${TENANT}`, { method: "DELETE" })
       .then(r => { if (!r.ok) throw new Error(); return r.json(); }),
@@ -454,6 +465,12 @@ export default function InvoiceDetailPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {canEdit && <DropdownMenuItem onClick={() => setEditOpen(true)}><Edit className="w-3.5 h-3.5 mr-2" />Edit invoice</DropdownMenuItem>}
+              {(invoice.job_id || invoice.quotation_id) && !isPaid && !isVoid && (
+                <DropdownMenuItem onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
+                  <RefreshCw className={cn("w-3.5 h-3.5 mr-2", syncMutation.isPending && "animate-spin")} />
+                  {syncMutation.isPending ? "Syncing…" : "Sync from quotation"}
+                </DropdownMenuItem>
+              )}
               {!isVoid && !isPaid && (
                 <DropdownMenuItem onClick={() => voidMutation.mutate()}>
                   <X className="w-3.5 h-3.5 mr-2" />Void invoice
