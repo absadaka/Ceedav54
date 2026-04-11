@@ -30,7 +30,8 @@ const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 const QR_FLOW = [
   { key: "new",       label: "New" },
   { key: "completed", label: "Work Done" },
-  { key: "invoiced",  label: "Paid" },
+  { key: "invoiced",  label: "Invoiced" },
+  { key: "paid",      label: "Paid" },
   { key: "delivered", label: "Delivered" },
 ];
 
@@ -643,11 +644,20 @@ export default function QuickRepairDetailPage() {
                     onClick={() => handleStatusClick(next!.key)}
                     disabled={statusMut.isPending}
                   >
-                    {statusMut.isPending ? "Updating…" : "Mark as Delivered"}
+                    {statusMut.isPending ? "Updating…" : "Mark as Paid"}
                   </Button>
                 </div>
               );
-            })() : (
+            })() : job.status === "paid" ? (
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => handleStatusClick(next!.key)}
+                disabled={statusMut.isPending}
+              >
+                {statusMut.isPending ? "Updating…" : "Mark as Delivered"}
+              </Button>
+            ) : (
               <Button
                 size="sm"
                 variant="outline"
