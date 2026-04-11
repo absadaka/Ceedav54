@@ -224,16 +224,17 @@ function AddServiceForm({ jobId, onAdded }: { jobId: string; onAdded: () => void
 function AddManualPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => void }) {
   const [description, setDescription] = useState("");
   const [qty, setQty] = useState("1");
+  const [price, setPrice] = useState("0");
 
   const mutation = useMutation({
     mutationFn: () => fetch(`${API}/api/jobs/${jobId}/parts?tenant=${TENANT}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description, qty, unit_price: "0", part_number: "" }),
+      body: JSON.stringify({ description, qty, unit_price: price, part_number: "" }),
     }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
     onSuccess: () => {
       onAdded();
-      setDescription(""); setQty("1");
+      setDescription(""); setQty("1"); setPrice("0");
       toast.success("Part added");
     },
     onError: () => toast.error("Failed to add part"),
@@ -242,7 +243,7 @@ function AddManualPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => v
   return (
     <div className="border border-dashed border-border rounded-lg p-4 mt-3 space-y-3 bg-muted/20">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add part manually</p>
-      <div className="grid grid-cols-4 gap-3 items-end">
+      <div className="grid grid-cols-6 gap-3 items-end">
         <div className="col-span-3 space-y-1">
           <Label className="text-xs">Part description *</Label>
           <Input
@@ -261,9 +262,17 @@ function AddManualPartForm({ jobId, onAdded }: { jobId: string; onAdded: () => v
             className="h-8 text-sm"
           />
         </div>
-        <div className="col-span-4 flex justify-end">
-          <Button size="sm" disabled={!description.trim() || mutation.isPending} onClick={() => mutation.mutate()}>
-            {mutation.isPending ? "Adding…" : "Add part"}
+        <div className="space-y-1">
+          <Label className="text-xs">Unit Price</Label>
+          <Input
+            type="number" min="0" step="0.01"
+            value={price} onChange={e => setPrice(e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="flex items-end">
+          <Button size="sm" className="h-8 w-full" disabled={!description.trim() || mutation.isPending} onClick={() => mutation.mutate()}>
+            {mutation.isPending ? "Adding…" : "Add"}
           </Button>
         </div>
       </div>
@@ -322,6 +331,17 @@ export default function QuickRepairDetailPage() {
       toast.success("Item removed");
     },
     onError: () => toast.error("Failed to remove item"),
+  });
+
+  const updatePartPriceMut = useMutation({
+    mutationFn: ({ partId, unit_price }: { partId: string; unit_price: string }) =>
+      fetch(`${API}/api/jobs/${id}/parts/${partId}?tenant=${TENANT}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unit_price }),
+      }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["quick-repair", id] }); toast.success("Price updated"); },
+    onError: () => toast.error("Failed to update price"),
   });
 
   const noteMut = useMutation({
@@ -717,20 +737,40 @@ export default function QuickRepairDetailPage() {
                   <tr className="border-b border-border bg-muted/30">
                     <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Item</th>
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground w-16">Qty</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground w-28">Unit Price</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground w-24">Total</th>
                     <th className="w-10" />
                   </tr>
                 </thead>
                 <tbody>
                   {parts.map(p => (
-                    <tr key={p.id} className="border-b border-border last:border-0">
+                    <tr key={p.id} className="border-b border-border last:border-0 group/part">
                       <td className="px-4 py-3">
                         <span className="font-medium">{p.description}</span>
                       </td>
                       <td className="text-right px-4 py-3 tabular-nums">{parseFloat(p.qty)}</td>
+                      <td className="text-right px-4 py-3">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          defaultValue={parseFloat(p.unit_price).toFixed(2)}
+                          className="w-24 text-right text-sm bg-transparent border border-transparent rounded px-2 py-1 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 tabular-nums"
+                          onBlur={e => {
+                            const val = e.target.value.trim();
+                            if (val === "" || isNaN(Number(val))) { e.target.value = parseFloat(p.unit_price).toFixed(2); return; }
+                            if (parseFloat(val).toFixed(2) !== parseFloat(p.unit_price).toFixed(2)) {
+                              updatePartPriceMut.mutate({ partId: p.id, unit_price: val });
+                            }
+                          }}
+                          onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                        />
+                      </td>
+                      <td className="text-right px-4 py-3 tabular-nums font-medium">{parseFloat(p.line_total).toFixed(2)}</td>
                       <td className="px-2 py-3">
                         <button
                           onClick={() => deletePartMut.mutate(p.id)}
-                          className="p-1 hover:bg-destructive/10 rounded transition-colors"
+                          className="p-1 hover:bg-destructive/10 rounded transition-colors opacity-0 group-hover/part:opacity-100"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                         </button>
