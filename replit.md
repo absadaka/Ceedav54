@@ -89,11 +89,11 @@ ceeda/
 |---|---|---|
 | Quick Repair | Live | Simplified 4-status flow (New→Work Done→Invoiced→Paid), no quotation/inspection. Uses `jobs` table with `type="quick_repair"`, ref prefix "QR-". Kanban + list views, detail page with parts CRUD. |
 | Bookings | Live | Full CRUD, 7-status flow, advisor meta, stat strip, booking detail page |
-| Quotations | Live | Full CRUD, line items CRUD with auto-recalc, advance payments, send/approve/reject/convert-to-job flow |
+| Quotations | Live | Full CRUD, line items CRUD with auto-recalc, advance payments (value/percentage, Stripe checkout), send/approve/reject/convert-to-job flow |
 | Jobs | Live | Kanban + list views (7-lane incl. Delivered), job detail: live Start/Stop timer, assign-technician dialog, parts CRUD, photo URL upload, status history, QC section, Mark as delivered flow |
 | Clients/Vehicles | Live | Customer table, detail page, vehicle detail page |
 | Dashboard | Live | KPI strip, 7 live data sections |
-| Invoices | Live | Full CRUD, line items, payments, stats strip, detail page |
+| Invoices | Live | Full CRUD, line items, payments, stats strip, detail page, advance payment deduction from quotation (UI/PDF/email/SMS/WhatsApp) |
 
 ### Invoice API Endpoints (`/api/invoices?tenant=<slug>`)
 - `GET /stats` — dashboard KPIs (draft/sent/partial/paid/overdue/void counts + totals)

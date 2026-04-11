@@ -165,8 +165,15 @@ export function invoiceSmsBody(opts: {
   currency: string;
   dueDate?: string | null;
   paymentUrl?: string | null;
+  advanceFromQuotation?: string | null;
 }): string {
+  const advance = parseFloat(opts.advanceFromQuotation ?? "0");
+  const totalVal = parseFloat(opts.total ?? "0");
+  const balanceDue = Math.max(0, totalVal - advance);
   let msg = `Hi ${opts.clientName}, invoice ${opts.invoiceRef} from ${opts.shopName} for ${formatCurrency(opts.total, opts.currency)} is ready.`;
+  if (advance > 0) {
+    msg += ` Advance paid: ${formatCurrency(String(advance), opts.currency)}. Balance due: ${formatCurrency(String(balanceDue), opts.currency)}.`;
+  }
   if (opts.dueDate) msg += ` Due: ${formatDate(opts.dueDate)}.`;
   if (opts.paymentUrl) msg += `\n\nPay online: ${opts.paymentUrl}`;
   msg += ` Thank you for your business!`;

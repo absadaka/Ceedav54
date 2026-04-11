@@ -388,7 +388,8 @@ export default function InvoiceDetailPage() {
   const taxAmt     = parseFloat(invoice.tax_amount ?? "0");
   const total      = parseFloat(invoice.total ?? "0");
   const paidAmt    = parseFloat(invoice.paid_amount ?? "0");
-  const balance    = Math.max(0, total - paidAmt);
+  const advancePaid = parseFloat(invoice.advance_from_quotation ?? "0");
+  const balance    = Math.max(0, total - advancePaid - paidAmt);
   const isPaid     = invoice.status === "paid";
   const isVoid     = invoice.status === "void";
   const canEdit    = invoice.status === "draft";
@@ -563,6 +564,12 @@ export default function InvoiceDetailPage() {
                 <span>Total</span>
                 <span>{fmtAed(total)}</span>
               </div>
+              {advancePaid > 0 && (
+                <div className="flex justify-between text-green-700 font-medium">
+                  <span>Advance paid</span>
+                  <span>− {fmtAed(advancePaid)}</span>
+                </div>
+              )}
               {paidAmt > 0 && (
                 <div className="flex justify-between text-green-700 font-medium">
                   <span>Paid</span>
@@ -697,6 +704,23 @@ export default function InvoiceDetailPage() {
                     <div className="flex justify-between font-bold text-base border-t border-border pt-1">
                       <span>Total</span><span>{fmtAed(total)}</span>
                     </div>
+                    {advancePaid > 0 && (
+                      <div className="flex justify-between text-green-700">
+                        <span>Advance Paid</span><span>−{fmtAed(advancePaid)}</span>
+                      </div>
+                    )}
+                    {(advancePaid > 0 || paidAmt > 0) && !isPaid && (
+                      <>
+                        {paidAmt > 0 && (
+                          <div className="flex justify-between text-green-700">
+                            <span>Payments</span><span>{fmtAed(paidAmt)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-bold text-base border-t border-border pt-1">
+                          <span>Balance Due</span><span>{fmtAed(balance)}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
