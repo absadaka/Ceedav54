@@ -646,6 +646,49 @@ router.post("/:id/sync-from-quotation", async (req, res) => {
 });
 
 /* ──────────────────────────────────────────────────────────────────────────
+   POST /invoices/:id/sync  —  re-sync line items from quotation / job parts
+─────────────────────────────────────────────────────────────────────────── */
+router.post("/:id/sync", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const [inv] = await db
+      .select()
+      .from(invoicesTable)
+      .where(and(eq(invoicesTable.id, req.params.id), eq(invoicesTable.tenant_id, tenant.id)))
+      .limit(1);
+
+    if (!inv) return res.status(404).json({ error: "Invoice not found" });
+
+    if (["paid", "void"].includes(inv.status)) {
+      return res.status(400).json({ error: "Cannot sync a paid or voided invoice" });
+    }
+
+    if (inv.quotation_id) {
+      await syncInvoiceFromQuotation(inv.id, inv.quotation_id);
+    } else if (inv.job_id) {
+      await syncInvoiceFromJobParts(inv.id, inv.job_id, tenant.id);
+    } else {
+      return res.status(400).json({ error: "Invoice is not linked to a quotation or job" });
+    }
+
+    const [fresh] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, inv.id)).limit(1);
+    const freshLines = await db
+      .select()
+      .from(invoiceLineItemsTable)
+      .where(eq(invoiceLineItemsTable.invoice_id, inv.id))
+      .orderBy(invoiceLineItemsTable.sort_order);
+
+    return res.json({ invoice: fresh, lineItems: freshLines });
+  } catch (err) {
+    console.error("POST /invoices/:id/sync", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ──────────────────────────────────────────────────────────────────────────
    POST /invoices/:id/send
 ─────────────────────────────────────────────────────────────────────────── */
 router.post("/:id/send", async (req, res) => {
