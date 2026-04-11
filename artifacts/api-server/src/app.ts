@@ -3,6 +3,7 @@ import cors from "cors";
 import router from "./routes";
 import { handleStripeWebhook } from "./routes/stripeWebhook.js";
 import paymentSuccessRouter from "./routes/paymentSuccess.js";
+import advanceSuccessRouter from "./routes/advanceSuccess.js";
 
 const app: Express = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/payment-success", paymentSuccessRouter);
+app.use("/api/advance-success", advanceSuccessRouter);
 app.use("/api", router);
 
 export default app;

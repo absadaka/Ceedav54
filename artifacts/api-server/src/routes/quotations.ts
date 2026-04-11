@@ -11,6 +11,7 @@ import { syncDraftInvoicesForQuotation } from "./invoices.js";
 import { sendEmail, quotationEmailHtml, generateQuoteActionToken, verifyQuoteActionToken, quoteActionResultHtml } from "../services/email.js";
 import { sendSms, sendWhatsApp, quotationSmsBody } from "../services/sms.js";
 import { quotationPdfHtml } from "../services/pdfTemplates.js";
+import { getUncachableStripeClient } from "../services/stripeClient.js";
 
 const router = Router();
 
@@ -186,7 +187,12 @@ router.get("/email-action", async (req, res) => {
     const tenant = await resolveTenant(slug);
     if (!tenant) return res.status(404).send("Tenant not found");
 
-    const [existing] = await db.select({ id: quotationsTable.id, ref: quotationsTable.ref, status: quotationsTable.status })
+    const [existing] = await db.select({
+        id: quotationsTable.id, ref: quotationsTable.ref, status: quotationsTable.status,
+        client_id: quotationsTable.client_id,
+        advance_type: quotationsTable.advance_type, advance_amount: quotationsTable.advance_amount,
+        advance_paid: quotationsTable.advance_paid,
+      })
       .from(quotationsTable)
       .where(and(eq(quotationsTable.id, parsed.quotationId), eq(quotationsTable.tenant_id, tenant.id)))
       .limit(1);
@@ -210,6 +216,52 @@ router.get("/email-action", async (req, res) => {
       await db.update(quotationsTable)
         .set({ status: "approved", approved_at: now, updated_at: now })
         .where(eq(quotationsTable.id, parsed.quotationId));
+
+      const advanceAmount = parseFloat(existing.advance_amount ?? "0");
+      if (existing.advance_type !== "none" && advanceAmount > 0 && existing.advance_paid !== "true") {
+        try {
+          const [client] = existing.client_id
+            ? await db.select({ name: clientsTable.name, email: clientsTable.email })
+                .from(clientsTable).where(eq(clientsTable.id, existing.client_id)).limit(1)
+            : [null];
+
+          const stripe = await getUncachableStripeClient();
+          const domain = process.env.REPLIT_DOMAINS?.split(",")[0] ?? "localhost";
+          const session = await stripe.checkout.sessions.create({
+            payment_method_types: ["card"],
+            mode: "payment",
+            line_items: [{
+              price_data: {
+                currency: (tenant.currency ?? "AED").toLowerCase(),
+                unit_amount: Math.round(advanceAmount * 100),
+                product_data: {
+                  name: `Advance Payment — ${existing.ref}`,
+                  description: `Advance payment for quotation ${existing.ref}`,
+                },
+              },
+              quantity: 1,
+            }],
+            metadata: {
+              quotation_id: existing.id,
+              quotation_ref: existing.ref,
+              type: "advance_payment",
+            },
+            ...(client?.email ? { customer_email: client.email } : {}),
+            success_url: `https://${domain}/api/advance-success/${existing.id}`,
+            cancel_url: `https://${domain}/api/advance-success/${existing.id}`,
+          });
+
+          await db.update(quotationsTable).set({
+            advance_stripe_url: session.url,
+            advance_stripe_session_id: session.id,
+            updated_at: now,
+          }).where(eq(quotationsTable.id, existing.id));
+
+          return res.redirect(session.url!);
+        } catch (stripeErr: any) {
+          console.error("[email-action] Stripe advance checkout error:", stripeErr.message);
+        }
+      }
     } else {
       await db.update(quotationsTable)
         .set({ status: "rejected", rejected_at: now, updated_at: now })
@@ -291,6 +343,13 @@ router.get("/:id", async (req, res) => {
         advisor_name:     advisorAlias.name,
         advisor_email:    advisorAlias.email,
         created_by_name:  creatorAlias.name,
+        advance_type:              quotationsTable.advance_type,
+        advance_value:             quotationsTable.advance_value,
+        advance_amount:            quotationsTable.advance_amount,
+        advance_paid:              quotationsTable.advance_paid,
+        advance_paid_at:           quotationsTable.advance_paid_at,
+        advance_stripe_url:        quotationsTable.advance_stripe_url,
+        advance_stripe_session_id: quotationsTable.advance_stripe_session_id,
       })
       .from(quotationsTable)
       .leftJoin(clientsTable, eq(clientsTable.id, quotationsTable.client_id))
@@ -794,6 +853,66 @@ router.post("/:id/advance", async (req, res) => {
   }
 });
 
+/* ─── POST /quotations/:id/set-advance ──────────────────────────────────── */
+router.post("/:id/set-advance", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+
+    const { advance_type, advance_value } = req.body;
+    if (!advance_type || !["none", "value", "percentage"].includes(advance_type)) {
+      return res.status(400).json({ error: "advance_type must be none, value, or percentage" });
+    }
+
+    const [qt] = await db.select({ id: quotationsTable.id, total: quotationsTable.total })
+      .from(quotationsTable)
+      .where(and(eq(quotationsTable.id, req.params.id), eq(quotationsTable.tenant_id, tenant.id)))
+      .limit(1);
+    if (!qt) return res.status(404).json({ error: "Quotation not found" });
+
+    let advanceAmount: string | null = null;
+
+    if (advance_type === "none") {
+      await db.update(quotationsTable).set({
+        advance_type: "none",
+        advance_value: null,
+        advance_amount: null,
+        advance_stripe_url: null,
+        advance_stripe_session_id: null,
+        advance_paid: "false",
+        advance_paid_at: null,
+        updated_at: new Date(),
+      }).where(eq(quotationsTable.id, req.params.id));
+    } else {
+      const val = parseFloat(advance_value);
+      if (!val || val <= 0) return res.status(400).json({ error: "advance_value must be > 0" });
+
+      const total = parseFloat(qt.total ?? "0");
+      if (advance_type === "percentage") {
+        if (val > 100) return res.status(400).json({ error: "Percentage cannot exceed 100" });
+        advanceAmount = (total * val / 100).toFixed(2);
+      } else {
+        if (val > total) return res.status(400).json({ error: "Advance value cannot exceed quotation total" });
+        advanceAmount = val.toFixed(2);
+      }
+
+      await db.update(quotationsTable).set({
+        advance_type,
+        advance_value: val.toFixed(2),
+        advance_amount: advanceAmount,
+        updated_at: new Date(),
+      }).where(eq(quotationsTable.id, req.params.id));
+    }
+
+    const [updated] = await db.select().from(quotationsTable).where(eq(quotationsTable.id, req.params.id)).limit(1);
+    res.json({ quotation: updated });
+  } catch (e: any) {
+    console.error("POST /quotations/:id/set-advance", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 /* ─── DELETE /quotations/:id/advance/:aid ────────────────────────────────── */
 router.delete("/:id/advance/:aid", async (req, res) => {
   try {
@@ -972,6 +1091,8 @@ router.post("/:id/send", async (req, res) => {
         notes: quotation.notes,
         approveUrl,
         rejectUrl,
+        advanceType: quotation.advance_type ?? undefined,
+        advanceAmount: quotation.advance_amount ?? undefined,
       });
       emailResult = await sendEmail({
         to: client.email,

@@ -405,6 +405,8 @@ export function quotationEmailHtml(opts: {
   notes?: string | null;
   approveUrl?: string;
   rejectUrl?: string;
+  advanceType?: string;
+  advanceAmount?: string;
 }): string {
   const actionButtons = (opts.approveUrl && opts.rejectUrl) ? `
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
@@ -461,6 +463,16 @@ export function quotationEmailHtml(opts: {
       </td></tr>
     </table>
     ${opts.notes ? `<p style="margin:0 0 16px;font-size:13px;color:#71717a;font-style:italic;">Note: ${opts.notes}</p>` : ""}
+    ${opts.advanceType && opts.advanceType !== "none" && opts.advanceAmount ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+      <tr>
+        <td style="padding:14px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;">
+          <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px;">Advance Payment Required</p>
+          <p style="margin:0;font-size:15px;font-weight:700;color:#1e3a8a;">${opts.currency} ${parseFloat(opts.advanceAmount).toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#3b82f6;">An advance payment is required upon approval. You will be redirected to the payment page after approving.</p>
+        </td>
+      </tr>
+    </table>` : ""}
     ${actionButtons}
     <p style="margin:${actionButtons ? "16px" : "0"} 0 0;font-size:13px;color:#a1a1aa;text-align:center;">
       If you have any questions, please don't hesitate to reach out.
