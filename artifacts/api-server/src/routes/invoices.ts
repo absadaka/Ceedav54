@@ -636,6 +636,29 @@ router.post("/:id/send", async (req, res) => {
       if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
     }
 
+    if (!inv.stripe_payment_url) {
+      const totalCents = Math.round(parseFloat(inv.total ?? "0") * 100);
+      if (totalCents > 0) {
+        const paymentResult = await createStripePaymentLink({
+          invoiceId: inv.id,
+          invoiceRef: inv.ref,
+          totalCents,
+          currency: tenant.currency ?? "AED",
+          customerName: client?.name ?? undefined,
+          customerEmail: client?.email ?? undefined,
+        });
+        if (paymentResult) {
+          await db.update(invoicesTable).set({
+            stripe_payment_url: paymentResult.url,
+            stripe_session_id: paymentResult.sessionId,
+            updated_at: new Date(),
+          }).where(eq(invoicesTable.id, inv.id));
+          inv.stripe_payment_url = paymentResult.url;
+          inv.stripe_session_id = paymentResult.sessionId;
+        }
+      }
+    }
+
     let jobReportNotes: string[] = [];
     if (inv.job_id) {
       const rNotes = await db
