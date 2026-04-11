@@ -963,6 +963,10 @@ router.post("/:id/parts", async (req, res) => {
     const tenant = await resolveTenant(slug);
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
+    const [jobExists] = await db.select({ id: jobsTable.id }).from(jobsTable)
+      .where(and(eq(jobsTable.id, req.params.id), eq(jobsTable.tenant_id, tenant.id))).limit(1);
+    if (!jobExists) return res.status(404).json({ error: "Job not found" });
+
     const { description, part_number, qty, unit_price, added_by } = req.body as Record<string, string>;
     if (!description) return res.status(400).json({ error: "description is required" });
 
@@ -1022,11 +1026,11 @@ router.post("/:id/parts", async (req, res) => {
         await db.update(quotationsTable).set({
           subtotal: subtotal.toFixed(2), tax_amount: tax_amount.toFixed(2), total: qTotal.toFixed(2), updated_at: new Date(),
         }).where(eq(quotationsTable.id, qt.id));
-
-        const { syncDraftInvoicesForQuotation } = await import("./invoices.js");
-        await syncDraftInvoicesForQuotation(qt.id).catch(e => console.error("auto-sync invoice", e));
       }
     }
+
+    const { syncDraftInvoicesForJob } = await import("./invoices.js");
+    await syncDraftInvoicesForJob(req.params.id, tenant.id).catch(e => console.error("auto-sync invoice", e));
 
     return res.status(201).json({ part });
   } catch (err) {
@@ -1073,6 +1077,9 @@ router.patch("/:id/parts/:partId", async (req, res) => {
         eq(jobPartsTable.tenant_id, tenant.id),
       ))
       .returning();
+
+    const { syncDraftInvoicesForJob } = await import("./invoices.js");
+    await syncDraftInvoicesForJob(req.params.id!, tenant.id).catch(e => console.error("auto-sync invoice", e));
 
     return res.json({ part: updated });
   } catch (err) {
@@ -1137,13 +1144,13 @@ router.delete("/:id/parts/:partId", async (req, res) => {
             await db.update(quotationsTable).set({
               subtotal: subtotal.toFixed(2), tax_amount: tax_amount.toFixed(2), total: qTotal.toFixed(2), updated_at: new Date(),
             }).where(eq(quotationsTable.id, qt.id));
-
-            const { syncDraftInvoicesForQuotation } = await import("./invoices.js");
-            await syncDraftInvoicesForQuotation(qt.id).catch(e => console.error("auto-sync invoice", e));
           }
         }
       }
     }
+
+    const { syncDraftInvoicesForJob } = await import("./invoices.js");
+    await syncDraftInvoicesForJob(req.params.id, tenant.id).catch(e => console.error("auto-sync invoice", e));
 
     return res.json({ ok: true });
   } catch (err) {
