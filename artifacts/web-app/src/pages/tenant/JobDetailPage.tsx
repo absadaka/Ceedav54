@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import {
   ArrowLeft, Wrench, User, Car, Clock, AlertTriangle, Plus,
   ChevronRight, Timer, Package, Camera, History, CheckCircle2,
@@ -165,21 +164,6 @@ function StatCard({ icon: Icon, label, value, accent, color }: { icon: React.Ele
 }
 
 /* ─── ServiceFlowTracker ─────────────────────────────────────────────────── */
-const TRACKER_STAGES = [
-  { key: "waiting",   label: "Checked-in", mapKeys: ["waiting"] },
-  { key: "on_hold",   label: "Inspection", mapKeys: ["on_hold", "qc"] },
-  { key: "completed", label: "Work Done",  mapKeys: ["in_progress", "waiting_parts", "completed"] },
-  { key: "invoiced",  label: "Invoiced",   mapKeys: ["invoiced", "paid"] },
-  { key: "delivered", label: "Delivered",   mapKeys: ["delivered"] },
-] as const;
-
-function getTrackerIdx(status: string): number {
-  for (let i = TRACKER_STAGES.length - 1; i >= 0; i--) {
-    if ((TRACKER_STAGES[i].mapKeys as readonly string[]).includes(status)) return i;
-  }
-  return -1;
-}
-
 function ServiceFlowTracker({
   currentStatus,
   statusHistory,
@@ -191,94 +175,140 @@ function ServiceFlowTracker({
   isInspection: boolean;
   onStepClick?: (statusKey: string) => void;
 }) {
+  const stages = (isInspection ? INSPECTION_STATUSES : JOB_STATUSES).filter(
+    (s) => s.key !== "move_to_service_job"
+  );
   const reachedAt: Record<string, string> = {};
   for (const entry of statusHistory) {
     if (entry.to_status && !reachedAt[entry.to_status]) {
       reachedAt[entry.to_status] = entry.created_at;
     }
   }
-
-  const currentIdx  = getTrackerIdx(currentStatus);
+  const currentIdx  = stages.findIndex((s) => s.key === currentStatus);
   const isCancelled = currentStatus === "cancelled";
   const isDelivered = currentStatus === "delivered";
 
-  return (
-    <div className="flex items-center gap-0 w-full">
-      {TRACKER_STAGES.map((stage, idx) => {
-        const isPast    = !isCancelled && currentIdx > idx;
-        const isCurrent = !isCancelled && currentIdx === idx;
-        const isClickable = !isCancelled && onStepClick && idx !== currentIdx;
-        const timestamp = stage.mapKeys.map(k => reachedAt[k]).find(Boolean);
+  const [celebrating, setCelebrating] = useState(false);
+  const prevIdxRef = useRef(currentIdx);
 
-        return (
-          <Fragment key={stage.key}>
-            {idx > 0 && (
-              <div
-                className={cn(
-                  "flex-1 h-[2px] rounded-full transition-colors duration-500 min-w-[12px]",
-                  isDelivered ? "bg-[#00d492]" : isPast ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-border"
-                )}
-              />
-            )}
-            <button
-              disabled={!isClickable}
-              onClick={() => isClickable && onStepClick?.(stage.key)}
-              className={cn(
-                "flex flex-col items-center shrink-0 gap-1 group",
-                isClickable ? "cursor-pointer" : "cursor-default"
-              )}
-            >
-              <div
-                className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300",
-                  isDelivered
-                    ? "bg-[#00d492] border-[#00d492] text-white"
-                    : isPast
-                    ? "bg-primary border-primary text-primary-foreground"
-                    : isCurrent
-                    ? "bg-background border-primary text-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]"
-                    : "bg-background border-border text-muted-foreground",
-                  isClickable && "group-hover:scale-110"
-                )}
-              >
-                {isPast ? (
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                ) : (
-                  <span className={cn("text-[9px] font-bold", isCurrent ? "text-primary" : "text-muted-foreground/60")}>
-                    {idx + 1}
-                  </span>
-                )}
+  useEffect(() => {
+    if (currentIdx > prevIdxRef.current) {
+      setCelebrating(true);
+      const t = setTimeout(() => setCelebrating(false), 700);
+      prevIdxRef.current = currentIdx;
+      return () => clearTimeout(t);
+    }
+    prevIdxRef.current = currentIdx;
+  }, [currentIdx]);
+
+  return (
+    <div className={cn(
+      "rounded-xl border bg-gradient-to-br px-5 pt-4 pb-5 shadow-sm overflow-hidden relative",
+      isDelivered ? "border-[#00d492]/30 from-[#00d492]/5 via-background to-[#00d492]/5" : "border-border from-background via-background to-muted/20"
+    )}>
+      <div className={cn("absolute inset-0 pointer-events-none opacity-[0.03]", isDelivered ? "bg-[radial-gradient(circle_at_60%_50%,_#00d492_0%,_transparent_70%)]" : "bg-[radial-gradient(circle_at_60%_50%,_hsl(var(--primary))_0%,_transparent_70%)]")} />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className={cn("w-1 h-4 rounded-full", isDelivered ? "bg-[#00d492]" : "bg-primary/60")} />
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Service Flow Tracker
+          </span>
+        </div>
+        {isCancelled && (
+          <span className="text-[10px] font-bold uppercase tracking-wide text-red-600 bg-red-50 border border-red-200 rounded-full px-2.5 py-0.5">
+            Cancelled
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-start">
+        {stages.map((stage, idx) => {
+          const isPast      = !isCancelled && currentIdx > idx;
+          const isCurrent   = !isCancelled && idx === currentIdx;
+          const isFuture    = isCancelled || idx > currentIdx;
+          const isClickable = !isCancelled && onStepClick && idx !== currentIdx;
+          const timestamp   = reachedAt[stage.key];
+
+          return (
+            <div key={stage.key} className="flex items-start flex-1 min-w-0">
+              <div className="flex flex-col items-center flex-1 min-w-0">
+                <div className="flex items-center w-full">
+                  {idx > 0 && (
+                    <div
+                      className={cn(
+                        "flex-1 h-[2px] rounded-full transition-colors duration-500",
+                        isDelivered ? "bg-[#00d492]" : isPast ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-border"
+                      )}
+                    />
+                  )}
+                  <button
+                    disabled={!isClickable}
+                    onClick={() => isClickable && onStepClick?.(stage.key)}
+                    className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center border-2 shrink-0 transition-all duration-300",
+                      isDelivered
+                        ? "bg-[#00d492] border-[#00d492] text-white shadow-sm"
+                        : isPast
+                        ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                        : isCurrent
+                        ? "bg-background border-primary text-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.12)]"
+                        : "bg-background border-border text-muted-foreground",
+                      isPast && celebrating ? "step-celebrate" : "",
+                      isClickable && !isPast && "hover:border-primary/60 hover:text-primary/80 hover:scale-110 cursor-pointer",
+                      isClickable && isPast && "hover:scale-110 cursor-pointer",
+                      !isClickable && "cursor-default"
+                    )}
+                  >
+                    {isPast ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : (
+                      <span className={cn("text-[10px] font-bold", isCurrent ? "text-primary" : "text-muted-foreground/60")}>
+                        {idx + 1}
+                      </span>
+                    )}
+                  </button>
+                  {idx < stages.length - 1 && (
+                    <div
+                      className={cn(
+                        "flex-1 h-[2px] rounded-full transition-colors duration-500",
+                        isDelivered ? "bg-[#00d492]" : isPast ? "bg-primary" : "bg-border"
+                      )}
+                    />
+                  )}
+                </div>
+
+                <div className="flex flex-col items-center mt-2 px-1 min-w-0 w-full">
+                  <button
+                    disabled={!isClickable}
+                    onClick={() => isClickable && onStepClick?.(stage.key)}
+                    className={cn(
+                      "text-[10px] font-semibold text-center leading-tight truncate w-full transition-colors",
+                      isDelivered
+                        ? "text-[#00d492]"
+                        : isCurrent
+                        ? "text-primary"
+                        : isPast
+                        ? "text-foreground/70"
+                        : "text-muted-foreground/50",
+                      isClickable && !isCurrent && "hover:text-primary/70",
+                      isClickable ? "cursor-pointer" : "cursor-default"
+                    )}
+                  >
+                    {stage.label}
+                  </button>
+                  {timestamp ? (
+                    <span className="text-[9px] text-muted-foreground/50 text-center mt-0.5 leading-none">
+                      {new Date(timestamp).toLocaleDateString("en-AE", { day: "numeric", month: "short" })}
+                    </span>
+                  ) : (
+                    <span className="text-[9px] text-transparent mt-0.5 leading-none select-none">–</span>
+                  )}
+                </div>
               </div>
-              <span
-                className={cn(
-                  "text-[10px] font-medium leading-tight whitespace-nowrap transition-colors",
-                  isDelivered
-                    ? "text-[#00d492]"
-                    : isCurrent
-                    ? "text-primary font-semibold"
-                    : isPast
-                    ? "text-foreground/70"
-                    : "text-muted-foreground/40"
-                )}
-              >
-                {stage.label}
-              </span>
-              {timestamp ? (
-                <span className="text-[8px] text-muted-foreground/50 leading-none">
-                  {new Date(timestamp).toLocaleDateString("en-AE", { day: "numeric", month: "short" })}
-                </span>
-              ) : (
-                <span className="text-[8px] text-transparent leading-none select-none">–</span>
-              )}
-            </button>
-          </Fragment>
-        );
-      })}
-      {isCancelled && (
-        <span className="ml-3 text-[10px] font-bold uppercase tracking-wide text-red-600 bg-red-50 border border-red-200 rounded-full px-2.5 py-0.5">
-          Cancelled
-        </span>
-      )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1244,16 +1274,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           </div>
         </div>
 
-        {/* Service Flow Tracker — inline */}
-        <div className="px-6 py-3 border-t border-border">
-          <ServiceFlowTracker
-            currentStatus={job.status}
-            statusHistory={statusHistory}
-            isInspection={isInspection}
-            onStepClick={(key) => moveStatus(key)}
-          />
-        </div>
-
         {/* Action bar */}
         <div className="px-6 py-3 border-t border-border bg-muted/30 flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
@@ -1282,6 +1302,14 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
           </div>
         </div>
       </div>
+
+      {/* Service Flow Tracker */}
+      <ServiceFlowTracker
+        currentStatus={job.status}
+        statusHistory={statusHistory}
+        isInspection={isInspection}
+        onStepClick={(key) => moveStatus(key)}
+      />
 
       {/* Cancellation banner */}
       {job.status === "cancelled" && (
