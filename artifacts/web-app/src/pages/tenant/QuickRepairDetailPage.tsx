@@ -1,7 +1,7 @@
 import {
   ArrowLeft, Zap, User, Car, Plus,
   Edit, Trash2, Package, CheckCircle2,
-  Search, Wrench, Receipt, Send, MessageSquare, Phone, Mail, CreditCard,
+  Search, Wrench, Receipt, Send, MessageSquare, Phone, Mail, CreditCard, RefreshCw,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -423,6 +423,18 @@ export default function QuickRepairDetailPage() {
       toast.success("Invoice sent to customer");
     },
     onError: () => toast.error("Failed to send invoice"),
+  });
+
+  const syncInvoiceMutation = useMutation({
+    mutationFn: (invoiceId: string) => fetch(`${API}/api/invoices/${invoiceId}/sync?tenant=${TENANT}`, {
+      method: "POST",
+    }).then(async r => { if (!r.ok) { const e = await r.json(); throw new Error(e.error ?? "Failed"); } return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["quick-repair", id] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Invoice synced with latest parts & prices");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to sync invoice"),
   });
 
   function nextStatus() {
@@ -902,10 +914,24 @@ export default function QuickRepairDetailPage() {
                         {inv.status}
                       </span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      {new Date(inv.created_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short", year: "numeric" })}
-                      {inv.due_at && <> · Due {new Date(inv.due_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short" })}</>}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      {inv.status !== "paid" && inv.status !== "void" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                          disabled={syncInvoiceMutation.isPending}
+                          onClick={() => syncInvoiceMutation.mutate(inv.id)}
+                        >
+                          <RefreshCw className={cn("w-3 h-3", syncInvoiceMutation.isPending && "animate-spin")} />
+                          Sync
+                        </Button>
+                      )}
+                      <p className="text-[10px] text-muted-foreground">
+                        {new Date(inv.created_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short", year: "numeric" })}
+                        {inv.due_at && <> · Due {new Date(inv.due_at).toLocaleDateString("en-AE", { day: "2-digit", month: "short" })}</>}
+                      </p>
+                    </div>
                   </div>
 
                   {lines.length > 0 && (
