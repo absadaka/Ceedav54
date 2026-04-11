@@ -81,6 +81,17 @@ function PublicNav() {
         <Logo />
 
         <nav className="hidden md:flex items-center gap-1">
+          <Link
+            href="/"
+            className={cn(
+              "px-3 py-1.5 text-sm rounded-md transition-colors",
+              location === "/"
+                ? "text-foreground bg-muted"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            )}
+          >
+            Home
+          </Link>
           <FeaturesDropdown />
           <Link
             href="/pricing"
@@ -119,6 +130,13 @@ function PublicNav() {
 
       {menuOpen && (
         <div className="md:hidden border-t border-border bg-white px-6 py-4 space-y-1 shadow-lg">
+          <Link
+            href="/"
+            className="block px-3 py-2.5 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+            onClick={() => setMenuOpen(false)}
+          >
+            Home
+          </Link>
           <div>
             <button
               className="flex items-center justify-between w-full px-3 py-2.5 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
