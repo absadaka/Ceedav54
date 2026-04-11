@@ -10,6 +10,7 @@ import {
 import { sendEmail, invoiceEmailHtml } from "../services/email.js";
 import { sendSms, sendWhatsApp, invoiceSmsBody } from "../services/sms.js";
 import { getUncachableStripeClient } from "../services/stripeClient.js";
+import { invoicePdfHtml } from "../services/pdfTemplates.js";
 
 const router = Router();
 
@@ -545,6 +546,73 @@ router.get("/:id", async (req, res) => {
   } catch (err) {
     console.error("GET /invoices/:id", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ──────────────────────────────────────────────────────────────────────────
+   GET /invoices/:id/pdf   — printable invoice page
+─────────────────────────────────────────────────────────────────────────── */
+router.get("/:id/pdf", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).send("Tenant not found");
+
+    const [inv] = await db
+      .select()
+      .from(invoicesTable)
+      .where(and(eq(invoicesTable.id, req.params.id), eq(invoicesTable.tenant_id, tenant.id)))
+      .limit(1);
+    if (!inv) return res.status(404).send("Invoice not found");
+
+    const [client] = inv.client_id
+      ? await db.select({ name: clientsTable.name, phone: clientsTable.phone, email: clientsTable.email })
+          .from(clientsTable).where(and(eq(clientsTable.id, inv.client_id), eq(clientsTable.tenant_id, tenant.id))).limit(1)
+      : [null];
+
+    const [vehicle] = inv.vehicle_id
+      ? await db.select({ plate: vehiclesTable.plate, make: vehiclesTable.make, model: vehiclesTable.model, year: vehiclesTable.year, vin: vehiclesTable.vin })
+          .from(vehiclesTable).where(and(eq(vehiclesTable.id, inv.vehicle_id), eq(vehiclesTable.tenant_id, tenant.id))).limit(1)
+      : [null];
+
+    const lineItems = await db.select().from(invoiceLineItemsTable)
+      .where(eq(invoiceLineItemsTable.invoice_id, inv.id))
+      .orderBy(invoiceLineItemsTable.sort_order);
+
+    const payments = await db.select().from(paymentsTable)
+      .where(eq(paymentsTable.invoice_id, inv.id));
+    const totalPaid = payments.reduce((s, p) => s + parseFloat(p.amount ?? "0"), 0);
+
+    let jobReport: string[] = [];
+    if (inv.job_id) {
+      const notes = await db
+        .select({ note: jobNotesTable.note })
+        .from(jobNotesTable)
+        .where(and(eq(jobNotesTable.job_id, inv.job_id), eq(jobNotesTable.tenant_id, tenant.id), eq(jobNotesTable.type, "report")))
+        .orderBy(asc(jobNotesTable.created_at));
+      jobReport = notes.map(n => n.note).filter(Boolean) as string[];
+    }
+
+    const html = invoicePdfHtml(
+      { name: tenant.name ?? "Workshop", phone: tenant.phone, email: tenant.email, address: tenant.address, vatNumber: tenant.vat_number, currency: tenant.currency ?? "AED" },
+      {
+        ref: inv.ref, status: inv.status ?? "draft", date: inv.created_at, dueDate: inv.due_at,
+        clientName: client?.name, clientPhone: client?.phone, clientEmail: client?.email,
+        vehiclePlate: vehicle?.plate, vehicleMake: vehicle?.make, vehicleModel: vehicle?.model,
+        vehicleYear: vehicle?.year, vehicleVin: vehicle?.vin,
+        lines: lineItems.map(l => ({ description: l.description, type: l.type ?? "", qty: String(l.qty), unitPrice: String(l.unit_price), lineTotal: String(l.line_total) })),
+        subtotal: inv.subtotal ?? undefined, discount: inv.discount ?? undefined,
+        taxRate: inv.tax_rate ?? undefined, taxAmount: inv.tax_amount ?? undefined,
+        total: inv.total ?? undefined, paidAmount: String(totalPaid),
+        notes: inv.notes, jobReport,
+      },
+    );
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store");
+    return res.send(html);
+  } catch (err) {
+    console.error("GET /invoices/:id/pdf", err);
+    return res.status(500).send("Something went wrong");
   }
 });
 

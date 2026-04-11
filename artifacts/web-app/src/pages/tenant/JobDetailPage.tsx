@@ -4,7 +4,7 @@ import {
   Edit, Trash2, MoreHorizontal, Play, Square, UserPlus, Upload,
   Link as LinkIcon, X, Receipt, FileText, Search, ClipboardList, Pencil, ArrowRight,
   Loader2, DollarSign, Wallet, CircleX, ClipboardCheck, Eye, Calculator, Hammer, Send, Truck,
-  MessageSquare, Mail, Phone, RefreshCw,
+  MessageSquare, Mail, Phone, RefreshCw, Download,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -2370,6 +2370,15 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                            onClick={() => { const w = window.open(`${API}/api/invoices/${inv.id}/pdf?tenant=${TENANT}`, "_blank"); if (!w) toast.error("Popup blocked — please allow popups for this site"); }}
+                          >
+                            <Download className="w-3 h-3" />
+                            PDF
+                          </Button>
                           {inv.status !== "paid" && inv.status !== "void" && (
                             <Button
                               variant="ghost"

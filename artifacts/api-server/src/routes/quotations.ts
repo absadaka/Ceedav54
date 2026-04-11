@@ -10,11 +10,12 @@ import { quoteAdvancePaymentsTable } from "@workspace/db";
 import { syncDraftInvoicesForQuotation } from "./invoices.js";
 import { sendEmail, quotationEmailHtml, generateQuoteActionToken, verifyQuoteActionToken, quoteActionResultHtml } from "../services/email.js";
 import { sendSms, sendWhatsApp, quotationSmsBody } from "../services/sms.js";
+import { quotationPdfHtml } from "../services/pdfTemplates.js";
 
 const router = Router();
 
 async function resolveTenant(slug: string) {
-  const [t] = await db.select({ id: tenantsTable.id, name: tenantsTable.name, currency: tenantsTable.currency }).from(tenantsTable).where(eq(tenantsTable.slug, slug)).limit(1);
+  const [t] = await db.select({ id: tenantsTable.id, name: tenantsTable.name, currency: tenantsTable.currency, phone: tenantsTable.phone, email: tenantsTable.email, address: tenantsTable.address, vat_number: tenantsTable.vat_number }).from(tenantsTable).where(eq(tenantsTable.slug, slug)).limit(1);
   return t ?? null;
 }
 
@@ -322,6 +323,56 @@ router.get("/:id", async (req, res) => {
   } catch (e: any) {
     console.error("GET /quotations/:id", e);
     res.status(500).json({ error: e.message });
+  }
+});
+
+/* ─── GET /quotations/:id/pdf ─────────────────────────────────────────────── */
+router.get("/:id/pdf", async (req, res) => {
+  try {
+    const slug   = (req.query.tenant as string) ?? "demo-workshop";
+    const tenant = await resolveTenant(slug);
+    if (!tenant) return res.status(404).send("Tenant not found");
+
+    const [q] = await db
+      .select()
+      .from(quotationsTable)
+      .where(and(eq(quotationsTable.id, req.params.id), eq(quotationsTable.tenant_id, tenant.id)))
+      .limit(1);
+    if (!q) return res.status(404).send("Quotation not found");
+
+    const [client] = q.client_id
+      ? await db.select({ name: clientsTable.name, phone: clientsTable.phone, email: clientsTable.email })
+          .from(clientsTable).where(and(eq(clientsTable.id, q.client_id), eq(clientsTable.tenant_id, tenant.id))).limit(1)
+      : [null];
+
+    const [vehicle] = q.vehicle_id
+      ? await db.select({ plate: vehiclesTable.plate, make: vehiclesTable.make, model: vehiclesTable.model, year: vehiclesTable.year, vin: vehiclesTable.vin })
+          .from(vehiclesTable).where(and(eq(vehiclesTable.id, q.vehicle_id), eq(vehiclesTable.tenant_id, tenant.id))).limit(1)
+      : [null];
+
+    const lines = await db.select().from(quoteLineItemsTable)
+      .where(eq(quoteLineItemsTable.quotation_id, q.id))
+      .orderBy(quoteLineItemsTable.sort_order);
+
+    const html = quotationPdfHtml(
+      { name: tenant.name ?? "Workshop", phone: tenant.phone, email: tenant.email, address: tenant.address, vatNumber: tenant.vat_number, currency: tenant.currency ?? "AED" },
+      {
+        ref: q.ref, status: q.status ?? "draft", date: q.created_at,
+        clientName: client?.name, clientPhone: client?.phone, clientEmail: client?.email,
+        vehiclePlate: vehicle?.plate, vehicleMake: vehicle?.make, vehicleModel: vehicle?.model,
+        vehicleYear: vehicle?.year, vehicleVin: vehicle?.vin,
+        lines: lines.map(l => ({ description: l.description, type: l.type ?? "", qty: String(l.qty), unitPrice: String(l.unit_price), lineTotal: String(l.line_total) })),
+        subtotal: q.subtotal ?? undefined, discount: q.discount ?? undefined,
+        taxRate: q.tax_rate ?? undefined, taxAmount: q.tax_amount ?? undefined,
+        total: q.total ?? undefined, notes: q.notes,
+      },
+    );
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store");
+    return res.send(html);
+  } catch (err) {
+    console.error("GET /quotations/:id/pdf", err);
+    return res.status(500).send("Something went wrong");
   }
 });
 
