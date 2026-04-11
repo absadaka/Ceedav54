@@ -409,20 +409,21 @@ router.get("/:id", async (req, res) => {
       invoices: await (async () => {
         const invRows = await db
           .select({
-            id:          invoicesTable.id,
-            ref:         invoicesTable.ref,
-            status:      invoicesTable.status,
-            subtotal:    invoicesTable.subtotal,
-            discount:    invoicesTable.discount,
-            tax_rate:    invoicesTable.tax_rate,
-            tax_amount:  invoicesTable.tax_amount,
-            total:       invoicesTable.total,
-            paid_amount: invoicesTable.paid_amount,
-            notes:       invoicesTable.notes,
-            due_at:      invoicesTable.due_at,
-            sent_at:     invoicesTable.sent_at,
-            paid_at:     invoicesTable.paid_at,
-            created_at:  invoicesTable.created_at,
+            id:                 invoicesTable.id,
+            ref:                invoicesTable.ref,
+            status:             invoicesTable.status,
+            subtotal:           invoicesTable.subtotal,
+            discount:           invoicesTable.discount,
+            tax_rate:           invoicesTable.tax_rate,
+            tax_amount:         invoicesTable.tax_amount,
+            total:              invoicesTable.total,
+            paid_amount:        invoicesTable.paid_amount,
+            notes:              invoicesTable.notes,
+            due_at:             invoicesTable.due_at,
+            sent_at:            invoicesTable.sent_at,
+            paid_at:            invoicesTable.paid_at,
+            created_at:         invoicesTable.created_at,
+            stripe_payment_url: invoicesTable.stripe_payment_url,
           })
           .from(invoicesTable)
           .where(and(eq(invoicesTable.job_id, req.params.id), eq(invoicesTable.tenant_id, tenant.id)))
