@@ -19,7 +19,7 @@ async function resolveTenant(slug: string) {
   return t ?? null;
 }
 
-const VALID_STATUSES = ["new", "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "invoiced", "delivered", "cancelled"] as const;
+const VALID_STATUSES = ["new", "waiting", "in_progress", "waiting_parts", "on_hold", "qc", "completed", "invoiced", "paid", "delivered", "cancelled"] as const;
 type JobStatus = typeof VALID_STATUSES[number];
 
 /* ─── GET /jobs ───────────────────────────────────────────────────────────── */
@@ -187,7 +187,7 @@ router.get("/kanban", async (req, res) => {
 
     const lanes: Record<string, typeof jobs> = {
       new: [], waiting: [], in_progress: [], waiting_parts: [],
-      on_hold: [], qc: [], completed: [], invoiced: [], delivered: [],
+      on_hold: [], qc: [], completed: [], invoiced: [], paid: [], delivered: [],
     };
     for (const j of jobs) {
       if (lanes[j.status]) lanes[j.status].push(j);

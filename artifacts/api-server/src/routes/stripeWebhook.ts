@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { db, invoicesTable, paymentsTable } from "@workspace/db";
+import { db, invoicesTable, paymentsTable, jobsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { getUncachableStripeClient } from "../services/stripeClient.js";
 
@@ -58,6 +58,21 @@ export async function handleStripeWebhook(req: Request, res: Response) {
             notes: `Stripe checkout session ${session.id}`,
             paid_at: new Date(),
           });
+
+          if (inv.job_id) {
+            const [job] = await db.select({ status: jobsTable.status })
+              .from(jobsTable)
+              .where(eq(jobsTable.id, inv.job_id))
+              .limit(1);
+
+            if (job && job.status === "invoiced") {
+              await db.update(jobsTable).set({
+                status: "paid",
+                updated_at: new Date(),
+              }).where(eq(jobsTable.id, inv.job_id));
+              console.log(`[stripe-webhook] Job ${inv.job_id} moved to "paid"`);
+            }
+          }
 
           console.log(`[stripe-webhook] Invoice ${inv.ref} marked as paid (${amountPaid})`);
         }
