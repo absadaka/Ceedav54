@@ -44,7 +44,7 @@ export function SearchableSelect({
   const displayLabel = normalized.find(o => o.value === value)?.label ?? value;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -64,11 +64,14 @@ export function SearchableSelect({
       <PopoverContent
         className="p-0 w-[var(--radix-popover-trigger-width)]"
         align="start"
+        side="bottom"
+        avoidCollisions
+        collisionPadding={8}
         style={{ width: "var(--radix-popover-trigger-width)" }}
       >
         <Command>
           <CommandInput placeholder={searchPlaceholder} className="h-9" />
-          <CommandList className="max-h-52 overflow-y-auto">
+          <CommandList className="max-h-[240px] overflow-y-auto scroll-smooth">
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
               {normalized.map(opt => (
