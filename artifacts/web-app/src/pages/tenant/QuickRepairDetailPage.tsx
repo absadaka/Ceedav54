@@ -486,42 +486,48 @@ export default function QuickRepairDetailPage() {
   const partsTotal = parts.reduce((s, p) => s + parseFloat(p.line_total || "0"), 0);
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate("/quick-repairs")}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-500" />
-              <h1 className="text-lg font-semibold">{job.ref}</h1>
-              <Badge variant="outline" className={cn("text-xs font-medium border", statusClass(job.status))}>
-                {QR_FLOW.find(s => s.key === job.status)?.label ?? statusLabel(job.status)}
-              </Badge>
-              <Badge variant="outline" className={cn("text-[10px] border", PRIORITY_BADGE[job.priority])}>
-                {job.priority}
-              </Badge>
+    <div className="max-w-4xl">
+      <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate("/quick-repairs")}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-500" />
+                <h1 className="text-lg font-semibold">{job.ref}</h1>
+                <Badge variant="outline" className={cn("text-xs font-medium border", statusClass(job.status))}>
+                  {QR_FLOW.find(s => s.key === job.status)?.label ?? statusLabel(job.status)}
+                </Badge>
+                <Badge variant="outline" className={cn("text-[10px] border", PRIORITY_BADGE[job.priority])}>
+                  {job.priority}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {quotation && <><span className="font-medium text-foreground">{quotation.ref}</span> · </>}
+                Created {fmtDate(job.created_at)}
+                {job.completed_at && ` · Completed ${fmtDate(job.completed_at)}`}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {quotation && <><span className="font-medium text-foreground">{quotation.ref}</span> · </>}
-              Created {fmtDate(job.created_at)}
-              {job.completed_at && ` · Completed ${fmtDate(job.completed_at)}`}
-            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Edit className="w-3.5 h-3.5 mr-1" />Edit
+            </Button>
+            {job.status === "new" && (
+              <Button variant="outline" size="sm" className="text-destructive" onClick={() => { if (confirm("Delete this quick repair?")) deleteMut.mutate(); }}>
+                <Trash2 className="w-3.5 h-3.5 mr-1" />Delete
+              </Button>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            <Edit className="w-3.5 h-3.5 mr-1" />Edit
-          </Button>
-          {job.status === "new" && (
-            <Button variant="outline" size="sm" className="text-destructive" onClick={() => { if (confirm("Delete this quick repair?")) deleteMut.mutate(); }}>
-              <Trash2 className="w-3.5 h-3.5 mr-1" />Delete
-            </Button>
-          )}
-        </div>
       </div>
+
+      <div className="-mx-6 h-6 bg-gradient-to-b from-white to-[#f2f3ff]" />
+
+      <div className="-mx-6 -mb-6 px-6 pb-6 bg-[#f2f3ff] space-y-6">
 
       {/* Progress tracker */}
       <div className={cn(
@@ -1215,6 +1221,7 @@ export default function QuickRepairDetailPage() {
           jobType="quick_repair"
         />
       )}
+      </div>
     </div>
   );
 }

@@ -1143,14 +1143,20 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const needsAssignment = job.status === "waiting" && !job.technician_id;
 
   return (
-    <div className="space-y-4 max-w-5xl">
-      {/* Breadcrumb */}
-      <button
-        onClick={() => navigate(backPath)}
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" /> {backLabel}
-      </button>
+    <div className="max-w-5xl">
+      <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-4">
+        {/* Breadcrumb */}
+        <button
+          onClick={() => navigate(backPath)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> {backLabel}
+        </button>
+      </div>
+
+      <div className="-mx-6 h-6 bg-gradient-to-b from-white to-[#f2f3ff]" />
+
+      <div className="-mx-6 -mb-6 px-6 pb-6 bg-[#f2f3ff] space-y-4">
 
       {/* Header Card */}
       <div className="rounded-2xl border border-border bg-gradient-to-br from-background to-muted/20 shadow-sm overflow-hidden">
@@ -2739,6 +2745,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
         </DialogContent>
       </Dialog>
 
+      </div>
     </div>
   );
 }
