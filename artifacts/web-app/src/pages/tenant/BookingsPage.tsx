@@ -68,6 +68,19 @@ function monthRange(year: number, month: number) {
   return { date_from: d0(start), date_to: d0(end) };
 }
 
+function weekRange(date: Date) {
+  const day = date.getDay();
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate() - day);
+  const end   = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7);
+  return { date_from: d0(start), date_to: d0(end) };
+}
+
+function dayRange(date: Date) {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const end   = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+  return { date_from: d0(start), date_to: d0(end) };
+}
+
 function fmt(iso: string) {
   const d = new Date(iso);
   return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })
@@ -195,12 +208,174 @@ function CalendarView({
   );
 }
 
+/* ─── Weekly Calendar View ─────────────────────────────────────────────── */
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 7); // 7am–7pm
+
+function WeeklyCalendarView({
+  anchorDate, rows, onNavigate, onBookingClick,
+}: {
+  anchorDate: Date; rows: BookingRow[];
+  onNavigate: (dir: -1 | 1) => void;
+  onBookingClick: (row: BookingRow) => void;
+}) {
+  const startOfWeek = new Date(anchorDate);
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+  const today = d0(new Date());
+
+  const byDayHour = new Map<string, BookingRow[]>();
+  for (const row of rows) {
+    const d = new Date(row.scheduled_at);
+    const key = `${d0(d)}-${d.getHours()}`;
+    if (!byDayHour.has(key)) byDayHour.set(key, []);
+    byDayHour.get(key)!.push(row);
+  }
+
+  const weekLabel = `${days[0].toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${days[6].toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
+
+  return (
+    <div className="rounded-lg border border-border bg-background overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onNavigate(-1)}>
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <span className="text-sm font-semibold">{weekLabel}</span>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onNavigate(1)}>
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="overflow-auto max-h-[600px]">
+        <table className="w-full border-collapse text-xs">
+          <thead className="sticky top-0 z-10 bg-background">
+            <tr className="border-b border-border">
+              <th className="w-16 px-2 py-2 text-[10px] font-medium text-muted-foreground text-left border-r border-border" />
+              {days.map(d => {
+                const isToday = d0(d) === today;
+                return (
+                  <th key={d0(d)} className={cn("px-1 py-2 text-center border-r border-border last:border-r-0", isToday && "bg-primary/5")}>
+                    <span className="text-[10px] font-medium text-muted-foreground block">{WEEKDAYS[d.getDay()]}</span>
+                    <span className={cn(
+                      "inline-flex items-center justify-center w-6 h-6 text-xs font-semibold rounded-full mt-0.5",
+                      isToday ? "bg-primary text-primary-foreground" : "text-foreground",
+                    )}>{d.getDate()}</span>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {HOURS.map(hour => (
+              <tr key={hour} className="border-b border-border last:border-0">
+                <td className="px-2 py-1 text-[10px] text-muted-foreground font-medium align-top border-r border-border whitespace-nowrap">
+                  {String(hour).padStart(2, "0")}:00
+                </td>
+                {days.map(d => {
+                  const key = `${d0(d)}-${hour}`;
+                  const items = byDayHour.get(key) ?? [];
+                  const isToday = d0(d) === today;
+                  return (
+                    <td key={key} className={cn("px-0.5 py-0.5 align-top border-r border-border last:border-r-0 min-h-[40px]", isToday && "bg-primary/[0.02]")}>
+                      {items.map(row => {
+                        const sm = STATUS_META[row.status] ?? { color: "bg-gray-100 text-gray-700", dot: "bg-gray-400" };
+                        return (
+                          <button
+                            key={row.id}
+                            className={cn("w-full text-left rounded px-1 py-0.5 mb-0.5 flex items-center gap-0.5 text-[10px] font-medium truncate border hover:opacity-80 transition-opacity", sm.color)}
+                            onClick={() => onBookingClick(row)}
+                          >
+                            <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", sm.dot)} />
+                            <span className="truncate">{fmtTime(row.scheduled_at)} {row.client_name ?? "Walk-in"}</span>
+                          </button>
+                        );
+                      })}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Daily Calendar View ─────────────────────────────────────────────── */
+function DailyCalendarView({
+  anchorDate, rows, onNavigate, onBookingClick,
+}: {
+  anchorDate: Date; rows: BookingRow[];
+  onNavigate: (dir: -1 | 1) => void;
+  onBookingClick: (row: BookingRow) => void;
+}) {
+  const today = d0(new Date());
+  const isToday = d0(anchorDate) === today;
+  const dayLabel = anchorDate.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  const byHour = new Map<number, BookingRow[]>();
+  for (const row of rows) {
+    const h = new Date(row.scheduled_at).getHours();
+    if (!byHour.has(h)) byHour.set(h, []);
+    byHour.get(h)!.push(row);
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-background overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onNavigate(-1)}>
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <span className={cn("text-sm font-semibold", isToday && "text-primary")}>{dayLabel}{isToday && " (Today)"}</span>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onNavigate(1)}>
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="divide-y divide-border">
+        {HOURS.map(hour => {
+          const items = byHour.get(hour) ?? [];
+          return (
+            <div key={hour} className="flex min-h-[48px]">
+              <div className="w-20 shrink-0 px-3 py-2 text-xs text-muted-foreground font-medium border-r border-border">
+                {String(hour).padStart(2, "0")}:00
+              </div>
+              <div className="flex-1 p-1 space-y-1">
+                {items.map(row => {
+                  const sm = STATUS_META[row.status] ?? { color: "bg-gray-100 text-gray-700", dot: "bg-gray-400" };
+                  return (
+                    <button
+                      key={row.id}
+                      className={cn("w-full text-left rounded-md px-3 py-2 flex items-center gap-2 text-sm font-medium border hover:opacity-80 transition-opacity", sm.color)}
+                      onClick={() => onBookingClick(row)}
+                    >
+                      <span className={cn("w-2 h-2 rounded-full shrink-0", sm.dot)} />
+                      <span className="font-semibold">{fmtTime(row.scheduled_at)}</span>
+                      <span className="truncate">{row.client_name ?? "Walk-in"}</span>
+                      {row.plate_number && <span className="text-xs font-mono opacity-70 ml-auto">{row.plate_number}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Page ─────────────────────────────────────────────────────────── */
 export default function BookingsPage() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
 
-  const [viewMode,     setViewMode]     = useState<"list" | "calendar">("list");
+  const [viewMode,     setViewMode]     = useState<"list" | "calendar">("calendar");
+  const [calMode,      setCalMode]      = useState<"day" | "week" | "month">("week");
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [datePreset,   setDatePreset]   = useState("all");
@@ -212,7 +387,11 @@ export default function BookingsPage() {
   const calMonth = calDate.getMonth();
 
   const range = viewMode === "calendar"
-    ? monthRange(calYear, calMonth)
+    ? calMode === "month"
+      ? monthRange(calYear, calMonth)
+      : calMode === "week"
+      ? weekRange(calDate)
+      : dayRange(calDate)
     : dateRange(datePreset);
 
   const params = new URLSearchParams({
@@ -225,7 +404,7 @@ export default function BookingsPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["bookings", search, statusFilter, datePreset, viewMode, calYear, calMonth],
+    queryKey: ["bookings", search, statusFilter, datePreset, viewMode, calMode, calYear, calMonth, d0(calDate)],
     queryFn: () => fetch(`${API}/api/bookings?${params}`).then(r => r.json()),
     refetchInterval: 60_000,
   });
@@ -340,8 +519,12 @@ export default function BookingsPage() {
 
   const handleSearch = useCallback((v: string) => setSearch(v), []);
 
-  const navigateMonth = (dir: -1 | 1) => {
-    setCalDate(d => new Date(d.getFullYear(), d.getMonth() + dir, 1));
+  const navigateCal = (dir: -1 | 1) => {
+    setCalDate(d => {
+      if (calMode === "month") return new Date(d.getFullYear(), d.getMonth() + dir, 1);
+      if (calMode === "week")  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + dir * 7);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate() + dir);
+    });
   };
 
   return (
@@ -384,7 +567,29 @@ export default function BookingsPage() {
           </button>
         </div>
 
-        {/* Only show list filters in list mode */}
+        {viewMode === "calendar" && (
+          <div className="flex items-center rounded-md border border-border overflow-hidden">
+            {(["day", "week", "month"] as const).map(m => (
+              <button
+                key={m}
+                className={cn(
+                  "px-3 h-8 text-sm capitalize transition-colors border-l border-border first:border-l-0",
+                  calMode === m ? "bg-muted font-medium" : "hover:bg-muted/50 text-muted-foreground",
+                )}
+                onClick={() => setCalMode(m)}
+              >
+                {m === "day" ? "Day" : m === "week" ? "Week" : "Month"}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {viewMode === "calendar" && (
+          <Button variant="outline" size="sm" className="h-8 text-sm" onClick={() => setCalDate(new Date())}>
+            Today
+          </Button>
+        )}
+
         {viewMode === "list" && (
           <>
             <div className="relative w-60">
@@ -426,12 +631,26 @@ export default function BookingsPage() {
           <div className="rounded-lg border border-border bg-background p-8 flex items-center justify-center">
             <Skeleton className="h-64 w-full" />
           </div>
-        ) : (
+        ) : calMode === "month" ? (
           <CalendarView
             year={calYear}
             month={calMonth}
             rows={rows}
-            onNavigate={navigateMonth}
+            onNavigate={navigateCal}
+            onBookingClick={row => navigate(`/bookings/${row.id}`)}
+          />
+        ) : calMode === "week" ? (
+          <WeeklyCalendarView
+            anchorDate={calDate}
+            rows={rows}
+            onNavigate={navigateCal}
+            onBookingClick={row => navigate(`/bookings/${row.id}`)}
+          />
+        ) : (
+          <DailyCalendarView
+            anchorDate={calDate}
+            rows={rows}
+            onNavigate={navigateCal}
             onBookingClick={row => navigate(`/bookings/${row.id}`)}
           />
         )
