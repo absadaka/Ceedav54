@@ -124,6 +124,43 @@ export async function syncDraftInvoicesForQuotation(quotationId: string) {
   }
 }
 
+async function syncInvoiceFromJobParts(invoiceId: string, jobId: string, tenantId: string) {
+  const parts = await db
+    .select()
+    .from(jobPartsTable)
+    .where(and(eq(jobPartsTable.job_id, jobId), eq(jobPartsTable.tenant_id, tenantId)))
+    .orderBy(jobPartsTable.sort_order);
+
+  await db.delete(invoiceLineItemsTable).where(eq(invoiceLineItemsTable.invoice_id, invoiceId));
+
+  let lineOrder = 0;
+  for (const p of parts) {
+    await db.insert(invoiceLineItemsTable).values({
+      invoice_id:  invoiceId,
+      sort_order:  lineOrder++,
+      description: p.description,
+      type:        "part",
+      part_number: p.part_number ?? null,
+      qty:         p.qty,
+      unit_price:  p.unit_price,
+      line_total:  parseFloat(p.line_total).toFixed(2),
+    });
+  }
+
+  await recalcInvoice(invoiceId);
+}
+
+export async function syncDraftInvoicesForJob(jobId: string, tenantId: string) {
+  const draftInvoices = await db
+    .select({ id: invoicesTable.id, quotation_id: invoicesTable.quotation_id })
+    .from(invoicesTable)
+    .where(and(eq(invoicesTable.job_id, jobId), eq(invoicesTable.tenant_id, tenantId), eq(invoicesTable.status, "draft")));
+
+  for (const inv of draftInvoices) {
+    await syncInvoiceFromJobParts(inv.id, jobId, tenantId);
+  }
+}
+
 /* ─── next sequence ──────────────────────────────────────────────────────── */
 async function nextSeq(tenantId: string) {
   const [r] = await db
