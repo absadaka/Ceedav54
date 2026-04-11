@@ -223,8 +223,8 @@ function ServiceFlowTracker({
 
       <div className="flex items-start">
         {stages.map((stage, idx) => {
-          const isPast      = !isCancelled && currentIdx > idx;
-          const isCurrent   = !isCancelled && idx === currentIdx;
+          const isPast      = !isCancelled && (currentIdx > idx || (isDelivered && idx === currentIdx));
+          const isCurrent   = !isCancelled && idx === currentIdx && !isDelivered;
           const isFuture    = isCancelled || idx > currentIdx;
           const isClickable = !isCancelled && onStepClick && idx !== currentIdx;
           const timestamp   = reachedAt[stage.key];
