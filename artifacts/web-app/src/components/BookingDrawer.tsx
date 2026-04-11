@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { Zap, Wrench, UserPlus, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { CAR_MAKES, CAR_MODELS, getYearOptions } from "@/lib/car-data";
+
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
 const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -433,28 +435,43 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>Make</Label>
-                    <Input
-                      placeholder="e.g. Toyota"
+                    <SearchableSelect
                       value={newMake}
-                      onChange={e => setNewMake(e.target.value)}
+                      onValueChange={v => { setNewMake(v); setNewModel(""); }}
+                      options={CAR_MAKES as unknown as string[]}
+                      placeholder="Select make…"
+                      searchPlaceholder="Search make…"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Model</Label>
-                    <Input
-                      placeholder="e.g. Land Cruiser"
-                      value={newModel}
-                      onChange={e => setNewModel(e.target.value)}
-                    />
+                    {newMake && CAR_MODELS[newMake]?.length ? (
+                      <SearchableSelect
+                        value={newModel}
+                        onValueChange={setNewModel}
+                        options={CAR_MODELS[newMake]}
+                        placeholder="Select model…"
+                        searchPlaceholder="Search model…"
+                      />
+                    ) : (
+                      <Input
+                        placeholder={newMake ? "Type model…" : "Select make first"}
+                        value={newModel}
+                        onChange={e => setNewModel(e.target.value)}
+                        disabled={!newMake}
+                      />
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>Year</Label>
-                    <Input
-                      placeholder="e.g. 2024"
+                    <SearchableSelect
                       value={newYear}
-                      onChange={e => setNewYear(e.target.value)}
+                      onValueChange={setNewYear}
+                      options={getYearOptions()}
+                      placeholder="Select year…"
+                      searchPlaceholder="Search year…"
                     />
                   </div>
                   <div className="space-y-1.5">
