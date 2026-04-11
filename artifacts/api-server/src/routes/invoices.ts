@@ -301,10 +301,21 @@ router.post("/from-job/:jobId", async (req, res) => {
       .where(and(eq(jobNotesTable.job_id, job.id), eq(jobNotesTable.tenant_id, tenant.id), eq(jobNotesTable.type, "technician")))
       .orderBy(asc(jobNotesTable.created_at));
 
+    const reportNotes = await db
+      .select({ note: jobNotesTable.note, created_at: jobNotesTable.created_at })
+      .from(jobNotesTable)
+      .where(and(eq(jobNotesTable.job_id, job.id), eq(jobNotesTable.tenant_id, tenant.id), eq(jobNotesTable.type, "report")))
+      .orderBy(asc(jobNotesTable.created_at));
+
+    const allNotes: string[] = [];
+    if (techNotes.length > 0) allNotes.push(...techNotes.map(n => n.note));
+    if (reportNotes.length > 0) {
+      allNotes.push("--- Job Report ---");
+      allNotes.push(...reportNotes.map(n => n.note));
+    }
+
     const notesText = (req.body as any).notes
-      ?? (techNotes.length > 0
-        ? techNotes.map(n => n.note).join("\n")
-        : null);
+      ?? (allNotes.length > 0 ? allNotes.join("\n") : null);
 
     const [inv] = await db.insert(invoicesTable).values({
       tenant_id:    tenant.id,
@@ -477,7 +488,16 @@ router.get("/:id", async (req, res) => {
       .where(eq(paymentsTable.invoice_id, inv.id))
       .orderBy(desc(paymentsTable.paid_at));
 
-    return res.json({ invoice: inv, lineItems, payments });
+    let jobReport: { note: string; created_at: Date }[] = [];
+    if (inv.job_id) {
+      jobReport = await db
+        .select({ note: jobNotesTable.note, created_at: jobNotesTable.created_at })
+        .from(jobNotesTable)
+        .where(and(eq(jobNotesTable.job_id, inv.job_id), eq(jobNotesTable.tenant_id, tenant.id), eq(jobNotesTable.type, "report")))
+        .orderBy(asc(jobNotesTable.created_at));
+    }
+
+    return res.json({ invoice: inv, lineItems, payments, jobReport });
   } catch (err) {
     console.error("GET /invoices/:id", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -616,6 +636,16 @@ router.post("/:id/send", async (req, res) => {
       if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
     }
 
+    let jobReportNotes: string[] = [];
+    if (inv.job_id) {
+      const rNotes = await db
+        .select({ note: jobNotesTable.note })
+        .from(jobNotesTable)
+        .where(and(eq(jobNotesTable.job_id, inv.job_id), eq(jobNotesTable.tenant_id, tenant.id), eq(jobNotesTable.type, "report")))
+        .orderBy(asc(jobNotesTable.created_at));
+      jobReportNotes = rNotes.map(n => n.note);
+    }
+
     if (client?.email) {
       const html = invoiceEmailHtml({
         shopName: tenant.name,
@@ -632,6 +662,7 @@ router.post("/:id/send", async (req, res) => {
         vehicleInfo,
         notes: inv.notes,
         paymentUrl: inv.stripe_payment_url ?? null,
+        jobReport: jobReportNotes.length > 0 ? jobReportNotes : undefined,
       });
       emailResult = await sendEmail({
         to: client.email,
