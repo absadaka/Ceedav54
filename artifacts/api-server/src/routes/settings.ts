@@ -89,6 +89,7 @@ router.patch("/settings/business", async (req, res) => {
   const {
     name, phone, email, address, country, currency, timezone, locale,
     logo_url, vat_number, website, maps_url,
+    distance_unit, language,
     social_facebook, social_instagram, social_twitter,
     social_linkedin, social_tiktok, social_youtube,
   } = req.body;
@@ -116,6 +117,8 @@ router.patch("/settings/business", async (req, res) => {
     .set({
       ...(website          !== undefined && { website }),
       ...(maps_url         !== undefined && { maps_url }),
+      ...(distance_unit    !== undefined && { distance_unit }),
+      ...(language         !== undefined && { language }),
       ...(social_facebook  !== undefined && { social_facebook }),
       ...(social_instagram !== undefined && { social_instagram }),
       ...(social_twitter   !== undefined && { social_twitter }),
