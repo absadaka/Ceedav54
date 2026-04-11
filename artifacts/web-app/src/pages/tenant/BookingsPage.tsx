@@ -43,7 +43,9 @@ const DATE_PRESETS = [
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function d0(d: Date) { return d.toISOString().slice(0, 10); }
+function d0(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 function dateRange(preset: string): { date_from?: string; date_to?: string } {
   const now = new Date();
@@ -116,7 +118,7 @@ function CalendarView({
 
   const byDay = new Map<string, BookingRow[]>();
   for (const row of rows) {
-    const key = row.scheduled_at.slice(0, 10);
+    const key = d0(new Date(row.scheduled_at));
     if (!byDay.has(key)) byDay.set(key, []);
     byDay.get(key)!.push(row);
   }
@@ -400,7 +402,7 @@ export default function BookingsPage() {
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
     ...(range.date_from ? { date_from: range.date_from } : {}),
     ...(range.date_to   ? { date_to:   range.date_to   } : {}),
-    limit: "200",
+    limit: "100",
   });
 
   const { data, isLoading } = useQuery({
