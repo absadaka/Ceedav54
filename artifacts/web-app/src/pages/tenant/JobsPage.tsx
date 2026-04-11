@@ -1,7 +1,8 @@
 import {
   Wrench, Search, LayoutGrid, List,
-  Clock, User, Car,
+  Clock, User,
 } from "lucide-react";
+import CarBrandLogo from "@/components/CarBrandLogo";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -91,7 +92,7 @@ function KanbanCard({ job, onClick }: { job: KanbanJob; onClick: () => void }) {
       </div>
       <div className="flex items-center justify-between gap-1">
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground min-w-0">
-          <Car className="w-4 h-4 shrink-0" />
+          <CarBrandLogo make={job.make} size={16} />
           <span className="font-mono truncate">{job.plate_number ?? "—"}</span>
         </div>
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground shrink-0">
