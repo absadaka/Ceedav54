@@ -30,7 +30,7 @@ const API     = import.meta.env.BASE_URL.replace(/\/$/, "");
 const QR_FLOW = [
   { key: "new",       label: "New" },
   { key: "completed", label: "Work Done" },
-  { key: "invoiced",  label: "Invoiced" },
+  { key: "invoiced",  label: "Paid" },
   { key: "delivered", label: "Delivered" },
 ];
 
