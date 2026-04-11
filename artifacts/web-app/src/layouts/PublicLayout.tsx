@@ -1,17 +1,18 @@
 import { Link, useLocation } from "wouter";
 import { Menu, X, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const navLinks = [
-  { label: "Features", href: "/#features" },
-  { label: "Pricing", href: "/pricing" },
+const featureLinks = [
+  { label: "Bookings", href: "/#bookings" },
+  { label: "Estimations", href: "/#estimations" },
+  { label: "Invoicing", href: "/#invoicing" },
+  { label: "Jobs Management", href: "/#jobs-management" },
 ];
 
 function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: boolean }) {
   const sz = size === "sm" ? 22 : 26;
-  const textColor = light ? "#ffffff" : "#0a0a0a";
   return (
     <Link href="/" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
       <span
@@ -26,8 +27,48 @@ function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: bool
 
 export { Logo };
 
+function FeaturesDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/60"
+      >
+        Features
+        <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg border border-border shadow-lg py-1 z-50">
+          {featureLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="block px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              onClick={() => setOpen(false)}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PublicNav() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
   const [location] = useLocation();
 
   const isAuthPage = location === "/auth" || location === "/register" || location.startsWith("/auth/");
@@ -40,20 +81,18 @@ function PublicNav() {
         <Logo />
 
         <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "px-3 py-1.5 text-sm rounded-md transition-colors",
-                location === link.href
-                  ? "text-foreground bg-muted"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+          <FeaturesDropdown />
+          <Link
+            href="/pricing"
+            className={cn(
+              "px-3 py-1.5 text-sm rounded-md transition-colors",
+              location === "/pricing"
+                ? "text-foreground bg-muted"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            )}
+          >
+            Pricing
+          </Link>
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
@@ -80,16 +119,36 @@ function PublicNav() {
 
       {menuOpen && (
         <div className="md:hidden border-t border-border bg-white px-6 py-4 space-y-1 shadow-lg">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="block px-3 py-2.5 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-              onClick={() => setMenuOpen(false)}
+          <div>
+            <button
+              className="flex items-center justify-between w-full px-3 py-2.5 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+              onClick={() => setFeaturesOpen((v) => !v)}
             >
-              {link.label}
-            </Link>
-          ))}
+              Features
+              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", featuresOpen && "rotate-180")} />
+            </button>
+            {featuresOpen && (
+              <div className="pl-4 space-y-0.5">
+                {featureLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="block px-3 py-2 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                    onClick={() => { setMenuOpen(false); setFeaturesOpen(false); }}
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+          <Link
+            href="/pricing"
+            className="block px-3 py-2.5 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+            onClick={() => setMenuOpen(false)}
+          >
+            Pricing
+          </Link>
           <div className="pt-3 space-y-2 border-t border-border mt-3">
             <Link href="/auth" onClick={() => setMenuOpen(false)}>
               <Button variant="outline" size="sm" className="w-full">Sign in</Button>
