@@ -308,6 +308,10 @@ export default function QuickRepairDetailPage() {
   const [activeTab, setActiveTab] = useState("parts");
   const partsRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (job?.status === "delivered") setActiveTab("invoices");
+  }, [job?.status]);
+
   const deletePartMut = useMutation({
     mutationFn: async (partId: string) => {
       const r = await fetch(`${API}/api/jobs/${id}/parts/${partId}?tenant=${TENANT}`, { method: "DELETE" });
