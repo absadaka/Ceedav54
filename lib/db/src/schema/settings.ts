@@ -28,6 +28,10 @@ export const tenantSettingsTable = pgTable("tenant_settings", {
   social_tiktok:    text("social_tiktok"),
   social_youtube:   text("social_youtube"),
 
+  /* Preferences */
+  distance_unit: text("distance_unit").notNull().default("km"),
+  language:      text("language").notNull().default("en"),
+
   /* Office hours – JSON object keyed by day name */
   office_hours: jsonb("office_hours").default({
     monday:    { enabled: true,  open: "08:00", close: "18:00" },

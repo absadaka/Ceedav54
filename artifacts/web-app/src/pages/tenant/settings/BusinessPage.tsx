@@ -20,6 +20,17 @@ const TIMEZONES = [
   "Asia/Muscat", "Africa/Cairo", "Europe/London", "America/New_York",
 ];
 const CURRENCIES = ["AED", "SAR", "KWD", "BHD", "QAR", "OMR", "EGP", "USD", "EUR", "GBP"];
+const DISTANCE_UNITS = [
+  { value: "km", label: "Kilometers (km)" },
+  { value: "mi", label: "Miles (mi)" },
+];
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "ar", label: "العربية (Arabic)" },
+  { value: "fr", label: "Français (French)" },
+  { value: "ur", label: "اردو (Urdu)" },
+  { value: "hi", label: "हिन्दी (Hindi)" },
+];
 const COUNTRIES  = [
   "United Arab Emirates", "Saudi Arabia", "Kuwait", "Bahrain", "Qatar",
   "Oman", "Egypt", "Jordan", "Lebanon", "Morocco", "United Kingdom", "United States",
@@ -75,6 +86,7 @@ export default function BusinessPage() {
   const [form, setForm] = useState({
     name: "", phone: "", email: "", address: "", country: "United Arab Emirates",
     currency: "AED", timezone: "Asia/Dubai", locale: "en",
+    distance_unit: "km", language: "en",
     vat_number: "", website: "", maps_url: "",
     social_instagram: "", social_facebook: "", social_twitter: "",
     social_linkedin: "", social_tiktok: "", social_youtube: "",
@@ -92,6 +104,8 @@ export default function BusinessPage() {
       currency:  tenant?.currency    ?? "AED",
       timezone:  tenant?.timezone    ?? "Asia/Dubai",
       locale:    tenant?.locale      ?? "en",
+      distance_unit: settings?.distance_unit ?? "km",
+      language:      settings?.language      ?? "en",
       vat_number: tenant?.vat_number ?? "",
       website:   settings?.website   ?? "",
       maps_url:  settings?.maps_url  ?? "",
@@ -197,6 +211,18 @@ export default function BusinessPage() {
                 <Select value={form.timezone} onValueChange={(v) => setForm((p) => ({ ...p, timezone: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{TIMEZONES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </Field>
+              <Field label="Distance unit">
+                <Select value={form.distance_unit} onValueChange={(v) => setForm((p) => ({ ...p, distance_unit: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{DISTANCE_UNITS.map((u) => <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </Field>
+              <Field label="Language">
+                <Select value={form.language} onValueChange={(v) => setForm((p) => ({ ...p, language: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{LANGUAGES.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}</SelectContent>
                 </Select>
               </Field>
             </FieldGroup>
