@@ -296,38 +296,44 @@ export default function DashboardPage() {
 
   return (
     <>
-    <div className="space-y-5">
+    <div>
 
-      {/* ── Header ────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="page-title">{shopName ?? "Dashboard"}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {greeting} — {new Date().toLocaleDateString("en-AE", { weekday: "long", day: "numeric", month: "long" })}
-          </p>
+      <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-5">
+        {/* ── Header ────────────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="page-title">{shopName ?? "Dashboard"}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {greeting} — {new Date().toLocaleDateString("en-AE", { weekday: "long", day: "numeric", month: "long" })}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-40"
+              aria-label="Refresh"
+            >
+              <RefreshCw className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />
+            </button>
+            <Button size="sm" className="gap-1.5" onClick={() => setDrawerOpen(true)}>
+              <Plus className="w-4 h-4" />New booking
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-40"
-            aria-label="Refresh"
-          >
-            <RefreshCw className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />
-          </button>
-          <Button size="sm" className="gap-1.5" onClick={() => setDrawerOpen(true)}>
-            <Plus className="w-4 h-4" />New booking
-          </Button>
-        </div>
+
+        {/* ── Error banner ─────────────────────────────────────────────── */}
+        {error && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>Could not load dashboard data. <button onClick={() => refetch()} className="underline font-medium">Try again</button></span>
+          </div>
+        )}
       </div>
 
-      {/* ── Error banner ─────────────────────────────────────────────── */}
-      {error && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>Could not load dashboard data. <button onClick={() => refetch()} className="underline font-medium">Try again</button></span>
-        </div>
-      )}
+      <div className="-mx-6 h-6 bg-gradient-to-b from-white to-[#f2f3ff]" />
+
+      <div className="-mx-6 -mb-6 px-6 pb-6 bg-[#f2f3ff] space-y-5">
 
       {/* ── KPI strip ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
@@ -705,6 +711,7 @@ export default function DashboardPage() {
         </div>
       </Section>
 
+      </div>
     </div>
 
     <BookingDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />

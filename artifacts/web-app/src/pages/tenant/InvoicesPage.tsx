@@ -101,10 +101,16 @@ export default function InvoicesPage() {
   const stats    = statsData?.stats;
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="page-title">Invoices</h1>
+    <div>
+      <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-5">
+        <div className="flex items-center justify-between">
+          <h1 className="page-title">Invoices</h1>
+        </div>
       </div>
+
+      <div className="-mx-6 h-6 bg-gradient-to-b from-white to-[#f2f3ff]" />
+
+      <div className="-mx-6 -mb-6 px-6 pb-6 bg-[#f2f3ff] space-y-5">
 
       {/* Stats strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -211,6 +217,7 @@ export default function InvoicesPage() {
         </table>
       </div>
 
+      </div>
     </div>
   );
 }
