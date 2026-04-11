@@ -164,9 +164,11 @@ export function invoiceSmsBody(opts: {
   total: string;
   currency: string;
   dueDate?: string | null;
+  paymentUrl?: string | null;
 }): string {
   let msg = `Hi ${opts.clientName}, invoice ${opts.invoiceRef} from ${opts.shopName} for ${formatCurrency(opts.total, opts.currency)} is ready.`;
   if (opts.dueDate) msg += ` Due: ${formatDate(opts.dueDate)}.`;
+  if (opts.paymentUrl) msg += `\n\nPay online: ${opts.paymentUrl}`;
   msg += ` Thank you for your business!`;
   return msg;
 }

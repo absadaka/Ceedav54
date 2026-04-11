@@ -37,6 +37,8 @@ export const invoicesTable = pgTable("invoices", {
   total:        numeric("total",       { precision: 12, scale: 2 }).notNull().default("0.00"),
   paid_amount:  numeric("paid_amount", { precision: 12, scale: 2 }).notNull().default("0.00"),
   notes:        text("notes"),
+  stripe_payment_url: text("stripe_payment_url"),
+  stripe_session_id:  text("stripe_session_id"),
   due_at:       timestamp("due_at",    { withTimezone: true }),
   sent_at:      timestamp("sent_at",   { withTimezone: true }),
   paid_at:      timestamp("paid_at",   { withTimezone: true }),

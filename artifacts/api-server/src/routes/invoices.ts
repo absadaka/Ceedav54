@@ -9,6 +9,7 @@ import {
 } from "@workspace/db";
 import { sendEmail, invoiceEmailHtml } from "../services/email.js";
 import { sendSms, sendWhatsApp, invoiceSmsBody } from "../services/sms.js";
+import { getUncachableStripeClient } from "../services/stripeClient.js";
 
 const router = Router();
 
@@ -135,6 +136,46 @@ async function nextSeq(tenantId: string) {
 function makeRef(seq: number) {
   const year = new Date().getFullYear();
   return `INV-${year}-${String(seq).padStart(4, "0")}`;
+}
+
+async function createStripePaymentLink(opts: {
+  invoiceId: string;
+  invoiceRef: string;
+  totalCents: number;
+  currency: string;
+  customerName?: string;
+  customerEmail?: string;
+}): Promise<{ url: string; sessionId: string } | null> {
+  try {
+    const stripe = await getUncachableStripeClient();
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      line_items: [{
+        price_data: {
+          currency: opts.currency.toLowerCase(),
+          unit_amount: opts.totalCents,
+          product_data: {
+            name: `Invoice ${opts.invoiceRef}`,
+            description: opts.customerName ? `Payment for ${opts.customerName}` : undefined,
+          },
+        },
+        quantity: 1,
+      }],
+      metadata: {
+        invoice_id: opts.invoiceId,
+        invoice_ref: opts.invoiceRef,
+      },
+      ...(opts.customerEmail ? { customer_email: opts.customerEmail } : {}),
+      success_url: `https://${process.env.REPLIT_DOMAINS?.split(",")[0] ?? "localhost"}/invoices/${opts.invoiceId}?payment=success`,
+      cancel_url: `https://${process.env.REPLIT_DOMAINS?.split(",")[0] ?? "localhost"}/invoices/${opts.invoiceId}?payment=cancelled`,
+    });
+
+    return { url: session.url!, sessionId: session.id };
+  } catch (err: any) {
+    console.error("[stripe] Failed to create payment link:", err.message);
+    return null;
+  }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -322,6 +363,35 @@ router.post("/from-job/:jobId", async (req, res) => {
     }
 
     await recalcInvoice(inv.id);
+    const [recalced] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, inv.id)).limit(1);
+
+    const [client] = job.client_id
+      ? await db.select({ name: clientsTable.name, email: clientsTable.email })
+          .from(clientsTable).where(eq(clientsTable.id, job.client_id)).limit(1)
+      : [null];
+
+    const totalCents = Math.round(parseFloat(recalced?.total ?? "0") * 100);
+    const tenantCurrency = tenant.currency ?? "AED";
+
+    if (totalCents > 0) {
+      const paymentResult = await createStripePaymentLink({
+        invoiceId: inv.id,
+        invoiceRef: ref,
+        totalCents,
+        currency: tenantCurrency,
+        customerName: client?.name ?? undefined,
+        customerEmail: client?.email ?? undefined,
+      });
+
+      if (paymentResult) {
+        await db.update(invoicesTable).set({
+          stripe_payment_url: paymentResult.url,
+          stripe_session_id: paymentResult.sessionId,
+          updated_at: new Date(),
+        }).where(eq(invoicesTable.id, inv.id));
+      }
+    }
+
     const [fresh] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, inv.id)).limit(1);
 
     return res.status(201).json({ invoice: fresh });
@@ -561,6 +631,7 @@ router.post("/:id/send", async (req, res) => {
         lineItems: lines,
         vehicleInfo,
         notes: inv.notes,
+        paymentUrl: inv.stripe_payment_url ?? null,
       });
       emailResult = await sendEmail({
         to: client.email,
@@ -579,6 +650,7 @@ router.post("/:id/send", async (req, res) => {
         total: inv.total ?? "0",
         currency: tenant.currency ?? "AED",
         dueDate: inv.due_at?.toISOString() ?? null,
+        paymentUrl: inv.stripe_payment_url ?? null,
       });
       await sendSms({ to: client.phone, body: smsBody, tenantId: tenant.id });
       await sendWhatsApp({ to: client.phone, body: smsBody, tenantId: tenant.id });

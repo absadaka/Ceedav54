@@ -28,7 +28,7 @@ ceeda/
 | Backend     | Express 5, TypeScript, tsx |
 | Database    | PostgreSQL 16, Drizzle ORM |
 | Auth        | JWT + HTTP-only cookies, Google OAuth, Magic links (planned) |
-| Payments    | Stripe (planned) |
+| Payments    | Stripe (Checkout Sessions) — via Replit integration (`stripeClient.ts`), auto-creates payment link on invoice creation, webhook at `/api/stripe/webhook` |
 | Email       | Resend SDK — sends from `info@ceeda.me` (env: `RESEND_API_KEY`, `EMAIL_FROM_DOMAIN`) |
 | SMS/WhatsApp | Twilio SDK — SMS & WhatsApp via `api-server/src/services/sms.ts` (env: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `TWILIO_WHATSAPP_NUMBER`). Per-tenant config in `integrations` table. |
 | Monorepo    | pnpm workspaces |
