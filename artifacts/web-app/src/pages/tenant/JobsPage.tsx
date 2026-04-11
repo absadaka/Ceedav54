@@ -28,9 +28,9 @@ const BOARD_LANES = [
 
 function KanbanSkeleton() {
   return (
-    <div className="grid grid-cols-5 gap-4 pb-4">
+    <div className="flex gap-4 pb-4 overflow-x-auto">
       {BOARD_LANES.map(lane => (
-        <div key={lane.key} className="min-w-0">
+        <div key={lane.key} className="min-w-[260px] flex-1">
           <div className="flex items-center justify-between mb-3">
             <Skeleton className="h-3.5 w-24" /><Skeleton className="h-4 w-5 rounded-full" />
           </div>
@@ -166,13 +166,13 @@ export default function JobsPage() {
 
       {view === "board" && (
         kanbanLoading ? <KanbanSkeleton /> : (
-          <div className="grid grid-cols-5 gap-4 pb-6">
+          <div className="flex gap-4 pb-6 overflow-x-auto">
             {BOARD_LANES.map(lane => {
               const jobs: KanbanJob[] = boardData?.[lane.key] ?? [];
               const visible = jobs.slice(0, 5);
               const extra   = jobs.length - visible.length;
               return (
-                <div key={lane.key} className="min-w-0">
+                <div key={lane.key} className="min-w-[260px] flex-1">
                   <div className="flex items-center justify-between mb-3">
                     <button
                       onClick={() => setExpandedLane(lane)}
