@@ -1606,40 +1606,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 </p>
               </div>
 
-              {/* Estimated completion */}
-              <div className="border border-border rounded-lg bg-background p-4 space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />Estimated Completion
-                </p>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="datetime-local"
-                    className="text-sm w-auto"
-                    value={job.scheduled_date ? (() => {
-                      const d = new Date(job.scheduled_date);
-                      const pad = (n: number) => String(n).padStart(2, "0");
-                      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-                    })() : ""}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (val) {
-                        patchJobMutation.mutate({ scheduled_date: new Date(val).toISOString() });
-                      } else {
-                        patchJobMutation.mutate({ scheduled_date: "" });
-                      }
-                    }}
-                  />
-                  {job.scheduled_date && (
-                    <button
-                      className="text-xs text-muted-foreground hover:text-red-500 transition-colors"
-                      onClick={() => patchJobMutation.mutate({ scheduled_date: "" })}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
               {/* Add more details */}
               <div className="border border-border rounded-lg bg-background overflow-hidden">
                 <button
@@ -1788,6 +1754,54 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       <Pencil className="w-3 h-3 opacity-0 group-hover/tabbay:opacity-40 shrink-0" />
                     </button>
                   )}
+                </div>
+
+                <div className="border border-border rounded-lg bg-background p-3 space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Est. Completion</p>
+                  <Select
+                    value={job.scheduled_date || "__none"}
+                    onValueChange={v => {
+                      if (v === "__none") {
+                        patchJobMutation.mutate({ scheduled_date: "" });
+                      } else {
+                        const now = new Date();
+                        const ms = parseInt(v, 10);
+                        const target = new Date(now.getTime() + ms);
+                        patchJobMutation.mutate({ scheduled_date: target.toISOString() });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-sm font-semibold border-0 p-0 shadow-none focus:ring-0">
+                      <SelectValue placeholder="Not set">
+                        {job.scheduled_date ? (() => {
+                          const d = new Date(job.scheduled_date);
+                          const now = new Date();
+                          const diff = d.getTime() - now.getTime();
+                          if (diff <= 0) return fmtDate(job.scheduled_date);
+                          const h = Math.round(diff / 3600000);
+                          if (h < 1) return "30 min";
+                          if (h <= 3) return `${h} hour${h > 1 ? "s" : ""}`;
+                          if (h <= 6) return "6 hours";
+                          const days = Math.round(h / 24);
+                          if (days <= 1) return "1 day";
+                          if (days <= 3) return `${days} days`;
+                          return "1 week";
+                        })() : "Not set"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Not set</SelectItem>
+                      <SelectItem value="1800000">30 min</SelectItem>
+                      <SelectItem value="3600000">1 hour</SelectItem>
+                      <SelectItem value="7200000">2 hours</SelectItem>
+                      <SelectItem value="10800000">3 hours</SelectItem>
+                      <SelectItem value="21600000">6 hours</SelectItem>
+                      <SelectItem value="86400000">1 day</SelectItem>
+                      <SelectItem value="172800000">2 days</SelectItem>
+                      <SelectItem value="259200000">3 days</SelectItem>
+                      <SelectItem value="604800000">1 week</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
               </div>
