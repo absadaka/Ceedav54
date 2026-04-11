@@ -15,7 +15,11 @@ export interface TenantSettings {
 export function useSettings() {
   return useQuery<TenantSettings>({
     queryKey: ["tenant-settings", TENANT],
-    queryFn: () => fetch(`${API}/api/settings?tenant=${TENANT}`).then(r => r.json()),
+    queryFn: async () => {
+      const res = await fetch(`${API}/api/settings?tenant=${TENANT}`);
+      const json = await res.json();
+      return json.settings ?? json;
+    },
     staleTime: 5 * 60 * 1000,
   });
 }
