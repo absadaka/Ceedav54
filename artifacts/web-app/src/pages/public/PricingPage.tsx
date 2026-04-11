@@ -1,108 +1,21 @@
 import { Link } from "wouter";
-import { CheckCircle2, Minus, ArrowRight, MessageSquare } from "lucide-react";
+import { CheckCircle2, Minus, ArrowRight, MessageSquare, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
-/* ─── Data ────────────────────────────────────────────────────────────────── */
-const plans = [
-  {
-    name: "Starter",
-    monthly: 49,
-    annual: 39,
-    desc: "For single-bay workshops getting started with digital management.",
-    plan: "starter",
-    color: "border-border",
-    badge: null,
-    features: {
-      users: "3 users",
-      locations: "1 location",
-      bookings: true,
-      jobCards: true,
-      quotations: true,
-      invoices: true,
-      whatsapp: false,
-      reports: "Basic",
-      api: false,
-      sso: false,
-      support: "Email",
-      onboarding: false,
-      sla: false,
-    },
-  },
-  {
-    name: "Professional",
-    monthly: 99,
-    annual: 79,
-    desc: "The full toolkit for growing workshops that need everything.",
-    plan: "professional",
-    color: "border-primary ring-2 ring-primary/20",
-    badge: "Most popular",
-    features: {
-      users: "10 users",
-      locations: "1 location",
-      bookings: true,
-      jobCards: true,
-      quotations: true,
-      invoices: true,
-      whatsapp: true,
-      reports: "Advanced",
-      api: true,
-      sso: false,
-      support: "Priority email",
-      onboarding: false,
-      sla: false,
-    },
-  },
-  {
-    name: "Enterprise",
-    monthly: null,
-    annual: null,
-    desc: "Multi-location chains, dealerships, and franchise operations.",
-    plan: "enterprise",
-    color: "border-border",
-    badge: null,
-    features: {
-      users: "Unlimited",
-      locations: "Unlimited",
-      bookings: true,
-      jobCards: true,
-      quotations: true,
-      invoices: true,
-      whatsapp: true,
-      reports: "Custom",
-      api: true,
-      sso: true,
-      support: "Dedicated CSM",
-      onboarding: true,
-      sla: true,
-    },
-  },
-];
+const API = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const featureRows = [
-  { section: "Core", rows: [
-    { label: "Users", key: "users" as const },
-    { label: "Locations", key: "locations" as const },
-    { label: "Bookings & calendar", key: "bookings" as const },
-    { label: "Job cards & Kanban board", key: "jobCards" as const },
-    { label: "Quotations", key: "quotations" as const },
-    { label: "Invoices", key: "invoices" as const },
-  ]},
-  { section: "Communications", rows: [
-    { label: "WhatsApp notifications", key: "whatsapp" as const },
-  ]},
-  { section: "Insights", rows: [
-    { label: "Reports & analytics", key: "reports" as const },
-    { label: "API access", key: "api" as const },
-  ]},
-  { section: "Security & support", rows: [
-    { label: "SSO / SAML", key: "sso" as const },
-    { label: "Support", key: "support" as const },
-    { label: "Dedicated onboarding", key: "onboarding" as const },
-    { label: "SLA guarantee", key: "sla" as const },
-  ]},
-];
+type Plan = {
+  plan_key: string;
+  name: string;
+  monthly_price: number | null;
+  annual_price: number | null;
+  description: string;
+  features: string[];
+  badge: string | null;
+};
 
 const faqs = [
   ["Can I switch plans anytime?", "Yes. Upgrade or downgrade from billing settings. Changes take effect at the next billing cycle."],
@@ -115,21 +28,24 @@ const faqs = [
   ["Can I use ceeda> in Arabic?", "Arabic (RTL) support is on the roadmap. Contact us if you need it sooner."],
 ];
 
-type PlanFeatures = typeof plans[0]["features"];
-type FeatureKey = keyof PlanFeatures;
-
-function FeatureCell({ value }: { value: string | boolean }) {
-  if (value === true) return <CheckCircle2 className="w-4.5 h-4.5 text-primary mx-auto" />;
-  if (value === false) return <Minus className="w-4 h-4 text-muted-foreground/30 mx-auto" />;
-  return <span className="text-sm text-foreground font-medium">{value}</span>;
+function planColor(p: Plan) {
+  if (p.badge) return "border-primary ring-2 ring-primary/20";
+  return "border-border";
 }
 
 export default function PricingPage() {
   const [annual, setAnnual] = useState(true);
 
+  const { data, isLoading } = useQuery<{ plans: Plan[] }>({
+    queryKey: ["public-plans"],
+    queryFn: () => fetch(`${API}/api/plans`).then((r) => r.json()),
+    staleTime: 300_000,
+  });
+
+  const plans = data?.plans ?? [];
+
   return (
     <div className="bg-white">
-      {/* Header */}
       <section className="pt-16 pb-12 text-center bg-white border-b border-border">
         <div className="max-w-2xl mx-auto px-6">
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Pricing</p>
@@ -140,7 +56,6 @@ export default function PricingPage() {
             No hidden fees. No per-seat surprises. 14-day free trial on every plan.
           </p>
 
-          {/* Billing toggle */}
           <div className="inline-flex items-center gap-1 bg-muted rounded-full p-1">
             <button
               onClick={() => setAnnual(false)}
@@ -167,121 +82,77 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Plan cards */}
       <section className="max-w-5xl mx-auto px-6 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {plans.map((plan) => {
-            const price = annual ? plan.annual : plan.monthly;
-            return (
-              <div
-                key={plan.name}
-                className={cn(
-                  "rounded-2xl border bg-white p-7 flex flex-col relative",
-                  plan.color
-                )}
-              >
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-primary text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
-                      {plan.badge}
-                    </span>
-                  </div>
-                )}
-
-                <div className="mb-6">
-                  <p className="text-[15px] font-semibold text-foreground">{plan.name}</p>
-                  <div className="mt-3 flex items-baseline gap-1">
-                    {price !== null ? (
-                      <>
-                        <span className="text-4xl font-bold text-foreground">${price}</span>
-                        <span className="text-sm text-muted-foreground">/month</span>
-                      </>
-                    ) : (
-                      <span className="text-3xl font-bold text-foreground">Custom</span>
-                    )}
-                  </div>
-                  {annual && price !== null && (
-                    <p className="text-xs text-muted-foreground mt-1">Billed annually (${price * 12}/year)</p>
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {plans.map((plan) => {
+              const price = annual ? plan.annual_price : plan.monthly_price;
+              return (
+                <div
+                  key={plan.plan_key}
+                  className={cn(
+                    "rounded-2xl border bg-white p-7 flex flex-col relative",
+                    planColor(plan)
                   )}
-                  <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{plan.desc}</p>
-                </div>
+                >
+                  {plan.badge && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="bg-primary text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
+                        {plan.badge}
+                      </span>
+                    </div>
+                  )}
 
-                <div className="flex-1" />
+                  <div className="mb-6">
+                    <p className="text-[15px] font-semibold text-foreground">{plan.name}</p>
+                    <div className="mt-3 flex items-baseline gap-1">
+                      {price !== null ? (
+                        <>
+                          <span className="text-4xl font-bold text-foreground">${price}</span>
+                          <span className="text-sm text-muted-foreground">/month</span>
+                        </>
+                      ) : (
+                        <span className="text-3xl font-bold text-foreground">Custom</span>
+                      )}
+                    </div>
+                    {annual && price !== null && (
+                      <p className="text-xs text-muted-foreground mt-1">Billed annually (${price * 12}/year)</p>
+                    )}
+                    <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{plan.description}</p>
+                  </div>
 
-                <Link href={plan.plan === "enterprise" ? "/auth" : `/register?plan=${plan.plan}`}>
-                  <Button
-                    variant={plan.badge ? "default" : "outline"}
-                    size="sm"
-                    className={cn("w-full gap-2 mb-6", plan.badge && "shadow-md shadow-primary/20")}
-                  >
-                    {plan.plan === "enterprise" ? "Talk to sales" : "Start free trial"}
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
+                  <div className="flex-1" />
 
-                {/* Feature highlights */}
-                <ul className="space-y-2.5 border-t border-border pt-5">
-                  {featureRows.flatMap(g => g.rows as { label: string; key: FeatureKey }[]).slice(0, 5).map((row) => {
-                    const val = plan.features[row.key];
-                    if (val === false) return null;
-                    return (
-                      <li key={`${plan.name}-${row.key}`} className="flex items-center gap-2 text-sm text-foreground">
+                  <Link href={plan.plan_key === "enterprise" ? "/auth" : `/register?plan=${plan.plan_key}`}>
+                    <Button
+                      variant={plan.badge ? "default" : "outline"}
+                      size="sm"
+                      className={cn("w-full gap-2 mb-6", plan.badge && "shadow-md shadow-primary/20")}
+                    >
+                      {plan.plan_key === "enterprise" ? "Talk to sales" : "Start free trial"}
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+
+                  <ul className="space-y-2.5 border-t border-border pt-5">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2 text-sm text-foreground">
                         <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                        {typeof val === "string" ? val : row.label}
+                        {f}
                       </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
-      {/* Comparison table */}
-      <section className="max-w-5xl mx-auto px-6 pb-16">
-        <h2 className="text-xl font-bold text-foreground mb-6">Full feature comparison</h2>
-        <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-muted border-b border-border">
-                <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-52">Feature</th>
-                {plans.map((p) => (
-                  <th key={p.name} className={cn(
-                    "px-5 py-3.5 text-center text-xs font-semibold uppercase tracking-wider",
-                    p.badge ? "text-primary" : "text-muted-foreground"
-                  )}>
-                    {p.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {featureRows.map((group) => (
-                <>
-                  <tr key={`section-${group.section}`} className="bg-muted/40">
-                    <td colSpan={4} className="px-5 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      {group.section}
-                    </td>
-                  </tr>
-                  {group.rows.map((row) => (
-                    <tr key={row.key} className="border-t border-border hover:bg-muted/30 transition-colors">
-                      <td className="px-5 py-3 text-foreground font-medium">{row.label}</td>
-                      {plans.map((p) => (
-                        <td key={p.name} className="px-5 py-3 text-center">
-                          <FeatureCell value={p.features[row.key]} />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* FAQ */}
       <section className="border-t border-border bg-muted/20 py-20">
         <div className="max-w-3xl mx-auto px-6">
           <h2 className="text-2xl font-bold text-foreground mb-10 text-center">Frequently asked questions</h2>
@@ -296,7 +167,6 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="py-20 bg-primary text-center">
         <div className="max-w-xl mx-auto px-6">
           <h2 className="text-2xl font-bold text-white mb-4">Ready to get started?</h2>

@@ -94,6 +94,7 @@ ceeda/
 | Clients/Vehicles | Live | Customer table, detail page, vehicle detail page |
 | Dashboard | Live | KPI strip, 7 live data sections |
 | Invoices | Live | Full CRUD, line items, payments, stats strip, detail page, advance payment deduction from quotation (UI/PDF/email/SMS/WhatsApp) |
+| Plan Catalog | Live | Centralized `plan_catalog` DB table (prices in USD). Admin editable via `/admin/plans`. Public API `GET /api/plans`. Consumed by: PricingPage, LandingPage pricing section, tenant BillingPage, admin PlansPage. |
 
 ### Invoice API Endpoints (`/api/invoices?tenant=<slug>`)
 - `GET /stats` — dashboard KPIs (draft/sent/partial/paid/overdue/void counts + totals)
