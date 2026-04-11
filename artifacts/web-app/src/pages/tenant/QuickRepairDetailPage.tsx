@@ -1,7 +1,7 @@
 import {
   ArrowLeft, Zap, User, Car, Plus,
   Edit, Trash2, Package, CheckCircle2,
-  Search, Wrench, Receipt, Send, MessageSquare, Phone, Mail,
+  Search, Wrench, Receipt, Send, MessageSquare, Phone, Mail, CreditCard,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -980,6 +980,33 @@ export default function QuickRepairDetailPage() {
                       </div>
                     </div>
                   </div>
+
+                  {inv.stripe_payment_url && (
+                    <div className="border-t border-border px-4 py-3 flex items-center gap-2">
+                      <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Payment link:</span>
+                      <a
+                        href={inv.stripe_payment_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#161aff] hover:underline truncate flex-1"
+                      >
+                        {inv.stripe_payment_url}
+                      </a>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(inv.stripe_payment_url);
+                          toast.success("Payment link copied");
+                        }}
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                  )}
 
                   {pmts.length > 0 && (
                     <div className="border-t border-border">
