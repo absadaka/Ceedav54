@@ -1418,6 +1418,33 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           </span>
                         </button>
                       );
+                    })() : job.status === "invoiced" ? (() => {
+                      const inv = (invoices as any[])[0];
+                      return (
+                        <div className="flex flex-col gap-2 w-full">
+                          {inv && (
+                            <button
+                              onClick={() => {
+                                setShareChannels({ sms: false, whatsapp: false, email: false });
+                                setShowShareInvoice(true);
+                              }}
+                              disabled={sendInvoiceMutation.isPending}
+                              className="w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50 border-[#161aff]/40 text-[#161aff] hover:border-[#161aff] hover:bg-[#161aff]/5"
+                            >
+                              <Send className="w-4 h-4" />
+                              <span className="text-xs font-bold">{sendInvoiceMutation.isPending ? "Sending…" : "Resend Invoice"}</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => moveToNext()}
+                            disabled={moveStatusMutation.isPending}
+                            className="w-full h-10 rounded-xl border-2 bg-transparent transition-colors flex items-center justify-center gap-2 disabled:opacity-50 border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
+                          >
+                            <Truck className="w-4 h-4" />
+                            <span className="text-xs font-bold">{moveStatusMutation.isPending ? "Updating…" : "Mark as Delivered"}</span>
+                          </button>
+                        </div>
+                      );
                     })() : (
                       <button
                         onClick={() => moveToNext()}

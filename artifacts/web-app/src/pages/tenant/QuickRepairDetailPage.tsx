@@ -552,6 +552,35 @@ export default function QuickRepairDetailPage() {
                   </Button>
                 </div>
               );
+            })() : job.status === "invoiced" ? (() => {
+              const inv = invoices[0];
+              return (
+                <div className="flex gap-2">
+                  {inv && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => {
+                        setShareChannels({ sms: false, whatsapp: false, email: false });
+                        setShowShareInvoice(true);
+                      }}
+                      disabled={sendInvoiceMutation.isPending}
+                    >
+                      <Send className="w-4 h-4" />
+                      {sendInvoiceMutation.isPending ? "Sending…" : "Resend Invoice"}
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => handleStatusClick(next!.key)}
+                    disabled={statusMut.isPending}
+                  >
+                    {statusMut.isPending ? "Updating…" : "Mark as Delivered"}
+                  </Button>
+                </div>
+              );
             })() : (
               <Button
                 size="sm"
