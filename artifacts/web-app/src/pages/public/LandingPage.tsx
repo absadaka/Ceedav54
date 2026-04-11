@@ -2,9 +2,10 @@ import { useRef } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight, CheckCircle2, ChevronRight, ChevronLeft, CalendarCheck,
-  Star, TrendingUp, Clock, Shield, LayoutDashboard, ClipboardList,
+  Star, TrendingUp, Clock, Shield, LayoutDashboard, ClipboardList, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 
 import screenshotDashboard from "@assets/Screenshot_2026-04-08_at_7.25.04_PM_1775662471561.png";
 import screenshotBookings from "@assets/Screenshot_2026-04-08_at_7.25.20_PM_1775662466917.png";
@@ -83,36 +84,17 @@ const testimonials = [
   },
 ];
 
-const plans = [
-  {
-    name: "Starter",
-    price: "$49",
-    period: "/mo",
-    description: "For single-bay workshops ready to go digital.",
-    features: ["3 users", "Bookings & job cards", "Quotations & invoices", "Email notifications", "Client & vehicle CRM"],
-    cta: "Start free trial",
-    href: "/register?plan=starter",
-  },
-  {
-    name: "Professional",
-    price: "$99",
-    period: "/mo",
-    description: "The full toolkit for growing workshops.",
-    features: ["10 users", "Everything in Starter", "WhatsApp notifications", "Advanced analytics", "API access", "Priority support"],
-    cta: "Start free trial",
-    href: "/register?plan=professional",
-    popular: true,
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    description: "Multi-location chains and franchise operations.",
-    features: ["Unlimited users", "Everything in Pro", "SSO & custom domain", "Dedicated account manager", "SLA guarantee"],
-    cta: "Talk to sales",
-    href: "/auth",
-  },
-];
+const LANDING_API = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+type PlanData = {
+  plan_key: string;
+  name: string;
+  monthly_price: number | null;
+  annual_price: number | null;
+  description: string;
+  features: string[];
+  badge: string | null;
+};
 
 const growStats = [
   {
@@ -384,6 +366,14 @@ function TestimonialsSection() {
 }
 
 function PricingSection() {
+  const { data, isLoading } = useQuery<{ plans: PlanData[] }>({
+    queryKey: ["public-plans"],
+    queryFn: () => fetch(`${LANDING_API}/api/plans`).then((r) => r.json()),
+    staleTime: 300_000,
+  });
+
+  const plans = data?.plans ?? [];
+
   return (
     <section className="py-24 bg-muted/20 border-y border-border">
       <div className="max-w-5xl mx-auto px-6">
@@ -395,45 +385,57 @@ function PricingSection() {
           <p className="text-muted-foreground">No setup fees. No hidden charges. Cancel anytime.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`rounded-xl border p-6 flex flex-col bg-white transition-shadow hover:shadow-lg ${
-                plan.popular
-                  ? "border-primary ring-2 ring-primary/20 shadow-md shadow-primary/10"
-                  : "border-border"
-              }`}
-            >
-              {plan.popular && (
-                <div className="mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-accent px-2 py-0.5 rounded-full">
-                    Most popular
-                  </span>
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {plans.map((plan) => (
+              <div
+                key={plan.plan_key}
+                className={`rounded-xl border p-6 flex flex-col bg-white transition-shadow hover:shadow-lg ${
+                  plan.badge
+                    ? "border-primary ring-2 ring-primary/20 shadow-md shadow-primary/10"
+                    : "border-border"
+                }`}
+              >
+                {plan.badge && (
+                  <div className="mb-3">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-accent px-2 py-0.5 rounded-full">
+                      {plan.badge}
+                    </span>
+                  </div>
+                )}
+                <p className="text-[15px] font-semibold text-foreground">{plan.name}</p>
+                <div className="mt-3 mb-3 flex items-baseline gap-1">
+                  {plan.monthly_price !== null ? (
+                    <>
+                      <span className="text-3xl font-bold text-foreground">${plan.monthly_price}</span>
+                      <span className="text-sm text-muted-foreground">/mo</span>
+                    </>
+                  ) : (
+                    <span className="text-3xl font-bold text-foreground">Custom</span>
+                  )}
                 </div>
-              )}
-              <p className="text-[15px] font-semibold text-foreground">{plan.name}</p>
-              <div className="mt-3 mb-3 flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-foreground">{plan.price}</span>
-                {plan.period && <span className="text-sm text-muted-foreground">{plan.period}</span>}
+                <p className="text-xs text-muted-foreground mb-5 leading-relaxed">{plan.description}</p>
+                <ul className="space-y-2.5 mb-6 flex-1">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-foreground">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link href={plan.plan_key === "enterprise" ? "/auth" : `/register?plan=${plan.plan_key}`}>
+                  <Button variant={plan.badge ? "default" : "outline"} size="sm" className="w-full">
+                    {plan.plan_key === "enterprise" ? "Talk to sales" : "Start free trial"}
+                  </Button>
+                </Link>
               </div>
-              <p className="text-xs text-muted-foreground mb-5 leading-relaxed">{plan.description}</p>
-              <ul className="space-y-2.5 mb-6 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-foreground">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href={plan.href}>
-                <Button variant={plan.popular ? "default" : "outline"} size="sm" className="w-full">
-                  {plan.cta}
-                </Button>
-              </Link>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <p className="text-center text-sm text-muted-foreground mt-8">
           All plans include a 14-day free trial.{" "}
@@ -562,6 +564,7 @@ export default function LandingPage() {
       <FeaturesSection />
       <JourneySection />
       <TestimonialsSection />
+      <PricingSection />
       <CtaSection />
       <GrowSection />
     </div>

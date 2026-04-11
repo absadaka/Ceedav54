@@ -1,5 +1,5 @@
 import {
-  pgTable, text, timestamp, boolean, uuid, pgEnum, index, unique, jsonb,
+  pgTable, text, timestamp, boolean, uuid, pgEnum, index, unique, jsonb, integer, numeric,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -278,3 +278,24 @@ export const apiKeysTable = pgTable("api_keys", {
 ]);
 
 export type ApiKey = typeof apiKeysTable.$inferSelect;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   PLAN CATALOG  (single source of truth for subscription plans)
+───────────────────────────────────────────────────────────────────────── */
+
+export const planCatalogTable = pgTable("plan_catalog", {
+  id:             uuid("id").defaultRandom().primaryKey(),
+  plan_key:       text("plan_key").notNull().unique(),
+  name:           text("name").notNull(),
+  monthly_price:  numeric("monthly_price", { precision: 10, scale: 2 }),
+  annual_price:   numeric("annual_price", { precision: 10, scale: 2 }),
+  description:    text("description").notNull().default(""),
+  features:       jsonb("features").notNull().default([]),
+  badge:          text("badge"),
+  sort_order:     integer("sort_order").notNull().default(0),
+  is_active:      boolean("is_active").notNull().default(true),
+  created_at:     timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updated_at:     timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type PlanCatalog = typeof planCatalogTable.$inferSelect;

@@ -3,9 +3,10 @@ import { randomBytes, scryptSync, scrypt, timingSafeEqual } from "crypto";
 import {
   db, tenantsTable, usersTable, auditLogsTable, featureFlagsTable,
   clientsTable, vehiclesTable, bookingsTable, jobsTable, invoicesTable,
+  planCatalogTable,
 } from "@workspace/db";
 import {
-  eq, ilike, isNull, count, desc, and, or, sql, ne, sum,
+  eq, ilike, isNull, count, desc, and, or, sql, ne, sum, asc,
 } from "drizzle-orm";
 import { sendPlatformEmail, adminInviteEmailHtml } from "../services/email";
 
@@ -843,6 +844,60 @@ router.post("/admin/seed-super-admin", async (_req, res) => {
   }).returning({ id: usersTable.id });
 
   return res.json({ message: "Super admin created. Must set password on first login.", id: created.id });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   PLAN CATALOG (admin CRUD)
+───────────────────────────────────────────────────────────────────────── */
+
+router.get("/admin/plans", requirePlatformAdmin, async (_req, res) => {
+  const plans = await db
+    .select()
+    .from(planCatalogTable)
+    .orderBy(asc(planCatalogTable.sort_order));
+
+  const tenantCounts = await db
+    .select({ plan: tenantsTable.plan, cnt: count() })
+    .from(tenantsTable)
+    .where(isNull(tenantsTable.deleted_at))
+    .groupBy(tenantsTable.plan);
+
+  const countMap: Record<string, number> = {};
+  for (const r of tenantCounts) countMap[r.plan] = Number(r.cnt);
+
+  return res.json({
+    plans: plans.map((p) => ({
+      ...p,
+      features: p.features as string[],
+      tenants: countMap[p.plan_key] ?? 0,
+    })),
+  });
+});
+
+router.put("/admin/plans/:id", requirePlatformAdmin, async (req: any, res) => {
+  if (!["platform_admin", "platform_finance"].includes(req.adminUser?.role)) {
+    return res.status(403).json({ error: "Insufficient permissions." });
+  }
+  const { name, monthly_price, annual_price, description, features, badge, sort_order, is_active } = req.body;
+
+  const [updated] = await db
+    .update(planCatalogTable)
+    .set({
+      ...(name          !== undefined && { name }),
+      ...(monthly_price !== undefined && { monthly_price: monthly_price === null ? null : String(monthly_price) }),
+      ...(annual_price  !== undefined && { annual_price: annual_price === null ? null : String(annual_price) }),
+      ...(description   !== undefined && { description }),
+      ...(features      !== undefined && { features }),
+      ...(badge         !== undefined && { badge: badge || null }),
+      ...(sort_order    !== undefined && { sort_order: Number(sort_order) }),
+      ...(is_active     !== undefined && { is_active: Boolean(is_active) }),
+      updated_at: new Date(),
+    })
+    .where(eq(planCatalogTable.id, req.params.id))
+    .returning();
+
+  if (!updated) return res.status(404).json({ error: "Plan not found" });
+  return res.json({ plan: { ...updated, features: updated.features as string[] } });
 });
 
 export default router;

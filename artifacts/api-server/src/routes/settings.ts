@@ -2,8 +2,9 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import {
   tenantsTable, tenantSettingsTable, integrationsTable, catalogItemsTable,
+  planCatalogTable,
 } from "@workspace/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 
 const router = Router();
 
@@ -28,6 +29,28 @@ async function getOrCreateSettings(tenantId: string) {
     .returning();
   return created;
 }
+
+/* ─── GET /plans (public) ──────────────────────────────────────────────── */
+
+router.get("/plans", async (_req, res) => {
+  const plans = await db
+    .select()
+    .from(planCatalogTable)
+    .where(eq(planCatalogTable.is_active, true))
+    .orderBy(asc(planCatalogTable.sort_order));
+
+  return res.json({
+    plans: plans.map((p) => ({
+      plan_key:       p.plan_key,
+      name:           p.name,
+      monthly_price:  p.monthly_price ? Number(p.monthly_price) : null,
+      annual_price:   p.annual_price ? Number(p.annual_price) : null,
+      description:    p.description,
+      features:       p.features as string[],
+      badge:          p.badge,
+    })),
+  });
+});
 
 /* ─── GET /settings ────────────────────────────────────────────────────── */
 
