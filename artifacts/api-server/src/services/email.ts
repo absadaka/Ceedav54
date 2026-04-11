@@ -323,7 +323,17 @@ export function invoiceEmailHtml(opts: {
   lineItems?: LineItem[];
   vehicleInfo?: string;
   notes?: string | null;
+  paymentUrl?: string | null;
 }): string {
+  const payNowButton = opts.paymentUrl ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+      <tr>
+        <td align="center">
+          <a href="${opts.paymentUrl}" style="display:inline-block;background:#0a0a0a;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 48px;border-radius:8px;">Pay Now</a>
+        </td>
+      </tr>
+    </table>` : "";
+
   const content = `
     <h2 style="margin:0 0 8px;font-size:20px;color:#0a0a0a;">Invoice ${opts.invoiceRef}</h2>
     <p style="margin:0 0 24px;color:#71717a;font-size:14px;">Hi ${opts.clientName},</p>
@@ -359,6 +369,7 @@ export function invoiceEmailHtml(opts: {
         </table>
       </td></tr>
     </table>
+    ${payNowButton}
     ${opts.notes ? `<p style="margin:0 0 16px;font-size:13px;color:#71717a;font-style:italic;">Note: ${opts.notes}</p>` : ""}
     <p style="margin:0;font-size:14px;color:#3f3f46;">
       If you have any questions, please don't hesitate to reach out.
