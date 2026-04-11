@@ -709,6 +709,9 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [inlineValue,    setInlineValue]    = useState("");
   const inlineSavedRef = useRef(false);
   const [showFullTimeline, setShowFullTimeline] = useState(false);
+  const [detailsEditOpen, setDetailsEditOpen] = useState(false);
+  const [detailsForm, setDetailsForm] = useState({ vin: "", mileage: "", bay: "", estCompletion: "__none", technician: "__none" });
+  const [detailsSavePending, setDetailsSavePending] = useState(false);
   const [showShareInvoice, setShowShareInvoice] = useState(false);
   const [shareChannels, setShareChannels] = useState<{ sms: boolean; whatsapp: boolean; email: boolean }>({ sms: false, whatsapp: false, email: false });
   const [activeTab, setActiveTab] = useState("work");
@@ -1206,7 +1209,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               <div className="text-center min-w-[70px]">
                 <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Mileage</p>
                 <p className="text-sm font-semibold text-foreground">
-                  {(() => { const val = job.mileage_in ?? (job as any).vehicle_mileage; return val ? `${parseInt(val).toLocaleString()} mi` : "—"; })()}
+                  {(() => { const val = job.mileage_in ?? (job as any).vehicle_mileage; if (!val) return "—"; const n = parseInt(String(val).replace(/,/g, "")); return isNaN(n) ? String(val) : `${n.toLocaleString()} mi`; })()}
                 </p>
               </div>
             </div>
@@ -1688,211 +1691,59 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 )}
               </div>
 
-              {/* VIN / Mileage / Bay / Advisor */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsVin && "border-red-300 bg-red-50/50")}>
-                  <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsVin ? "text-red-600" : "text-muted-foreground")}>VIN{needsVin ? " *" : ""}</p>
-                  {inlineField === "tab_vin" ? (
-                    <input
-                      autoFocus
-                      className="w-full text-sm font-mono bg-transparent outline-none border-b border-primary pb-0.5"
-                      value={inlineValue}
-                      placeholder="Enter VIN…"
-                      onChange={e => setInlineValue(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        if (e.key === "Escape") { setInlineField(null); }
-                      }}
-                      onBlur={() => {
-                        const trimmed = inlineValue.trim();
-                        if (trimmed !== (job.vin ?? "")) {
-                          patchVehicleMutation.mutate({ vehicleId: job.vehicle_id, data: { vin: trimmed } });
-                        } else {
-                          setInlineField(null);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <button
-                      className="w-full text-left text-sm font-mono flex items-center gap-1 group/tabvin hover:text-primary"
-                      onClick={() => { setInlineField("tab_vin"); setInlineValue(job.vin ?? ""); }}
-                    >
-                      <span className={job.vin ? "text-foreground" : "text-muted-foreground/50 italic"}>{job.vin || "Not set"}</span>
-                      <Pencil className="w-3 h-3 opacity-0 group-hover/tabvin:opacity-40 shrink-0" />
-                    </button>
-                  )}
-                </div>
-
-                <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsMileage && "border-red-300 bg-red-50/50")}>
-                  <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsMileage ? "text-red-600" : "text-muted-foreground")}>Mileage{needsMileage ? " *" : ""}</p>
-                  {inlineField === "tab_mileage" ? (
-                    <input
-                      autoFocus
-                      type="number"
-                      className="w-full text-sm font-semibold bg-transparent outline-none border-b border-primary pb-0.5"
-                      value={inlineValue}
-                      placeholder="e.g. 45000"
-                      onChange={e => setInlineValue(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        if (e.key === "Escape") { setInlineField(null); }
-                      }}
-                      onBlur={() => {
-                        const val = inlineValue.trim();
-                        if (val !== (job.mileage_in ?? "")) {
-                          patchJobMutation.mutate({ mileage_in: val });
-                        } else {
-                          setInlineField(null);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <button
-                      className="w-full text-left text-sm font-semibold flex items-center gap-1 group/tabmil hover:text-primary"
-                      onClick={() => { setInlineField("tab_mileage"); setInlineValue(job.mileage_in ?? (job as any).vehicle_mileage ?? ""); }}
-                    >
-                      <span className={job.mileage_in ? "text-foreground" : "text-muted-foreground/50 italic"}>
-                        {(() => { const v = job.mileage_in ?? (job as any).vehicle_mileage; return v ? `${parseInt(v).toLocaleString()} mi` : "Not set"; })()}
-                      </span>
-                      <Pencil className="w-3 h-3 opacity-0 group-hover/tabmil:opacity-40 shrink-0" />
-                    </button>
-                  )}
-                </div>
-
-                <div className="border border-border rounded-lg bg-background p-3 space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Bay</p>
-                  {inlineField === "tab_bay" ? (
-                    <input
-                      autoFocus
-                      className="w-full text-sm font-semibold bg-transparent outline-none border-b border-primary pb-0.5"
-                      value={inlineValue}
-                      placeholder="e.g. A1"
-                      onChange={e => setInlineValue(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        if (e.key === "Escape") { setInlineField(null); }
-                      }}
-                      onBlur={() => {
-                        const val = inlineValue.trim();
-                        if (val !== (job.bay ?? "")) {
-                          patchJobMutation.mutate({ bay: val });
-                        } else {
-                          setInlineField(null);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <button
-                      className="w-full text-left text-sm font-semibold flex items-center gap-1 group/tabbay hover:text-primary"
-                      onClick={() => { setInlineField("tab_bay"); setInlineValue(job.bay ?? ""); }}
-                    >
-                      <span className={job.bay ? "text-foreground" : "text-muted-foreground/50 italic"}>{job.bay || "Not set"}</span>
-                      <Pencil className="w-3 h-3 opacity-0 group-hover/tabbay:opacity-40 shrink-0" />
-                    </button>
-                  )}
-                </div>
-
-                <div className="border border-border rounded-lg bg-background p-3 space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Est. Completion</p>
-                  <Select
-                    value={job.scheduled_date || "__none"}
-                    onValueChange={v => {
-                      if (v === "__none") {
-                        patchJobMutation.mutate({ scheduled_date: "" });
-                      } else {
-                        const now = new Date();
-                        const ms = parseInt(v, 10);
-                        const target = new Date(now.getTime() + ms);
-                        patchJobMutation.mutate({ scheduled_date: target.toISOString() });
-                      }
+              {/* VIN / Mileage / Bay / Est. Completion / Technician — read-only with Edit button */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vehicle & Job Details</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1.5"
+                    onClick={() => {
+                      setDetailsForm({
+                        vin: job.vin ?? "",
+                        mileage: job.mileage_in ?? "",
+                        bay: job.bay ?? "",
+                        estCompletion: "__none",
+                        technician: job.technician_id ?? "__none",
+                      });
+                      setDetailsEditOpen(true);
                     }}
                   >
-                    <SelectTrigger className="h-8 text-sm font-semibold border-0 p-0 shadow-none focus:ring-0">
-                      <SelectValue placeholder="Not set">
-                        {job.scheduled_date ? (() => {
-                          const d = new Date(job.scheduled_date);
-                          const now = new Date();
-                          const diff = d.getTime() - now.getTime();
-                          if (diff <= 0) return fmtDate(job.scheduled_date);
-                          const h = Math.round(diff / 3600000);
-                          if (h < 1) return "30 min";
-                          if (h <= 3) return `${h} hour${h > 1 ? "s" : ""}`;
-                          if (h <= 6) return "6 hours";
-                          const days = Math.round(h / 24);
-                          if (days <= 1) return "1 day";
-                          if (days <= 3) return `${days} days`;
-                          return "1 week";
-                        })() : "Not set"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">Not set</SelectItem>
-                      <SelectItem value="1800000">30 min</SelectItem>
-                      <SelectItem value="3600000">1 hour</SelectItem>
-                      <SelectItem value="7200000">2 hours</SelectItem>
-                      <SelectItem value="10800000">3 hours</SelectItem>
-                      <SelectItem value="21600000">6 hours</SelectItem>
-                      <SelectItem value="86400000">1 day</SelectItem>
-                      <SelectItem value="172800000">2 days</SelectItem>
-                      <SelectItem value="259200000">3 days</SelectItem>
-                      <SelectItem value="604800000">1 week</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Pencil className="w-3 h-3" />Edit
+                  </Button>
                 </div>
-
-              </div>
-
-              {/* Technician assignment */}
-              <div className={cn("border rounded-lg bg-background p-4 space-y-2", needsAssignment ? "border-red-300 bg-red-50/50" : "border-border")}>
-                <p className={cn("text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5", needsAssignment ? "text-red-600" : "text-muted-foreground")}>
-                  <Wrench className="w-3.5 h-3.5" />Technician{needsAssignment ? " *" : ""}
-                </p>
-                <div className="relative">
-                  <button
-                    className={cn("w-full flex items-center justify-between gap-2 text-sm border rounded-lg px-3 py-2 hover:border-foreground/30 transition-colors", needsAssignment ? "border-red-300" : "border-border")}
-                    onClick={() => { setInlineField(inlineField === "tab_technician" ? null : "tab_technician"); setInlineValue(""); }}
-                  >
-                    <span className={cn("truncate", job.technician_name ? "text-foreground font-semibold" : "text-muted-foreground")}>
-                      {job.technician_name ?? "Select technician"}
-                    </span>
-                    <ChevronRight className="w-3.5 h-3.5 rotate-90 shrink-0 text-muted-foreground" />
-                  </button>
-                  {inlineField === "tab_technician" && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
-                      <div className="absolute top-full left-0 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-full py-1">
-                        <div className="px-2 py-1">
-                          <input
-                            autoFocus
-                            className="w-full text-xs bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
-                            placeholder="Search…"
-                            value={inlineValue}
-                            onChange={e => setInlineValue(e.target.value)}
-                            onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
-                          />
-                        </div>
-                        <div className="border-t border-border max-h-40 overflow-y-auto">
-                          <button
-                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
-                            onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ technician_id: null }); setInlineField(null); }}
-                          >
-                            — None —
-                          </button>
-                          {teamMembers
-                            .filter(m => !inlineValue || m.name.toLowerCase().includes(inlineValue.toLowerCase()))
-                            .map(m => (
-                            <button
-                              key={m.id}
-                              className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors", m.id === job.technician_id ? "font-semibold" : "")}
-                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ technician_id: m.id }); setInlineField(null); }}
-                            >
-                              {m.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsVin && "border-red-300 bg-red-50/50")}>
+                    <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsVin ? "text-red-600" : "text-muted-foreground")}>VIN{needsVin ? " *" : ""}</p>
+                    <p className={cn("text-sm font-mono truncate", job.vin ? "text-foreground" : "text-muted-foreground/50 italic")}>{job.vin || "Not set"}</p>
+                  </div>
+                  <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsMileage && "border-red-300 bg-red-50/50")}>
+                    <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsMileage ? "text-red-600" : "text-muted-foreground")}>Mileage{needsMileage ? " *" : ""}</p>
+                    <p className={cn("text-sm font-semibold", job.mileage_in ? "text-foreground" : "text-muted-foreground/50 italic")}>
+                      {(() => { const v = job.mileage_in ?? (job as any).vehicle_mileage; if (!v) return "Not set"; const n = parseInt(String(v).replace(/,/g, "")); return isNaN(n) ? String(v) : `${n.toLocaleString()} mi`; })()}
+                    </p>
+                  </div>
+                  <div className="border border-border rounded-lg bg-background p-3 space-y-1.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Bay</p>
+                    <p className={cn("text-sm font-semibold", job.bay ? "text-foreground" : "text-muted-foreground/50 italic")}>{job.bay || "Not set"}</p>
+                  </div>
+                  <div className="border border-border rounded-lg bg-background p-3 space-y-1.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Est. Completion</p>
+                    <p className={cn("text-sm font-semibold", job.scheduled_date ? "text-foreground" : "text-muted-foreground/50 italic")}>
+                      {job.scheduled_date ? (() => {
+                        const d = new Date(job.scheduled_date);
+                        const today = new Date();
+                        return d.toDateString() === today.toDateString()
+                          ? `Today, ${d.toLocaleTimeString("en-AE", { hour: "2-digit", minute: "2-digit" })}`
+                          : fmtDate(job.scheduled_date);
+                      })() : "Not set"}
+                    </p>
+                  </div>
+                  <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsAssignment && "border-red-300 bg-red-50/50")}>
+                    <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsAssignment ? "text-red-600" : "text-muted-foreground")}>Technician{needsAssignment ? " *" : ""}</p>
+                    <p className={cn("text-sm font-semibold", job.technician_name ? "text-foreground" : "text-muted-foreground/50 italic")}>{job.technician_name || "Not assigned"}</p>
+                  </div>
                 </div>
               </div>
               {needsAssignment && (
@@ -2565,6 +2416,148 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       <AssignTechDialog jobId={job.id} open={assignOpen} onClose={() => setAssignOpen(false)} />
 
       {/* Cancel job dialog */}
+      <Dialog open={detailsEditOpen} onOpenChange={setDetailsEditOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Vehicle & Job Details</DialogTitle>
+            <DialogDescription>
+              Update VIN, mileage, bay number, estimated completion and technician assignment.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-vin">VIN</Label>
+              <Input
+                id="edit-vin"
+                placeholder="e.g. 1HGBH41JXMN109186"
+                className="font-mono"
+                value={detailsForm.vin}
+                onChange={e => setDetailsForm(f => ({ ...f, vin: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-mileage">Mileage</Label>
+                <Input
+                  id="edit-mileage"
+                  type="number"
+                  placeholder="e.g. 45000"
+                  value={detailsForm.mileage}
+                  onChange={e => setDetailsForm(f => ({ ...f, mileage: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-bay">Bay Number</Label>
+                <Input
+                  id="edit-bay"
+                  placeholder="e.g. Bay 1"
+                  value={detailsForm.bay}
+                  onChange={e => setDetailsForm(f => ({ ...f, bay: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Estimated Completion</Label>
+              <Select
+                value={detailsForm.estCompletion}
+                onValueChange={v => setDetailsForm(f => ({ ...f, estCompletion: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Not set" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Not set</SelectItem>
+                  <SelectItem value="1800000">30 min</SelectItem>
+                  <SelectItem value="3600000">1 hour</SelectItem>
+                  <SelectItem value="7200000">2 hours</SelectItem>
+                  <SelectItem value="10800000">3 hours</SelectItem>
+                  <SelectItem value="21600000">6 hours</SelectItem>
+                  <SelectItem value="86400000">1 day</SelectItem>
+                  <SelectItem value="172800000">2 days</SelectItem>
+                  <SelectItem value="259200000">3 days</SelectItem>
+                  <SelectItem value="604800000">1 week</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Technician</Label>
+              <Select
+                value={detailsForm.technician}
+                onValueChange={v => setDetailsForm(f => ({ ...f, technician: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select technician" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">— None —</SelectItem>
+                  {teamMembers.map(m => (
+                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDetailsEditOpen(false)}>Cancel</Button>
+            <Button
+              disabled={detailsSavePending}
+              onClick={async () => {
+                setDetailsSavePending(true);
+                try {
+                  const promises: Promise<any>[] = [];
+                  const vinTrimmed = detailsForm.vin.trim();
+                  if (vinTrimmed !== (job.vin ?? "") && job.vehicle_id) {
+                    promises.push(
+                      fetch(`${API}/api/vehicles/${job.vehicle_id}?tenant=${TENANT}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ vin: vinTrimmed }),
+                      }).then(r => { if (!r.ok) throw new Error("Vehicle update failed"); })
+                    );
+                  }
+                  const jobPatch: Record<string, any> = {};
+                  const mileageTrimmed = detailsForm.mileage.trim();
+                  if (mileageTrimmed !== (job.mileage_in ?? "")) jobPatch.mileage_in = mileageTrimmed;
+                  const bayTrimmed = detailsForm.bay.trim();
+                  if (bayTrimmed !== (job.bay ?? "")) jobPatch.bay = bayTrimmed;
+                  const techVal = detailsForm.technician === "__none" ? null : detailsForm.technician;
+                  if (techVal !== job.technician_id) jobPatch.technician_id = techVal;
+                  if (detailsForm.estCompletion !== "__none") {
+                    const ms = parseInt(detailsForm.estCompletion, 10);
+                    if (!isNaN(ms)) {
+                      jobPatch.scheduled_date = new Date(Date.now() + ms).toISOString();
+                    }
+                  }
+                  if (Object.keys(jobPatch).length > 0) {
+                    promises.push(
+                      fetch(`${API}/api/jobs/${id}?tenant=${TENANT}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(jobPatch),
+                      }).then(r => { if (!r.ok) throw new Error("Job update failed"); })
+                    );
+                  }
+                  if (promises.length === 0) {
+                    setDetailsEditOpen(false);
+                    return;
+                  }
+                  await Promise.all(promises);
+                  qc.invalidateQueries({ queryKey: ["job", id] });
+                  toast.success("Details saved");
+                  setDetailsEditOpen(false);
+                } catch {
+                  toast.error("Failed to save");
+                } finally {
+                  setDetailsSavePending(false);
+                }
+              }}
+            >
+              {detailsSavePending ? "Saving…" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
