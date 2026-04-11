@@ -758,11 +758,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
       }
     }
     if (job.status === "waiting" && targetStatus === "on_hold") {
-      const missing: string[] = [];
-      if (!job.advisor_id) missing.push("Advisor name");
-      if (!job.bay) missing.push("Bay number");
-      if (missing.length > 0) {
-        toast.error(`Please set ${missing.join(" and ")} before moving to Inspection`);
+      if (!job.bay) {
+        toast.error("Please set Bay number before moving to Inspection");
         return false;
       }
     }
@@ -1123,7 +1120,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
   const needsVin = job.status === "new" && !job.vin;
   const needsMileage = job.status === "new" && !(job.mileage_in ?? (job as any).vehicle_mileage);
-  const needsAssignment = job.status === "waiting" && !job.technician_id && !job.advisor_id;
+  const needsAssignment = job.status === "waiting" && !job.technician_id;
 
   return (
     <div className="space-y-4 max-w-5xl">
@@ -1200,11 +1197,11 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
 
             <div className="w-px bg-border mx-4 hidden sm:block" />
 
-            {/* ADVISOR — read-only */}
+            {/* TECHNICIAN — read-only */}
             <div className="flex items-stretch">
               <div className="text-center min-w-[70px]">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Advisor</p>
-                <p className={cn("text-sm", job.advisor_name ? "font-semibold text-foreground" : "text-muted-foreground")}>{job.advisor_name ?? "—"}</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Technician</p>
+                <p className={cn("text-sm", job.technician_name ? "font-semibold text-foreground" : "text-muted-foreground")}>{job.technician_name ?? "—"}</p>
               </div>
             </div>
 
@@ -1310,7 +1307,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             const isReady = (() => {
               switch (job.status) {
                 case "new": return !!(job.vin && (job.mileage_in ?? (job as any).vehicle_mileage));
-                case "waiting": return !!(job.advisor_id && job.bay);
+                case "waiting": return !!job.bay;
                 case "on_hold": return parts.length > 0 || techNotes.length > 0;
                 case "qc": return !!quotation;
                 case "in_progress": return reportNotes.length > 0;
@@ -1759,52 +1756,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                   )}
                 </div>
 
-                <div className="border border-border rounded-lg bg-background p-3 space-y-1.5 relative">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Advisor</p>
-                  <button
-                    className="w-full text-left text-sm flex items-center justify-between gap-1 group/tabadv hover:text-primary"
-                    onClick={() => { setInlineField(inlineField === "tab_advisor" ? null : "tab_advisor"); setInlineValue(""); }}
-                  >
-                    <span className={job.advisor_name ? "text-foreground font-semibold truncate" : "text-muted-foreground/50 italic"}>{job.advisor_name || "Not set"}</span>
-                    <ChevronRight className="w-3 h-3 rotate-90 shrink-0 text-muted-foreground" />
-                  </button>
-                  {inlineField === "tab_advisor" && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setInlineField(null)} />
-                      <div className="absolute top-full left-0 mt-1 z-50 bg-background border border-border rounded-lg shadow-lg w-full py-1">
-                        <div className="px-2 py-1">
-                          <input
-                            autoFocus
-                            className="w-full text-xs bg-transparent outline-none placeholder:text-muted-foreground/50 px-1"
-                            placeholder="Search…"
-                            value={inlineValue}
-                            onChange={e => setInlineValue(e.target.value)}
-                            onKeyDown={e => { if (e.key === "Escape") setInlineField(null); }}
-                          />
-                        </div>
-                        <div className="border-t border-border max-h-40 overflow-y-auto">
-                          <button
-                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors text-muted-foreground"
-                            onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: null }); setInlineField(null); }}
-                          >
-                            — None —
-                          </button>
-                          {teamMembers
-                            .filter(m => !inlineValue || m.name.toLowerCase().includes(inlineValue.toLowerCase()))
-                            .map(m => (
-                            <button
-                              key={m.id}
-                              className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors", m.id === job.advisor_id ? "font-semibold" : "")}
-                              onMouseDown={e => { e.preventDefault(); patchJobMutation.mutate({ advisor_id: m.id }); setInlineField(null); }}
-                            >
-                              {m.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
               </div>
 
               {/* Technician assignment */}
@@ -1863,7 +1814,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               {needsAssignment && (
                 <p className="text-xs text-red-600 font-medium flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  Assign a technician or advisor to move to the inspection stage
+                  Assign a technician to move to the inspection stage
                 </p>
               )}
 
