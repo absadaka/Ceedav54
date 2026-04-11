@@ -509,34 +509,62 @@ export default function QuickRepairDetailPage() {
       </div>
 
       {/* Progress tracker */}
-      <div className={cn("bg-background border rounded-lg px-6 py-4", isDelivered ? "border-[#00d492]/30 bg-[#00d492]/5" : "border-border")}>
-        <div className="flex items-center justify-between">
+      <div className={cn(
+        "rounded-xl border bg-gradient-to-br px-5 pt-4 pb-5 shadow-sm overflow-hidden relative",
+        isDelivered ? "border-[#00d492]/30 from-[#00d492]/5 via-background to-[#00d492]/5" : "border-border from-background via-background to-muted/20"
+      )}>
+        <div className={cn("absolute inset-0 pointer-events-none opacity-[0.03]", isDelivered ? "bg-[radial-gradient(circle_at_60%_50%,_#00d492_0%,_transparent_70%)]" : "bg-[radial-gradient(circle_at_60%_50%,_hsl(var(--primary))_0%,_transparent_70%)]")} />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className={cn("w-1 h-4 rounded-full", isDelivered ? "bg-[#00d492]" : "bg-primary/60")} />
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Service Flow Tracker
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-start">
           {QR_FLOW.map((step, i) => {
-            const done = i <= currentStep;
+            const isPast = currentStep > i;
             const isCurrent = i === currentStep;
             return (
-              <div key={step.key} className="flex items-center gap-0 flex-1">
-                <div className="flex flex-col items-center gap-1">
-                  <div className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
-                    isDelivered ? "border-[#00d492] bg-[#00d492] text-white" :
-                    isCurrent ? "border-primary bg-primary text-primary-foreground" :
-                    done ? "border-green-500 bg-green-50 text-green-700" :
-                    "border-border bg-muted text-muted-foreground",
-                  )}>
-                    {done && !isCurrent ? <CheckCircle2 className="w-4 h-4" /> : isDelivered ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+              <div key={step.key} className="flex items-start flex-1 min-w-0">
+                <div className="flex flex-col items-center flex-1 min-w-0">
+                  <div className="flex items-center w-full">
+                    {i > 0 && (
+                      <div className={cn(
+                        "flex-1 h-[2px] rounded-full transition-colors duration-500",
+                        isDelivered ? "bg-[#00d492]" : isPast ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-border"
+                      )} />
+                    )}
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center border-2 shrink-0 transition-all duration-300",
+                      isDelivered
+                        ? "bg-[#00d492] border-[#00d492] text-white shadow-sm"
+                        : isPast
+                        ? "bg-primary border-primary text-primary-foreground shadow-sm"
+                        : isCurrent
+                        ? "bg-background border-primary text-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.12)]"
+                        : "bg-background border-border text-muted-foreground",
+                    )}>
+                      {isPast || isDelivered ? <CheckCircle2 className="w-4 h-4" /> : (
+                        <span className={cn("text-[10px] font-bold", isCurrent ? "text-primary" : "text-muted-foreground/60")}>{i + 1}</span>
+                      )}
+                    </div>
+                    {i < QR_FLOW.length - 1 && (
+                      <div className={cn(
+                        "flex-1 h-[2px] rounded-full transition-colors duration-500",
+                        isDelivered ? "bg-[#00d492]" : isPast ? "bg-primary" : "bg-border"
+                      )} />
+                    )}
                   </div>
-                  <span className={cn(
-                    "text-[10px] font-medium whitespace-nowrap",
-                    isDelivered ? "text-[#00d492] font-semibold" : isCurrent ? "text-primary" : done ? "text-green-700" : "text-muted-foreground",
-                  )}>{step.label}</span>
+                  <div className="flex flex-col items-center mt-2 px-1 min-w-0 w-full">
+                    <span className={cn(
+                      "text-[10px] font-semibold text-center leading-tight truncate w-full transition-colors",
+                      isDelivered ? "text-[#00d492]" : isCurrent ? "text-primary" : isPast ? "text-foreground/70" : "text-muted-foreground/50",
+                    )}>{step.label}</span>
+                  </div>
                 </div>
-                {i < QR_FLOW.length - 1 && (
-                  <div className={cn(
-                    "flex-1 h-0.5 mx-2 mt-[-16px]",
-                    isDelivered ? "bg-[#00d492]" : i < currentStep ? "bg-green-400" : "bg-border",
-                  )} />
-                )}
               </div>
             );
           })}
