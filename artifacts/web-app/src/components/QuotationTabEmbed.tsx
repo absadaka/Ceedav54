@@ -5,8 +5,7 @@ import {
   FileText, Trash2, Send, CheckCircle2, XCircle,
   Plus, X, User, Car, Loader2, AlertTriangle, Download, Pencil, Check,
 } from "lucide-react";
-import { pdf } from "@react-pdf/renderer";
-import QuotationPDFDocument from "@/components/QuotationPDF";
+
 import { Button }   from "@/components/ui/button";
 import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
@@ -30,13 +29,6 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
   expired:  { label: "Expired",  color: "bg-orange-100 text-orange-700 border-orange-200" },
 };
 
-const PAYMENT_METHODS = [
-  { value: "cash",         label: "Cash" },
-  { value: "card",         label: "Card" },
-  { value: "bank_transfer",label: "Bank Transfer" },
-  { value: "cheque",       label: "Cheque" },
-  { value: "online",       label: "Online" },
-];
 
 function fmt(iso: string | null, fallback = "—") {
   if (!iso) return fallback;
@@ -184,63 +176,6 @@ function AddDiscountLine({ quotationId, subtotal, onDone }: { quotationId: strin
   );
 }
 
-function AddAdvanceForm({ quotationId, onDone }: { quotationId: string; onDone: () => void }) {
-  const qc = useQueryClient();
-  const [amount,    setAmount]    = useState("");
-  const [method,    setMethod]    = useState("cash");
-  const [reference, setReference] = useState("");
-  const [note,      setNote]      = useState("");
-
-  const add = useMutation({
-    mutationFn: () => fetch(`${API}/api/quotations/${quotationId}/advance?tenant=${TENANT}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount, method, reference: reference || null, note: note || null }),
-    }).then(r => r.json()),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["quotation", quotationId] });
-      toast.success("Payment recorded");
-      setAmount(""); setReference(""); setNote(""); setMethod("cash");
-      onDone();
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  return (
-    <div className="mt-3 p-3 border border-dashed border-primary/30 rounded-lg bg-primary/5 space-y-3">
-      <p className="text-xs font-medium text-muted-foreground">Record advance payment</p>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <Label className="text-xs">Amount (AED) *</Label>
-          <Input className="h-7 text-xs tabular-nums" type="number" step="0.01" min="0" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Method</Label>
-          <Select value={method} onValueChange={setMethod}>
-            <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>{PAYMENT_METHODS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <Label className="text-xs">Reference / Receipt #</Label>
-          <Input className="h-7 text-xs" placeholder="Optional" value={reference} onChange={e => setReference(e.target.value)} />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Note</Label>
-          <Input className="h-7 text-xs" placeholder="Optional" value={note} onChange={e => setNote(e.target.value)} />
-        </div>
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onDone}>Cancel</Button>
-        <Button size="sm" className="h-7 text-xs" onClick={() => add.mutate()} disabled={!amount || parseFloat(amount) <= 0 || add.isPending}>
-          {add.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}Advanced payment
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId: string; jobId: string }) {
   const [, navigate] = useLocation();
@@ -248,8 +183,6 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
 
   const [addLineOpen,    setAddLineOpen]    = useState(false);
   const [addDiscountOpen,setAddDiscountOpen]= useState(false);
-  const [addPayOpen,     setAddPayOpen]     = useState(false);
-  const [pdfLoading,     setPdfLoading]     = useState(false);
   const [editingLineId,  setEditingLineId]  = useState<string | null>(null);
   const [editQty,        setEditQty]        = useState("");
   const [editPrice,      setEditPrice]      = useState("");
@@ -262,39 +195,14 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
 
   const qt    = data?.quotation        ?? null;
   const lines = data?.lineItems        ?? [];
-  const advs  = data?.advancePayments  ?? [];
-  const totalPaid    = data?.totalPaid  ?? 0;
-  const balance      = data?.balance    ?? 0;
   const lineDiscount = lines.reduce((sum: number, l: any) => {
     const lt = parseFloat(l.line_total ?? "0");
     return lt < 0 ? sum + Math.abs(lt) : sum;
   }, 0);
 
-  async function downloadPDF() {
+  function downloadPDF() {
     if (!qt) return;
-    setPdfLoading(true);
-    try {
-      const blob = await pdf(
-        <QuotationPDFDocument
-          shopName={getSession()?.tenantName ?? "Workshop"}
-          qt={qt}
-          lines={lines}
-          advs={advs}
-          totalPaid={totalPaid}
-          balance={balance}
-        />
-      ).toBlob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${qt.ref}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Failed to generate PDF");
-    } finally {
-      setPdfLoading(false);
-    }
+    window.open(`${API}/api/quotations/${quotationId}/pdf?tenant=${TENANT}`, "_blank");
   }
 
   const action = useMutation({
@@ -332,12 +240,6 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
       toast.success("Price updated");
     },
     onError: (e: any) => toast.error(e.message),
-  });
-
-  const deleteAdv = useMutation({
-    mutationFn: (aid: string) =>
-      fetch(`${API}/api/quotations/${quotationId}/advance/${aid}?tenant=${TENANT}`, { method: "DELETE" }).then(r => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["quotation", quotationId] }); qc.invalidateQueries({ queryKey: ["job", jobId] }); toast.success("Payment removed"); },
   });
 
   if (isLoading) {
@@ -401,10 +303,9 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
               variant="outline"
               className="gap-1.5 h-8"
               onClick={downloadPDF}
-              disabled={pdfLoading}
             >
-              {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-              {pdfLoading ? "Generating…" : "Download PDF"}
+              <Download className="w-3.5 h-3.5" />
+              Download PDF
             </Button>
           )}
         </div>
@@ -464,18 +365,6 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
               <dt>Total</dt>
               <dd className="tabular-nums">{fmtAed(qt.total)}</dd>
             </div>
-            {totalPaid > 0 && (
-              <>
-                <div className="flex justify-between text-green-700">
-                  <dt>Advance paid</dt>
-                  <dd className="tabular-nums">− {fmtAed(totalPaid)}</dd>
-                </div>
-                <div className={`flex justify-between border-t border-border pt-1.5 font-semibold ${balance <= 0 ? "text-green-700" : ""}`}>
-                  <dt>Balance due</dt>
-                  <dd className="tabular-nums">{fmtAed(balance)}</dd>
-                </div>
-              </>
-            )}
           </dl>
         </div>
       </div>
@@ -632,43 +521,6 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
           )}
         </div>
 
-        <div className="rounded-lg border border-border bg-background overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
-            <p className="text-sm font-semibold">Advance payments ({advs.length})</p>
-            {!addPayOpen && (
-              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setAddPayOpen(true)}>
-                <Plus className="w-3 h-3" />Advanced payment
-              </Button>
-            )}
-          </div>
-          <div className="px-4 py-3 space-y-2">
-            {advs.length === 0 && !addPayOpen && (
-              <p className="text-sm text-muted-foreground py-4 text-center">No advance payments recorded.</p>
-            )}
-            {advs.map((p: any) => (
-              <div key={p.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <div>
-                  <p className="text-sm font-medium tabular-nums">{fmtAed(p.amount)}</p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {PAYMENT_METHODS.find(m => m.value === p.method)?.label ?? p.method}
-                    {p.reference ? ` · ${p.reference}` : ""}
-                    {p.note ? ` — ${p.note}` : ""}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{fmt(p.paid_at)}</span>
-                  <Button
-                    variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                    onClick={() => deleteAdv.mutate(p.id)}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-            {addPayOpen && <AddAdvanceForm quotationId={quotationId} onDone={() => setAddPayOpen(false)} />}
-          </div>
-        </div>
       </div>
     </div>
   );
