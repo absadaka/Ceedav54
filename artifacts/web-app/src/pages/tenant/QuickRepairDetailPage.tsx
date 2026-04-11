@@ -468,6 +468,7 @@ export default function QuickRepairDetailPage() {
 
   const next = nextStatus();
   const currentStep = QR_FLOW.findIndex(s => s.key === job.status);
+  const isDelivered = job.status === "delivered";
   const partsTotal = parts.reduce((s, p) => s + parseFloat(p.line_total || "0"), 0);
 
   return (
@@ -508,7 +509,7 @@ export default function QuickRepairDetailPage() {
       </div>
 
       {/* Progress tracker */}
-      <div className="bg-background border border-border rounded-lg px-6 py-4">
+      <div className={cn("bg-background border rounded-lg px-6 py-4", isDelivered ? "border-[#00d492]/30 bg-[#00d492]/5" : "border-border")}>
         <div className="flex items-center justify-between">
           {QR_FLOW.map((step, i) => {
             const done = i <= currentStep;
@@ -518,21 +519,22 @@ export default function QuickRepairDetailPage() {
                 <div className="flex flex-col items-center gap-1">
                   <div className={cn(
                     "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
+                    isDelivered ? "border-[#00d492] bg-[#00d492] text-white" :
                     isCurrent ? "border-primary bg-primary text-primary-foreground" :
                     done ? "border-green-500 bg-green-50 text-green-700" :
                     "border-border bg-muted text-muted-foreground",
                   )}>
-                    {done && !isCurrent ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                    {done && !isCurrent ? <CheckCircle2 className="w-4 h-4" /> : isDelivered ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
                   </div>
                   <span className={cn(
                     "text-[10px] font-medium whitespace-nowrap",
-                    isCurrent ? "text-primary" : done ? "text-green-700" : "text-muted-foreground",
+                    isDelivered ? "text-[#00d492] font-semibold" : isCurrent ? "text-primary" : done ? "text-green-700" : "text-muted-foreground",
                   )}>{step.label}</span>
                 </div>
                 {i < QR_FLOW.length - 1 && (
                   <div className={cn(
                     "flex-1 h-0.5 mx-2 mt-[-16px]",
-                    i < currentStep ? "bg-green-400" : "bg-border",
+                    isDelivered ? "bg-[#00d492]" : i < currentStep ? "bg-green-400" : "bg-border",
                   )} />
                 )}
               </div>
