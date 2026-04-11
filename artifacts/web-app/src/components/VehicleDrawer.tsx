@@ -8,6 +8,7 @@ import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { CAR_MAKES, CAR_MODELS, getYearOptions } from "@/lib/car-data";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -19,58 +20,7 @@ const EMIRATES = [
   "Umm Al Quwain", "Ras Al Khaimah", "Fujairah",
 ];
 
-const YEARS = Array.from({ length: new Date().getFullYear() - 1979 }, (_, i) =>
-  String(new Date().getFullYear() + 1 - i),
-);
-
-const CAR_MAKES = [
-  "Toyota", "Nissan", "Honda", "Mitsubishi", "Kia", "Hyundai",
-  "Ford", "Chevrolet", "GMC", "Dodge", "Jeep",
-  "BMW", "Mercedes-Benz", "Audi", "Volkswagen", "Porsche", "Volvo",
-  "Lexus", "Infiniti", "Cadillac", "Lincoln",
-  "Land Rover", "Range Rover", "Jaguar",
-  "Mazda", "Suzuki", "Subaru", "Isuzu", "Renault", "Peugeot",
-  "Ferrari", "Lamborghini", "Bentley", "Rolls-Royce", "Maserati",
-  "Tesla", "Other",
-];
-
-const CAR_MODELS: Record<string, string[]> = {
-  Toyota:        ["Camry", "Corolla", "Land Cruiser", "Prado", "Hilux", "RAV4",
-                  "Fortuner", "Yaris", "Avalon", "FJ Cruiser", "Crown", "Sequoia",
-                  "Tundra", "4Runner", "C-HR", "Highlander"],
-  Nissan:        ["Patrol", "Altima", "Sunny", "Maxima", "X-Trail", "Kicks",
-                  "Pathfinder", "Armada", "Tiida", "Juke", "Murano", "GT-R", "Navara"],
-  Honda:         ["Accord", "Civic", "CR-V", "Pilot", "HR-V", "Odyssey", "Jazz", "City"],
-  Mitsubishi:    ["Lancer", "Pajero", "L200", "Outlander", "Eclipse Cross", "Galant", "ASX"],
-  Kia:           ["Sportage", "Sorento", "Cerato", "K5", "Telluride", "Stinger", "Carnival", "Seltos"],
-  Hyundai:       ["Tucson", "Santa Fe", "Elantra", "Sonata", "Accent", "Creta", "Palisade", "Ioniq"],
-  Ford:          ["F-150", "Explorer", "Expedition", "Mustang", "Edge", "Escape", "Bronco", "Ranger"],
-  Chevrolet:     ["Suburban", "Tahoe", "Silverado", "Camaro", "Malibu", "Equinox", "Traverse", "Caprice", "Blazer"],
-  GMC:           ["Yukon", "Sierra", "Terrain", "Acadia", "Canyon"],
-  Dodge:         ["Charger", "Challenger", "Durango", "RAM 1500", "Viper"],
-  Jeep:          ["Wrangler", "Grand Cherokee", "Renegade", "Compass", "Gladiator", "Commander"],
-  BMW:           ["3 Series", "5 Series", "7 Series", "X3", "X5", "X6", "X7", "M3", "M5", "M8", "Z4"],
-  "Mercedes-Benz": ["C-Class", "E-Class", "S-Class", "GLC", "GLE", "GLS", "G-Class",
-                    "A-Class", "CLA", "AMG GT", "EQS"],
-  Audi:          ["A3", "A4", "A6", "A8", "Q3", "Q5", "Q7", "Q8", "TT", "R8", "e-tron"],
-  Volkswagen:    ["Passat", "Golf", "Tiguan", "Touareg", "Polo", "ID.4"],
-  Porsche:       ["Cayenne", "Macan", "911", "Panamera", "Taycan", "Boxster", "Cayman"],
-  Volvo:         ["XC40", "XC60", "XC90", "S60", "S90", "V60"],
-  Lexus:         ["LX 570", "LX 600", "GX 460", "RX 350", "ES 350", "IS 350", "LS 500", "NX 350", "UX 250h"],
-  Infiniti:      ["QX80", "QX60", "QX50", "Q50", "Q70"],
-  Cadillac:      ["Escalade", "CT5", "CT4", "XT5", "XT6"],
-  Lincoln:       ["Navigator", "Aviator", "Corsair", "Nautilus"],
-  "Land Rover":  ["Defender", "Discovery", "Discovery Sport", "Freelander"],
-  "Range Rover": ["Range Rover", "Range Rover Sport", "Range Rover Velar", "Range Rover Evoque"],
-  Jaguar:        ["F-Pace", "E-Pace", "I-Pace", "XE", "XF", "XJ", "F-Type"],
-  Mazda:         ["CX-5", "CX-9", "Mazda3", "Mazda6", "MX-5", "CX-30"],
-  Suzuki:        ["Grand Vitara", "Jimny", "Swift", "Vitara", "Baleno"],
-  Subaru:        ["Forester", "Outback", "Impreza", "XV", "Legacy", "BRZ"],
-  Isuzu:         ["D-Max", "MU-X", "Trooper"],
-  Renault:       ["Duster", "Koleos", "Megane", "Captur", "Clio"],
-  Peugeot:       ["3008", "5008", "2008", "508", "308"],
-  Tesla:         ["Model 3", "Model S", "Model X", "Model Y", "Cybertruck"],
-};
+const YEARS = getYearOptions();
 
 const COLORS = [
   "White", "Pearl White", "Off White",
@@ -284,7 +234,7 @@ export default function VehicleDrawer({ open, onClose, vehicle, clientId, onSucc
               <SearchableSelect
                 value={form.make}
                 onValueChange={pick("make")}
-                options={CAR_MAKES}
+                options={CAR_MAKES as unknown as string[]}
                 placeholder="Select make…"
                 searchPlaceholder="Search make…"
               />
