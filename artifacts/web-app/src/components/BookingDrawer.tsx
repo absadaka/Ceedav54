@@ -190,8 +190,8 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
                   "flex items-center gap-4 rounded-xl border-2 border-border p-5 transition-all hover:border-primary/60 hover:shadow-md cursor-pointer text-left"
                 )}
               >
-                <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                  <Wrench className="w-6 h-6 text-orange-600" />
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                  <Wrench className="w-6 h-6 text-indigo-600" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold">Service Job</p>
@@ -225,7 +225,7 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
                 "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border",
                 bookingType === "quick_repair"
                   ? "bg-amber-50 text-amber-700 border-amber-200"
-                  : "bg-orange-50 text-orange-700 border-orange-200"
+                  : "bg-indigo-50 text-indigo-700 border-indigo-200"
               )}>
                 {bookingType === "quick_repair" ? <Zap className="w-3 h-3" /> : <Wrench className="w-3 h-3" />}
                 {bookingType === "quick_repair" ? "Quick Repair" : "Service Job"}
