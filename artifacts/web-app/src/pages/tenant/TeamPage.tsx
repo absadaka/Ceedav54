@@ -415,26 +415,32 @@ export default function TeamPage() {
   });
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="page-title">Team</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Manage members, roles and access.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCw className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />
-          </Button>
-          {isManager && (
-            <Button size="sm" className="gap-1.5" onClick={() => setShowInvite(true)}>
-              <UserPlus className="w-4 h-4" />Invite member
+    <div>
+      <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-5">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="page-title">Team</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Manage members, roles and access.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />
             </Button>
-          )}
+            {isManager && (
+              <Button size="sm" className="gap-1.5" onClick={() => setShowInvite(true)}>
+                <UserPlus className="w-4 h-4" />Invite member
+              </Button>
+            )}
+          </div>
         </div>
       </div>
+
+      <div className="-mx-6 h-6 bg-gradient-to-b from-white to-[#f2f3ff]" />
+
+      <div className="-mx-6 -mb-6 px-6 pb-6 bg-[#f2f3ff] space-y-5">
 
       {/* Stats strip */}
       <div className="flex gap-3 flex-wrap">
@@ -553,6 +559,7 @@ export default function TeamPage() {
       </div>
 
       <InviteDialog open={showInvite} onClose={() => setShowInvite(false)} />
+      </div>
     </div>
   );
 }

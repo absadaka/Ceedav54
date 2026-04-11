@@ -95,10 +95,16 @@ export default function QuotationsPage() {
   const handleSearch = useCallback((v: string) => setSearch(v), []);
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="page-title">Quotations</h1>
+    <div>
+      <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-5">
+        <div className="flex items-center justify-between">
+          <h1 className="page-title">Quotations</h1>
+        </div>
       </div>
+
+      <div className="-mx-6 h-6 bg-gradient-to-b from-white to-[#f2f3ff]" />
+
+      <div className="-mx-6 -mb-6 px-6 pb-6 bg-[#f2f3ff] space-y-5">
 
       {/* Status summary strip */}
       <StatusSummaryBar summary={summary} />
@@ -229,6 +235,7 @@ export default function QuotationsPage() {
         </table>
       </div>
 
+      </div>
     </div>
   );
 }

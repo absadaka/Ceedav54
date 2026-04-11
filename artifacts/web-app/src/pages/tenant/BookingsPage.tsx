@@ -530,13 +530,19 @@ export default function BookingsPage() {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="page-title">Bookings</h1>
-        <Button size="sm" className="gap-1.5" onClick={() => { setEditing(null); setDrawerOpen(true); }}>
-          <Plus className="w-4 h-4" />New booking
-        </Button>
+    <div>
+      <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-5">
+        <div className="flex items-center justify-between">
+          <h1 className="page-title">Bookings</h1>
+          <Button size="sm" className="gap-1.5" onClick={() => { setEditing(null); setDrawerOpen(true); }}>
+            <Plus className="w-4 h-4" />New booking
+          </Button>
+        </div>
       </div>
+
+      <div className="-mx-6 h-6 bg-gradient-to-b from-white to-[#f2f3ff]" />
+
+      <div className="-mx-6 -mb-6 px-6 pb-6 bg-[#f2f3ff] space-y-5">
 
       {/* Stat strip */}
       <div className="grid grid-cols-3 gap-3">
@@ -796,6 +802,7 @@ export default function BookingsPage() {
         onClose={() => { setDrawerOpen(false); setEditing(null); }}
         booking={editing}
       />
+      </div>
     </div>
   );
 }

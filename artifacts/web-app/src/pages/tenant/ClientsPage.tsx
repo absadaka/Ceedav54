@@ -123,50 +123,56 @@ export default function ClientsPage() {
   const totalPages  = data ? Math.ceil(data.total / 25) : 1;
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-title">Customers</h1>
-          {data && (
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {data.total.toLocaleString()} {data.total === 1 ? "customer" : "customers"}
-            </p>
-          )}
-        </div>
-        <Button size="sm" className="gap-1.5" onClick={openCreate}>
-          <Plus className="w-4 h-4" />New customer
-        </Button>
-      </div>
-
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          <Input
-            placeholder="Search name, phone, email…"
-            className="pl-9 h-8 text-sm"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+    <div>
+      <div className="-mx-6 -mt-6 px-6 pt-6 pb-4 bg-white space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="page-title">Customers</h1>
+            {data && (
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {data.total.toLocaleString()} {data.total === 1 ? "customer" : "customers"}
+              </p>
+            )}
+          </div>
+          <Button size="sm" className="gap-1.5" onClick={openCreate}>
+            <Plus className="w-4 h-4" />New customer
+          </Button>
         </div>
 
-        <div className="flex border border-border rounded-md overflow-hidden text-sm">
-          {(["all", "individual", "company"] as TypeFilter[]).map(t => (
-            <button
-              key={t} onClick={() => setTypeF(t)}
-              className={cn(
-                "px-3 py-1.5 font-medium transition-colors",
-                typeF === t
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {t === "all" ? "All" : t === "individual" ? "Individual" : "Company"}
-            </button>
-          ))}
+        {/* Toolbar */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Search name, phone, email…"
+              className="pl-9 h-8 text-sm"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="flex border border-border rounded-md overflow-hidden text-sm">
+            {(["all", "individual", "company"] as TypeFilter[]).map(t => (
+              <button
+                key={t} onClick={() => setTypeF(t)}
+                className={cn(
+                  "px-3 py-1.5 font-medium transition-colors",
+                  typeF === t
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {t === "all" ? "All" : t === "individual" ? "Individual" : "Company"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      <div className="-mx-6 h-6 bg-gradient-to-b from-white to-[#f2f3ff]" />
+
+      <div className="-mx-6 -mb-6 px-6 pb-6 bg-[#f2f3ff] space-y-5">
 
       {/* Table */}
       <div className="rounded-lg border border-border bg-background overflow-hidden">
@@ -329,6 +335,7 @@ export default function ClientsPage() {
         onClose={() => { setBookingOpen(false); setBookingClientId(null); }}
         defaultClientId={bookingClientId}
       />
+      </div>
     </div>
   );
 }
