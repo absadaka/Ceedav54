@@ -8,7 +8,7 @@ import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { CAR_MAKES, CAR_MODELS, getYearOptions } from "@/lib/car-data";
+import { CAR_MAKES, CAR_MODELS, CAR_COLORS, getYearOptions } from "@/lib/car-data";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -21,17 +21,6 @@ const EMIRATES = [
 ];
 
 const YEARS = getYearOptions();
-
-const COLORS = [
-  "White", "Pearl White", "Off White",
-  "Black", "Midnight Black",
-  "Silver", "Grey", "Dark Grey",
-  "Red", "Maroon", "Burgundy",
-  "Blue", "Navy Blue", "Sky Blue",
-  "Green", "Dark Green",
-  "Brown", "Bronze", "Beige", "Champagne",
-  "Gold", "Orange", "Yellow", "Cream", "Pink", "Purple",
-];
 
 const FUEL_TYPES = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG"];
 
@@ -277,7 +266,7 @@ export default function VehicleDrawer({ open, onClose, vehicle, clientId, onSucc
               <SearchableSelect
                 value={form.color}
                 onValueChange={pick("color")}
-                options={COLORS}
+                options={CAR_COLORS}
                 placeholder="Select color…"
                 searchPlaceholder="Search color…"
               />

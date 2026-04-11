@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { Zap, Wrench, UserPlus, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import { CAR_MAKES, CAR_MODELS, getYearOptions } from "@/lib/car-data";
+import { CAR_MAKES, CAR_MODELS, CAR_COLORS, getYearOptions } from "@/lib/car-data";
 
 import { getTenantSlug } from "@/lib/tenant";
 const TENANT = getTenantSlug();
@@ -476,10 +476,12 @@ export default function BookingDrawer({ open, onClose, booking, defaultClientId 
                   </div>
                   <div className="space-y-1.5">
                     <Label>Color</Label>
-                    <Input
-                      placeholder="e.g. White"
+                    <SearchableSelect
                       value={newColor}
-                      onChange={e => setNewColor(e.target.value)}
+                      onValueChange={setNewColor}
+                      options={CAR_COLORS}
+                      placeholder="Select color…"
+                      searchPlaceholder="Search color…"
                     />
                   </div>
                 </div>

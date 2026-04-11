@@ -95,6 +95,17 @@ export const CAR_MODELS: Record<string, string[]> = {
   "Zeekr":          ["001", "007", "009", "X"],
 };
 
+export const CAR_COLORS = [
+  "White", "Pearl White", "Off White",
+  "Black", "Midnight Black",
+  "Silver", "Grey", "Dark Grey",
+  "Red", "Maroon", "Burgundy",
+  "Blue", "Navy Blue", "Sky Blue",
+  "Green", "Dark Green",
+  "Brown", "Bronze", "Beige", "Champagne",
+  "Gold", "Orange", "Yellow", "Cream", "Pink", "Purple",
+];
+
 export function getYearOptions(): string[] {
   const currentYear = new Date().getFullYear() + 1;
   const years: string[] = [];
