@@ -1716,7 +1716,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsVin && "border-red-300 bg-red-50/50")}>
                     <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsVin ? "text-red-600" : "text-muted-foreground")}>VIN{needsVin ? " *" : ""}</p>
-                    <p className={cn("text-sm font-mono truncate", job.vin ? "text-foreground" : "text-muted-foreground/50 italic")}>{job.vin || "Not set"}</p>
+                    <p className={cn("text-sm font-semibold truncate", job.vin ? "text-foreground" : "text-muted-foreground/50 italic")}>{job.vin || "Not set"}</p>
                   </div>
                   <div className={cn("border rounded-lg bg-background p-3 space-y-1.5", needsMileage && "border-red-300 bg-red-50/50")}>
                     <p className={cn("text-[10px] font-semibold uppercase tracking-wide", needsMileage ? "text-red-600" : "text-muted-foreground")}>Mileage{needsMileage ? " *" : ""}</p>
@@ -2430,7 +2430,6 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               <Input
                 id="edit-vin"
                 placeholder="e.g. 1HGBH41JXMN109186"
-                className="font-mono"
                 value={detailsForm.vin}
                 onChange={e => setDetailsForm(f => ({ ...f, vin: e.target.value }))}
               />
