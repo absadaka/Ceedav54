@@ -32,7 +32,6 @@ const QR_FLOW = [
   { key: "completed", label: "Work Done" },
   { key: "invoiced",  label: "Invoiced" },
   { key: "paid",      label: "Paid" },
-  { key: "delivered", label: "Delivered" },
 ];
 
 function fmtDate(d: string | null) {
@@ -321,7 +320,7 @@ export default function QuickRepairDetailPage() {
   const partsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (job?.status === "delivered") setActiveTab("invoices");
+    if (job?.status === "paid") setActiveTab("invoices");
   }, [job?.status]);
 
   const deletePartMut = useMutation({
@@ -483,7 +482,7 @@ export default function QuickRepairDetailPage() {
 
   const next = nextStatus();
   const currentStep = QR_FLOW.findIndex(s => s.key === job.status);
-  const isDelivered = job.status === "delivered";
+  const isFinal = job.status === "paid";
   const partsTotal = parts.reduce((s, p) => s + parseFloat(p.line_total || "0"), 0);
 
   return (
@@ -527,12 +526,12 @@ export default function QuickRepairDetailPage() {
       {/* Progress tracker */}
       <div className={cn(
         "rounded-xl border bg-gradient-to-br px-5 pt-4 pb-5 shadow-sm overflow-hidden relative",
-        isDelivered ? "border-[#00d492]/30 from-[#00d492]/5 via-background to-[#00d492]/5" : "border-border from-background via-background to-muted/20"
+        isFinal ? "border-[#00d492]/30 from-[#00d492]/5 via-background to-[#00d492]/5" : "border-border from-background via-background to-muted/20"
       )}>
-        <div className={cn("absolute inset-0 pointer-events-none opacity-[0.03]", isDelivered ? "bg-[radial-gradient(circle_at_60%_50%,_#00d492_0%,_transparent_70%)]" : "bg-[radial-gradient(circle_at_60%_50%,_hsl(var(--primary))_0%,_transparent_70%)]")} />
+        <div className={cn("absolute inset-0 pointer-events-none opacity-[0.03]", isFinal ? "bg-[radial-gradient(circle_at_60%_50%,_#00d492_0%,_transparent_70%)]" : "bg-[radial-gradient(circle_at_60%_50%,_hsl(var(--primary))_0%,_transparent_70%)]")} />
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className={cn("w-1 h-4 rounded-full", isDelivered ? "bg-[#00d492]" : "bg-primary/60")} />
+            <div className={cn("w-1 h-4 rounded-full", isFinal ? "bg-[#00d492]" : "bg-primary/60")} />
             <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
               Service Flow Tracker
             </span>
@@ -550,12 +549,12 @@ export default function QuickRepairDetailPage() {
                     {i > 0 && (
                       <div className={cn(
                         "flex-1 h-[2px] rounded-full transition-colors duration-500",
-                        isDelivered ? "bg-[#00d492]" : isPast ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-border"
+                        isFinal ? "bg-[#00d492]" : isPast ? "bg-primary" : isCurrent ? "bg-primary/40" : "bg-border"
                       )} />
                     )}
                     <div className={cn(
                       "w-8 h-8 rounded-full flex items-center justify-center border-2 shrink-0 transition-all duration-300",
-                      isDelivered
+                      isFinal
                         ? "bg-[#00d492] border-[#00d492] text-white shadow-sm"
                         : isPast
                         ? "bg-primary border-primary text-primary-foreground shadow-sm"
@@ -563,21 +562,21 @@ export default function QuickRepairDetailPage() {
                         ? "bg-background border-primary text-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.12)]"
                         : "bg-background border-border text-muted-foreground",
                     )}>
-                      {isPast || isDelivered ? <CheckCircle2 className="w-4 h-4" /> : (
+                      {isPast || isFinal ? <CheckCircle2 className="w-4 h-4" /> : (
                         <span className={cn("text-[10px] font-bold", isCurrent ? "text-primary" : "text-muted-foreground/60")}>{i + 1}</span>
                       )}
                     </div>
                     {i < QR_FLOW.length - 1 && (
                       <div className={cn(
                         "flex-1 h-[2px] rounded-full transition-colors duration-500",
-                        isDelivered ? "bg-[#00d492]" : isPast ? "bg-primary" : "bg-border"
+                        isFinal ? "bg-[#00d492]" : isPast ? "bg-primary" : "bg-border"
                       )} />
                     )}
                   </div>
                   <div className="flex flex-col items-center mt-2 px-1 min-w-0 w-full">
                     <span className={cn(
                       "text-[10px] font-semibold text-center leading-tight truncate w-full transition-colors",
-                      isDelivered ? "text-[#00d492]" : isCurrent ? "text-primary" : isPast ? "text-foreground/70" : "text-muted-foreground/50",
+                      isFinal ? "text-[#00d492]" : isCurrent ? "text-primary" : isPast ? "text-foreground/70" : "text-muted-foreground/50",
                     )}>{step.label}</span>
                   </div>
                 </div>
@@ -729,7 +728,7 @@ export default function QuickRepairDetailPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="parts" className="gap-1.5"><Package className="w-3.5 h-3.5" />Quotation</TabsTrigger>
-          {["completed", "invoiced", "delivered"].includes(job.status) && (
+          {["completed", "invoiced", "paid"].includes(job.status) && (
             <TabsTrigger value="invoices" className="gap-1.5"><Receipt className="w-3.5 h-3.5" />Invoices</TabsTrigger>
           )}
         </TabsList>

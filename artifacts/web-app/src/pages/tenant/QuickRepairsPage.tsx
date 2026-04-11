@@ -22,7 +22,6 @@ const QR_STATUSES = [
   { key: "completed", label: "Work Done", color: "bg-green-100  text-green-800  border-green-300"  },
   { key: "invoiced",  label: "Invoiced",  color: "bg-emerald-100 text-emerald-800 border-emerald-300" },
   { key: "paid",      label: "Paid",      color: "bg-cyan-100   text-cyan-800   border-cyan-300"   },
-  { key: "delivered", label: "Delivered", color: "bg-teal-100   text-teal-800   border-teal-300"   },
 ] as const;
 
 interface KanbanJob {
