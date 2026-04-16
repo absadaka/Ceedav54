@@ -4,6 +4,7 @@ import { scryptSync, randomBytes } from "crypto";
 import {
   db, tenantsTable, usersTable, userInvitesTable,
 } from "@workspace/db";
+import { sendEmail, teamInviteEmailHtml } from "../services/email.js";
 
 const router = Router();
 
@@ -132,22 +133,47 @@ router.post("/invite", async (req, res) => {
       })
       .returning();
 
+    let tempPw: string | null = null;
     if (name) {
-      const tempPw = randomBytes(12).toString("hex");
-      const salt   = randomBytes(16).toString("hex");
-      const hash   = scryptSync(tempPw, salt, 64).toString("hex");
+      tempPw = randomBytes(6).toString("base64url");
+      const salt = randomBytes(16).toString("hex");
+      const hash = scryptSync(tempPw, salt, 64).toString("hex");
       await db.insert(usersTable).values({
         tenant_id:     tenant.id,
         email:         email.toLowerCase().trim(),
         name:          name.trim(),
         role:          role as TenantRole,
         password_hash: `${salt}:${hash}`,
-        is_active:     false,
+        is_active:     true,
         created_by:    invitedBy ?? null,
       });
     }
 
-    return res.status(201).json({ invite, inviteUrl: `/accept-invite?token=${tokenHash}` });
+    const host = (req.headers["x-forwarded-host"] as string) ?? req.headers.host ?? "ceeda.me";
+    const proto = (req.headers["x-forwarded-proto"] as string) ?? "https";
+    const loginUrl = `${proto}://${host}/auth?tenant=${encodeURIComponent(tenant.slug)}`;
+
+    const emailResult = await sendEmail({
+      to: email.toLowerCase().trim(),
+      subject: `You've been invited to ${tenant.name}`,
+      html: teamInviteEmailHtml({
+        shopName: tenant.name,
+        userName: name?.trim() || email.split("@")[0],
+        role,
+        email: email.toLowerCase().trim(),
+        tempPassword: tempPw ?? undefined,
+        loginUrl,
+      }),
+      tenantId: tenant.id,
+      shopName: tenant.name,
+    });
+
+    return res.status(201).json({
+      invite,
+      inviteUrl: `/accept-invite?token=${tokenHash}`,
+      emailSent: emailResult.success,
+      emailReason: emailResult.success ? undefined : (emailResult as any).reason,
+    });
   } catch (err) {
     console.error("POST /team/invite", err);
     return res.status(500).json({ error: "Internal server error" });
