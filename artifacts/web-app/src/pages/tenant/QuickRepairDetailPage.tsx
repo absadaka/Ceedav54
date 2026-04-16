@@ -318,12 +318,15 @@ export default function QuickRepairDetailPage() {
   const [noteText, setNoteText] = useState("");
   const [showShareInvoice, setShowShareInvoice] = useState(false);
   const [shareChannels, setShareChannels] = useState({ sms: false, whatsapp: false, email: false });
+  const isTechnician = getSession()?.role === "technician";
   const [activeTab, setActiveTab] = useState("parts");
   const partsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Technicians may only access the Quotation tab — never auto-switch them to Invoices.
+    if (isTechnician) { setActiveTab("parts"); return; }
     if (job?.status === "paid") setActiveTab("invoices");
-  }, [job?.status]);
+  }, [job?.status, isTechnician]);
 
   const deletePartMut = useMutation({
     mutationFn: async (partId: string) => {
@@ -736,7 +739,7 @@ export default function QuickRepairDetailPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="parts" className="gap-1.5"><Package className="w-3.5 h-3.5" />Quotation</TabsTrigger>
-          {["completed", "invoiced", "paid"].includes(job.status) && (
+          {!isTechnician && ["completed", "invoiced", "paid"].includes(job.status) && (
             <TabsTrigger value="invoices" className="gap-1.5"><Receipt className="w-3.5 h-3.5" />Invoices</TabsTrigger>
           )}
         </TabsList>

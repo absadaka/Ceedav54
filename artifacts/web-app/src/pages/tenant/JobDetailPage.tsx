@@ -722,7 +722,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const [markPaidNote, setMarkPaidNote] = useState("");
   const [markPaidMethod, setMarkPaidMethod] = useState("cash");
   const [markPaidPending, setMarkPaidPending] = useState(false);
-  const [activeTab, setActiveTab] = useState("work");
+  const isTechnician = getSession()?.role === "technician";
+  const [activeTab, setActiveTab] = useState(isTechnician ? "parts" : "work");
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const patchJobMutation = useMutation({
@@ -950,6 +951,15 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const jobStatus = (data as any)?.job?.status;
   useEffect(() => {
     if (!jobStatus) return;
+    // Technicians can only see Inspection + Job Report tabs — default to Inspection,
+    // switch to Job Report once the job is in-progress/completed.
+    if (isTechnician) {
+      const technicianTab = ["in_progress", "completed", "invoiced", "paid", "delivered"].includes(jobStatus)
+        ? "report"
+        : "parts";
+      setActiveTab(technicianTab);
+      return;
+    }
     const statusTabMap: Record<string, string> = {
       new: "work", waiting: "work",
       on_hold: "parts", qc: "cost",
@@ -959,7 +969,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
     };
     const target = statusTabMap[jobStatus] ?? "work";
     setActiveTab(target);
-  }, [jobStatus]);
+  }, [jobStatus, isTechnician]);
 
   const cancelMutation = useMutation({
     mutationFn: (note: string) =>
@@ -1617,25 +1627,27 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
             {(() => {
               const s = job.status;
               const showInspection = !["new", "waiting"].includes(s);
-              const showQuotation  = !["new", "waiting", "on_hold"].includes(s);
+              const showQuotation  = !["new", "waiting", "on_hold"].includes(s) && !isTechnician;
               const showReport     = !["new", "waiting", "on_hold", "qc"].includes(s);
-              const showInvoices   = !["new", "waiting", "on_hold"].includes(s);
+              const showInvoices   = !["new", "waiting", "on_hold"].includes(s) && !isTechnician;
               return (
                 <TabsList className="mb-4 flex-wrap h-auto gap-1">
-                  <TabsTrigger value="work">Check-in</TabsTrigger>
-                  {showInspection && isInspection && (
+                  {!isTechnician && (
+                    <TabsTrigger value="work">Check-in</TabsTrigger>
+                  )}
+                  {(showInspection || isTechnician) && isInspection && (
                     <TabsTrigger value="parts">Diagnosis</TabsTrigger>
                   )}
-                  {showInspection && !isInspection && job.source_inspection_id && (
+                  {(showInspection || isTechnician) && !isInspection && job.source_inspection_id && (
                     <TabsTrigger value="inspection">Inspection</TabsTrigger>
                   )}
-                  {showInspection && !isInspection && !job.source_inspection_id && (
+                  {(showInspection || isTechnician) && !isInspection && !job.source_inspection_id && (
                     <TabsTrigger value="parts">Inspection</TabsTrigger>
                   )}
                   {showQuotation && (
                     <TabsTrigger value="cost">Quotation</TabsTrigger>
                   )}
-                  {showReport && (
+                  {(showReport || isTechnician) && (
                     <TabsTrigger value="report">Job Report</TabsTrigger>
                   )}
                   {showInvoices && (
