@@ -1,0 +1,45 @@
+Create a new app called Ceeda Technician.
+This app is for iPad and Android tablets and will be used by the service team / technicians to create estimation reports, add their inspection notes, and submit feedback after the repair is completed.
+Requirements:
+* The app must be simple, clean, and easy to use on tablets.
+* It must be fully integrated with the main CEEDA web app.
+* Any users, technicians, or teams created in the web app must automatically have access to this app based on their roles and permissions.
+* Use the same branding, colors, and design style as the CEEDA website so it feels like part of the same product.
+* Each technician should only see the jobs assigned to them.
+* Access should be limited to the information they need, including:
+    * Vehicle details
+    * Customer details
+    * Assigned job details
+    * Estimation inputs
+    * Inspection notes
+    * Repair feedback / technician comments
+* The app should allow technicians to view, update, and submit job-related details without access to admin-only or unnecessary business data.
+* Keep the workflow optimized for fast use inside a workshop environment.
+Main goal:
+Build a tablet-friendly technician app that extends the CEEDA web app and gives technicians a focused workspace to handle assigned jobs, prepare estimates, and record service feedback efficiently.
+Here is a stronger version if you want it to sound more professional for Replit:
+Improved version:
+Build a new tablet app called Ceeda Technician for iPad and Android tablets.
+The app will be used by technicians and service teams in workshops to:
+* view assigned jobs,
+* create estimation reports,
+* add inspection findings,
+* record repair updates,
+* and submit final technician feedback after the work is completed.
+The app must be 100% integrated with the main CEEDA web platform, sharing the same database, authentication, users, teams, permissions, and design system.
+Key requirements:
+* Tablet-first responsive design for iPad and Android tablets
+* Same CEEDA branding, colors, and visual style as the website
+* Login and access controlled by the existing CEEDA web app users and roles
+* Technicians can only access jobs assigned to them
+* Show only relevant information needed for execution:
+    * customer details,
+    * vehicle details,
+    * assigned services/jobs,
+    * estimation fields,
+    * inspection notes,
+    * repair feedback
+* No access to sensitive admin, billing, or full management data unless permission is granted
+* Fast, simple, workshop-friendly workflow with minimal clicks
+* Real-time sync with the web app so updates appear across both platforms
+The goal is to create a focused technician workspace that works as an extension of the CEEDA system, not as a separate standalone app.
