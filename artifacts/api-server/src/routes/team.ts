@@ -156,15 +156,38 @@ router.post("/invite", async (req, res) => {
       tempPw = randomBytes(6).toString("base64url");
       const salt = randomBytes(16).toString("hex");
       const hash = scryptSync(tempPw, salt, 64).toString("hex");
-      await db.insert(usersTable).values({
-        tenant_id:     tenant.id,
-        email:         email.toLowerCase().trim(),
-        name:          name.trim(),
-        role:          role as TenantRole,
-        password_hash: `${salt}:${hash}`,
-        is_active:     true,
-        created_by:    invitedBy ?? null,
-      });
+      const normalizedEmail = email.toLowerCase().trim();
+
+      const [softDeleted] = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(eq(usersTable.email, normalizedEmail))
+        .limit(1);
+
+      if (softDeleted) {
+        await db
+          .update(usersTable)
+          .set({
+            tenant_id:     tenant.id,
+            name:          name.trim(),
+            role:          role as TenantRole,
+            password_hash: `${salt}:${hash}`,
+            is_active:     true,
+            deleted_at:    null,
+            created_by:    invitedBy ?? null,
+          })
+          .where(eq(usersTable.id, softDeleted.id));
+      } else {
+        await db.insert(usersTable).values({
+          tenant_id:     tenant.id,
+          email:         normalizedEmail,
+          name:          name.trim(),
+          role:          role as TenantRole,
+          password_hash: `${salt}:${hash}`,
+          is_active:     true,
+          created_by:    invitedBy ?? null,
+        });
+      }
     }
 
     const host = (req.headers["x-forwarded-host"] as string) ?? req.headers.host ?? "ceeda.me";
