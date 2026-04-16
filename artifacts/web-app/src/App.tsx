@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
@@ -6,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import PublicLayout from "@/layouts/PublicLayout";
 import TenantLayout from "@/layouts/TenantLayout";
 import { getSession } from "@/hooks/useAuth";
+import { canAccess, type ModuleKey } from "@/lib/permissions";
 
 // Public pages
 import LandingPage from "@/pages/public/LandingPage";
@@ -164,6 +166,28 @@ function AppRouter() {
   if (zone === "legacy-tenant-app") {
     const tenantSlug = new URLSearchParams(window.location.search).get("tenant") ?? undefined;
     const session = getSession();
+
+    // Enforce role-based restrictions: redirect users away from pages they can't access.
+    const first = location.split("/").filter(Boolean)[0] ?? "";
+    const PATH_TO_MODULE: Record<string, ModuleKey> = {
+      dashboard: "dashboard",
+      customers: "customers",
+      clients: "customers",
+      vehicles: "customers",
+      bookings: "bookings",
+      quotations: "quotations",
+      inspections: "jobs",
+      jobs: "jobs",
+      "quick-repairs": "jobs",
+      invoices: "invoices",
+      team: "team",
+      settings: "settings",
+    };
+    const needed = PATH_TO_MODULE[first];
+    if (needed && session && !canAccess(session.role, needed)) {
+      return <RoleRedirect tenantSlug={tenantSlug} role={session.role} />;
+    }
+
     return (
       <TenantLayout tenantSlug={tenantSlug} tenantName={session?.tenantName} tenantLogoUrl={session?.tenantLogoUrl}>
         <Switch>
@@ -219,6 +243,18 @@ function AppRouter() {
       </Switch>
     </PublicLayout>
   );
+}
+
+/** Redirect a user to their role's default landing page. */
+function RoleRedirect({ tenantSlug, role }: { tenantSlug?: string; role?: string }) {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    const q = tenantSlug ? `?tenant=${tenantSlug}` : "";
+    // Technicians land on Jobs; everyone else on Dashboard.
+    const target = role === "technician" ? `/jobs${q}` : `/dashboard${q}`;
+    setLocation(target, { replace: true });
+  }, [tenantSlug, role, setLocation]);
+  return null;
 }
 
 export default function App() {

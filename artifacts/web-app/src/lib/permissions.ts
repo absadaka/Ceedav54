@@ -11,13 +11,18 @@ const ALL_TENANT_ROLES: UserRole[] = [
   "cashier", "parts_manager", "receptionist",
 ];
 
+// Everyone except technician (technicians are limited to their assigned jobs)
+const NON_TECHNICIAN: UserRole[] = [
+  "owner", "admin", "service_advisor", "cashier", "parts_manager", "receptionist",
+];
+
 const MANAGERS: UserRole[] = ["owner", "admin"];
 
 export const MODULE_ROLES: Record<ModuleKey, UserRole[]> = {
-  dashboard:       ALL_TENANT_ROLES,
-  customers:       ALL_TENANT_ROLES,
-  bookings:        ALL_TENANT_ROLES,
-  quotations:      ALL_TENANT_ROLES,
+  dashboard:       NON_TECHNICIAN,
+  customers:       NON_TECHNICIAN,
+  bookings:        NON_TECHNICIAN,
+  quotations:      NON_TECHNICIAN,
   jobs:            ALL_TENANT_ROLES,
   invoices:        ["owner", "admin", "cashier", "service_advisor", "parts_manager"],
   team:            MANAGERS,

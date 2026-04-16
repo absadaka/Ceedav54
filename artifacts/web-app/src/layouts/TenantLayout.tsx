@@ -40,28 +40,32 @@ interface NavItem {
   icon: React.ElementType;
 }
 
+import type { ModuleKey } from "@/lib/permissions";
+
+interface RestrictedNavItem extends NavItem {
+  module?: ModuleKey;
+}
+
 function buildNav(tenantSlug?: string): {
-  main: NavItem[];
-  workspace: NavItem[];
-  admin: NavItem[];
+  main: RestrictedNavItem[];
+  workspace: RestrictedNavItem[];
+  admin: RestrictedNavItem[];
 } {
   // Main + workspace pages live at flat paths with ?tenant= query param
   const q = tenantSlug ? `?tenant=${tenantSlug}` : "";
-  // Admin + account pages live at /:slug/admin/* and /:slug/account/*
-  const slugPrefix = tenantSlug ? `/${tenantSlug}` : "";
   return {
     main: [
-      { label: "Dashboard",    href: `/dashboard${q}`,    icon: LayoutDashboard },
-      { label: "Customers",    href: `/customers${q}`,    icon: Users },
-      { label: "Bookings",     href: `/bookings${q}`,     icon: CalendarCheck },
-      { label: "Service Jobs",  href: `/jobs${q}`,           icon: Wrench },
-      { label: "Quick Repair", href: `/quick-repairs${q}`, icon: Zap },
-      { label: "Quotations",   href: `/quotations${q}`,   icon: FileText },
-      { label: "Invoices",     href: `/invoices${q}`,     icon: Receipt },
+      { label: "Dashboard",    href: `/dashboard${q}`,    icon: LayoutDashboard, module: "dashboard" },
+      { label: "Customers",    href: `/customers${q}`,    icon: Users,            module: "customers" },
+      { label: "Bookings",     href: `/bookings${q}`,     icon: CalendarCheck,    module: "bookings" },
+      { label: "Service Jobs", href: `/jobs${q}`,         icon: Wrench,           module: "jobs" },
+      { label: "Quick Repair", href: `/quick-repairs${q}`, icon: Zap,             module: "jobs" },
+      { label: "Quotations",   href: `/quotations${q}`,   icon: FileText,         module: "quotations" },
+      { label: "Invoices",     href: `/invoices${q}`,     icon: Receipt,          module: "invoices" },
     ],
     workspace: [
-      { label: "Team",     href: `/team${q}`,     icon: UsersRound },
-      { label: "Settings", href: `/settings${q}`, icon: Settings },
+      { label: "Team",     href: `/team${q}`,     icon: UsersRound, module: "team" },
+      { label: "Settings", href: `/settings${q}`, icon: Settings,   module: "settings" },
     ],
     admin: [],
   };
@@ -132,7 +136,15 @@ function Sidebar({
   onThemeToggle: () => void;
 }) {
   const [location] = useLocation();
-  const nav = buildNav(tenantSlug);
+  const { can } = useAuth();
+  const rawNav = buildNav(tenantSlug);
+  const filterByRole = (items: RestrictedNavItem[]) =>
+    items.filter((item) => !item.module || can(item.module));
+  const nav = {
+    main: filterByRole(rawNav.main),
+    workspace: filterByRole(rawNav.workspace),
+    admin: filterByRole(rawNav.admin),
+  };
 
   function isActive(href: string) {
     // Strip query string from both sides for comparison
