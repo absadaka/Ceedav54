@@ -110,11 +110,29 @@ router.post("/invite", async (req, res) => {
     const existing = await db
       .select({ id: usersTable.id })
       .from(usersTable)
-      .where(and(eq(usersTable.email, email.toLowerCase().trim()), isNull(usersTable.deleted_at)))
+      .where(and(
+        eq(usersTable.email, email.toLowerCase().trim()),
+        eq(usersTable.tenant_id, tenant.id),
+        isNull(usersTable.deleted_at),
+      ))
       .limit(1);
 
     if (existing.length > 0) {
-      return res.status(409).json({ error: "A user with this email already exists" });
+      return res.status(409).json({ error: "A user with this email already exists in this workshop" });
+    }
+
+    const pendingInvite = await db
+      .select({ id: userInvitesTable.id })
+      .from(userInvitesTable)
+      .where(and(
+        eq(userInvitesTable.email, email.toLowerCase().trim()),
+        eq(userInvitesTable.tenant_id, tenant.id),
+        eq(userInvitesTable.status, "pending"),
+      ))
+      .limit(1);
+
+    if (pendingInvite.length > 0) {
+      return res.status(409).json({ error: "A pending invite already exists for this email" });
     }
 
     const tokenHash = randomBytes(32).toString("hex");
