@@ -303,7 +303,7 @@ router.delete("/invites/:inviteId", async (req, res) => {
 
     await db
       .update(userInvitesTable)
-      .set({ status: "revoked" as any })
+      .set({ status: "cancelled" })
       .where(and(
         eq(userInvitesTable.id, req.params.inviteId),
         eq(userInvitesTable.tenant_id, tenant.id),
