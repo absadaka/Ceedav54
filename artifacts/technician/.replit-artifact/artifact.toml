@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/technician/"
+title = "CEEDA — Technician"
+version = "1.0.0"
+id = "artifacts/technician"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/technician/" ]
+localPort = 19195
+
+[services.development]
+run = "pnpm --filter @workspace/technician run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/technician", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/technician", "run", "serve" ]
+
+[services.env]
+PORT = "19195"
+BASE_PATH = "/technician/"
