@@ -177,22 +177,21 @@ export default function FeaturesPage() {
     <div className="bg-white">
       {/* Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-white via-white to-muted/30">
-        {/* Faded workshop photo backdrop — layered so text stays crisp */}
+        {/* Workshop photo backdrop — layered so text stays crisp */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <img
             src={workshopHeroImg}
             alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-[0.22] saturate-[0.55] [filter:contrast(1.05)]"
+            className="absolute inset-0 w-full h-full object-cover opacity-[0.55] saturate-[0.85] [filter:contrast(1.05)]"
           />
-          {/* Horizontal wash: keeps the left (text) crisp, lets the photo breathe on the right */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-white/30" />
+          {/* Horizontal wash: keeps the left (text) crisp, lets the photo show through on the right */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/75 to-white/10" />
           {/* Vertical wash: softens the top and blends the bottom into the next section */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-transparent to-white" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-white" />
           {/* Brand tint on the right to pull the photo into the ceeda> palette */}
-          <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-[#161aff]/[0.05] to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-[#161aff]/[0.08] to-transparent" />
         </div>
         <BackgroundGrid />
-        <CarSilhouette />
         <TireTrack className="hidden md:block absolute bottom-0 left-0 right-0 h-8 opacity-[0.07]" />
         <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-16 lg:pt-28 lg:pb-20">
           <div className="max-w-3xl">
