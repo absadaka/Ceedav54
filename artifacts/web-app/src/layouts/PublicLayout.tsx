@@ -336,7 +336,7 @@ function PublicFooter() {
                 <li key={label}>
                   <Link
                     href={href}
-                    onClick={href === "/" ? () => window.scrollTo({ top: 0, left: 0, behavior: "auto" }) : undefined}
+                    onClick={() => window.scrollTo({ top: 0, left: 0, behavior: "auto" })}
                     className="text-sm text-slate-400 hover:text-white transition-colors"
                   >
                     {label}
