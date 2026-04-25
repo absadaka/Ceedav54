@@ -147,8 +147,8 @@ function PublicNav() {
 
   if (isAuthPage) return null;
 
-  const dashboardHref = user ? `/${user.tenantSlug}/dashboard` : "/auth";
-  const logoutHref    = user ? `/${user.tenantSlug}/logout`    : "/logout";
+  const dashboardHref = user ? `/dashboard?tenant=${user.tenantSlug}` : "/auth";
+  const logoutHref    = user ? `/logout?tenant=${user.tenantSlug}`    : "/logout";
 
   const navLinkClass = (active: boolean) =>
     cn(
