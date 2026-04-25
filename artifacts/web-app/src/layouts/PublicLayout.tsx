@@ -3,7 +3,7 @@ import {
   Menu, X, ChevronDown, Star,
   CalendarCheck, Wrench, Zap, FileText,
   Users, Receipt, CreditCard, ClipboardCheck,
-  Twitter, Instagram, Youtube, Linkedin, ArrowRight,
+  Instagram, Youtube, Linkedin, ArrowRight,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,14 @@ const featuresCol2: SolutionItem[] = [
   { label: "Payments",    href: "/features#payments",    icon: CreditCard },
   { label: "Inspections", href: "/features#inspections", icon: ClipboardCheck },
 ];
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
 
 function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: boolean }) {
   const sz = size === "sm" ? 22 : 26;
@@ -278,7 +286,7 @@ function PublicFooter() {
   ];
 
   const socials: { label: string; icon: React.ElementType; href: string }[] = [
-    { label: "Twitter",  icon: Twitter,  href: "#" },
+    { label: "X",        icon: XIcon,    href: "#" },
     { label: "Instagram", icon: Instagram, href: "#" },
     { label: "YouTube",  icon: Youtube,  href: "#" },
     { label: "LinkedIn", icon: Linkedin, href: "#" },
