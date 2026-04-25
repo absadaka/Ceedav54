@@ -181,7 +181,7 @@ function PublicNav() {
           <Link href="/register">
             <Button
               size="sm"
-              className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 font-medium shadow-sm"
+              className="bg-emerald-500 hover:bg-emerald-600 text-white border-0"
             >
               Create your first shop
             </Button>
