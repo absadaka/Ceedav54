@@ -3,7 +3,7 @@ import {
   Menu, X, ChevronDown, Star,
   CalendarCheck, Wrench, Zap, FileText,
   Users, Receipt, CreditCard, ClipboardCheck,
-  Twitter, Github, Youtube, Linkedin, ArrowRight, Sun,
+  Twitter, Github, Youtube, Linkedin, ArrowRight,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -358,14 +358,8 @@ function PublicFooter() {
             </ul>
           </div>
 
-          {/* Right rail: icon + copyright */}
-          <div className="lg:col-span-2 flex lg:flex-col lg:items-end items-start gap-3 lg:gap-4">
-            <button
-              aria-label="Theme"
-              className="h-8 w-8 rounded-md border border-white/10 bg-[#141414] flex items-center justify-center text-[#161aff] hover:border-white/20 transition-colors"
-            >
-              <Sun className="h-4 w-4" />
-            </button>
+          {/* Right rail: copyright */}
+          <div className="lg:col-span-2 flex lg:flex-col lg:items-end items-start">
             <p className="text-xs text-slate-500 lg:text-right">
               © {new Date().getFullYear()} ceeda&gt;
             </p>
