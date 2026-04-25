@@ -316,7 +316,7 @@ function PublicFooter() {
               />
               <button
                 type="submit"
-                className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#df94e3] hover:bg-[#c97acd] text-black px-4 py-2 text-sm font-medium transition-colors"
               >
                 Subscribe
                 <ArrowRight className="h-3.5 w-3.5" />
