@@ -3,7 +3,7 @@ import {
   Menu, X, ChevronDown, Star,
   CalendarCheck, Wrench, Zap, FileText,
   Users, Receipt, CreditCard, ClipboardCheck,
-  Twitter, Github, Youtube, Linkedin, ArrowRight,
+  Twitter, Instagram, Youtube, Linkedin, ArrowRight,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -279,7 +279,7 @@ function PublicFooter() {
 
   const socials: { label: string; icon: React.ElementType; href: string }[] = [
     { label: "Twitter",  icon: Twitter,  href: "#" },
-    { label: "GitHub",   icon: Github,   href: "#" },
+    { label: "Instagram", icon: Instagram, href: "#" },
     { label: "YouTube",  icon: Youtube,  href: "#" },
     { label: "LinkedIn", icon: Linkedin, href: "#" },
   ];
