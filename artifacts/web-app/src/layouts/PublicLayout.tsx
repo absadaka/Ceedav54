@@ -182,7 +182,7 @@ function PublicNav() {
           <Link href="/register">
             <Button
               size="sm"
-              className="bg-[#df94e3] hover:bg-[#c97acd] text-white border-0"
+              className="bg-[#df94e3] hover:bg-[#c97acd] text-black border-0"
             >
               Create your shop
             </Button>
@@ -241,7 +241,7 @@ function PublicNav() {
               <Button variant="outline" size="sm" className="w-full">Sign in</Button>
             </Link>
             <Link href="/register" onClick={() => setMenuOpen(false)}>
-              <Button size="sm" className="w-full bg-[#df94e3] hover:bg-[#c97acd] text-white border-0">Create your shop</Button>
+              <Button size="sm" className="w-full bg-[#df94e3] hover:bg-[#c97acd] text-black border-0">Create your shop</Button>
             </Link>
           </div>
         </div>
