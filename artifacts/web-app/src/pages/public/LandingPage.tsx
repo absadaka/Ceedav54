@@ -2,10 +2,9 @@ import { useRef } from "react";
 import { Link } from "wouter";
 import {
   ArrowRight, CheckCircle2, ChevronRight, ChevronLeft, CalendarCheck,
-  Star, TrendingUp, Clock, Shield, LayoutDashboard, ClipboardList, Loader2,
+  Star, TrendingUp, Clock, Shield, LayoutDashboard, ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
 
 import screenshotDashboard from "@assets/Screenshot_2026-04-08_at_7.25.04_PM_1775662471561.png";
 import screenshotBookings from "@assets/Screenshot_2026-04-08_at_7.25.20_PM_1775662466917.png";
@@ -83,18 +82,6 @@ const testimonials = [
     avatar: "AM",
   },
 ];
-
-const LANDING_API = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-type PlanData = {
-  plan_key: string;
-  name: string;
-  monthly_price: number | null;
-  annual_price: number | null;
-  description: string;
-  features: string[];
-  badge: string | null;
-};
 
 const growStats = [
   {
@@ -365,89 +352,6 @@ function TestimonialsSection() {
   );
 }
 
-function PricingSection() {
-  const { data, isLoading } = useQuery<{ plans: PlanData[] }>({
-    queryKey: ["public-plans"],
-    queryFn: () => fetch(`${LANDING_API}/api/plans`).then((r) => r.json()),
-    staleTime: 300_000,
-  });
-
-  const plans = data?.plans ?? [];
-
-  return (
-    <section className="py-24 bg-muted/20 border-y border-border">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-14">
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Pricing</p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-4">
-            Simple, transparent pricing
-          </h2>
-          <p className="text-muted-foreground">No setup fees. No hidden charges. Cancel anytime.</p>
-        </div>
-
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {plans.map((plan) => (
-              <div
-                key={plan.plan_key}
-                className={`rounded-xl border p-6 flex flex-col bg-white transition-shadow hover:shadow-lg ${
-                  plan.badge
-                    ? "border-primary ring-2 ring-primary/20 shadow-md shadow-primary/10"
-                    : "border-border"
-                }`}
-              >
-                {plan.badge && (
-                  <div className="mb-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-accent px-2 py-0.5 rounded-full">
-                      {plan.badge}
-                    </span>
-                  </div>
-                )}
-                <p className="text-[15px] font-semibold text-foreground">{plan.name}</p>
-                <div className="mt-3 mb-3 flex items-baseline gap-1">
-                  {plan.monthly_price !== null ? (
-                    <>
-                      <span className="text-3xl font-bold text-foreground">${plan.monthly_price}</span>
-                      <span className="text-sm text-muted-foreground">/mo</span>
-                    </>
-                  ) : (
-                    <span className="text-3xl font-bold text-foreground">Custom</span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mb-5 leading-relaxed">{plan.description}</p>
-                <ul className="space-y-2.5 mb-6 flex-1">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-foreground">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href={plan.plan_key === "enterprise" ? "/auth" : `/register?plan=${plan.plan_key}`}>
-                  <Button variant={plan.badge ? "default" : "outline"} size="sm" className="w-full">
-                    {plan.plan_key === "enterprise" ? "Talk to sales" : "Start free trial"}
-                  </Button>
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <p className="text-center text-sm text-muted-foreground mt-8">
-          All plans include a 14-day free trial.{" "}
-          <Link href="/pricing" className="text-primary hover:underline font-medium">
-            Compare all features →
-          </Link>
-        </p>
-      </div>
-    </section>
-  );
-}
-
 function GrowSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -564,7 +468,6 @@ export default function LandingPage() {
       <FeaturesSection />
       <JourneySection />
       <TestimonialsSection />
-      <PricingSection />
       <CtaSection />
       <GrowSection />
     </div>
