@@ -151,7 +151,7 @@ function PublicNav() {
             <Link href="/pricing" className={navLinkClass(location === "/pricing")}>
               Pricing
             </Link>
-            <Link href="/features" className={navLinkClass(location === "/features")}>
+            <Link href="/docs" className={navLinkClass(location === "/docs")}>
               Docs
             </Link>
             <Link href="/features" className={navLinkClass(false)}>
@@ -234,7 +234,7 @@ function PublicNav() {
           >
             Pricing
           </Link>
-          <Link href="/features" onClick={() => setMenuOpen(false)} className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted">Docs</Link>
+          <Link href="/docs" onClick={() => setMenuOpen(false)} className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted">Docs</Link>
           <Link href="/features" onClick={() => setMenuOpen(false)} className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted">Blog</Link>
           <div className="pt-3 space-y-2 border-t border-border mt-3">
             <Link href="/auth" onClick={() => setMenuOpen(false)}>
@@ -260,7 +260,7 @@ function PublicFooter() {
     ["Home",     "/"],
     ["Pricing",  "/pricing"],
     ["Features", "/features"],
-    ["Docs",     "/features"],
+    ["Docs",     "/docs"],
     ["Blog",     "/features"],
   ];
 
