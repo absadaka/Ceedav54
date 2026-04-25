@@ -209,7 +209,7 @@ export default function FeaturesPage() {
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link href="/register">
-                <Button size="lg" className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 font-medium shadow-sm">
+                <Button size="lg" className="bg-[#161aff] hover:bg-[#1216cc] text-white border-0 font-medium shadow-sm">
                   Start free trial
                   <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
@@ -262,7 +262,7 @@ export default function FeaturesPage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link href="/register">
-              <Button size="lg" className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 font-medium shadow-sm">
+              <Button size="lg" className="bg-[#161aff] hover:bg-[#1216cc] text-white border-0 font-medium shadow-sm">
                 Start free trial
                 <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
