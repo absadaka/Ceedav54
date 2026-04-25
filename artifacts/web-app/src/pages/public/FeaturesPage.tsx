@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import {
   CalendarCheck, Wrench, Zap, FileText, Users, Receipt, CreditCard, ClipboardCheck,
   ArrowRight, CheckCircle2, Sparkles, Clock, Car, Phone, Tag, Plus,
+  Cog, Gauge,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -176,10 +177,12 @@ export default function FeaturesPage() {
       {/* Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-white via-white to-muted/30">
         <BackgroundGrid />
+        <CarSilhouette />
+        <TireTrack className="hidden md:block absolute bottom-0 left-0 right-0 h-8 opacity-[0.07]" />
         <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-16 lg:pt-28 lg:pb-20">
           <div className="max-w-3xl">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-foreground/70">
-              <Sparkles className="h-3.5 w-3.5" /> Features
+              <Wrench className="h-3.5 w-3.5" /> Built for the workshop floor
             </span>
             <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.05]">
               The full workshop, in one place.
@@ -225,15 +228,17 @@ export default function FeaturesPage() {
       </section>
 
       {/* Feature sections ────────────────────────────────────────────── */}
-      <div className="divide-y divide-border">
+      <div className="divide-y divide-border relative">
         {FEATURES.map((feature, i) => (
           <FeatureSection key={feature.slug} feature={feature} index={i} />
         ))}
       </div>
 
       {/* Bottom CTA ──────────────────────────────────────────────────── */}
-      <section className="border-t border-border bg-muted/30">
-        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+      <section className="relative overflow-hidden border-t border-border bg-muted/30">
+        <TireTrack className="absolute top-0 left-0 right-0 h-8 opacity-[0.08]" />
+        <div className="relative max-w-6xl mx-auto px-6 py-20 text-center">
+          <Wrench className="mx-auto h-6 w-6 text-foreground/30 mb-4" />
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Ready to run your shop on ceeda&gt;?
           </h2>
@@ -266,14 +271,26 @@ function FeatureSection({ feature, index }: { feature: Feature; index: number })
   const Icon = feature.icon;
   const reverse = index % 2 === 1;
   const sectionRef = useRef<HTMLElement>(null);
+  // Rotate through subtle workshop-themed background icons per section.
+  const BgIcon = [Cog, Wrench, Car, Gauge][index % 4];
 
   return (
     <section
       ref={sectionRef}
       id={feature.slug}
-      className="scroll-mt-24 py-20 lg:py-24"
+      className="scroll-mt-24 py-20 lg:py-24 relative overflow-hidden"
     >
-      <div className="max-w-6xl mx-auto px-6">
+      {/* Faint workshop-icon watermark */}
+      <BgIcon
+        aria-hidden
+        className={cn(
+          "absolute pointer-events-none text-foreground/[0.03] -z-0",
+          reverse ? "left-[-2rem] top-10" : "right-[-2rem] top-10",
+        )}
+        style={{ width: 220, height: 220 }}
+        strokeWidth={1}
+      />
+      <div className="relative max-w-6xl mx-auto px-6">
         <div className={cn("grid lg:grid-cols-2 gap-12 lg:gap-16 items-center", reverse && "lg:[&>*:first-child]:order-2")}>
           {/* Text */}
           <div>
@@ -318,21 +335,68 @@ function FeatureSection({ feature, index }: { feature: Feature; index: number })
   );
 }
 
-/* ─── Decorative grid background ─────────────────────────────────────────── */
+/* ─── Decorative workshop-themed accents ─────────────────────────────────── */
 
 function BackgroundGrid() {
   return (
     <div
       aria-hidden
-      className="absolute inset-0 -z-0 opacity-[0.6] pointer-events-none"
+      className="absolute inset-0 -z-0 opacity-[0.7] pointer-events-none"
       style={{
         backgroundImage:
-          "linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px)",
+          "linear-gradient(to right, rgba(22,26,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(22,26,255,0.05) 1px, transparent 1px)",
         backgroundSize: "40px 40px",
         maskImage: "radial-gradient(ellipse at top, black 30%, transparent 75%)",
         WebkitMaskImage: "radial-gradient(ellipse at top, black 30%, transparent 75%)",
       }}
     />
+  );
+}
+
+/** Faded silhouette of a side-view sedan, used as a hero accent. */
+function CarSilhouette() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 640 200"
+      className="absolute right-[-3rem] bottom-2 w-[420px] sm:w-[520px] md:w-[640px] text-foreground/[0.05] pointer-events-none -z-0"
+      fill="currentColor"
+    >
+      {/* Body */}
+      <path d="M40 140 C 80 90, 180 70, 260 70 L 400 70 C 460 70, 520 90, 580 140 L 600 150 L 600 165 L 40 165 Z" />
+      {/* Windows cut-out (drawn as light overlay using even-odd not available; use stroke instead) */}
+      <path
+        d="M150 95 L 250 80 L 380 80 L 460 95 L 460 120 L 150 120 Z"
+        fill="#ffffff"
+        opacity="0.35"
+      />
+      <line x1="280" y1="80" x2="280" y2="120" stroke="#ffffff" strokeWidth="3" opacity="0.5" />
+      {/* Wheels */}
+      <circle cx="160" cy="165" r="28" />
+      <circle cx="160" cy="165" r="14" fill="#ffffff" opacity="0.5" />
+      <circle cx="490" cy="165" r="28" />
+      <circle cx="490" cy="165" r="14" fill="#ffffff" opacity="0.5" />
+    </svg>
+  );
+}
+
+/** A thin tire-tread pattern strip — used as a subtle section divider. */
+function TireTrack({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      className={cn("text-foreground pointer-events-none", className)}
+      preserveAspectRatio="none"
+      viewBox="0 0 200 16"
+      fill="currentColor"
+    >
+      {Array.from({ length: 40 }).map((_, i) => (
+        <rect key={i} x={i * 5 + 0.6} y="2"  width="3" height="4" rx="0.6" />
+      ))}
+      {Array.from({ length: 40 }).map((_, i) => (
+        <rect key={`b${i}`} x={i * 5 + 0.6} y="10" width="3" height="4" rx="0.6" />
+      ))}
+    </svg>
   );
 }
 
