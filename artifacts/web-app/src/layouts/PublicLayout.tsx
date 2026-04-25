@@ -10,20 +10,19 @@ import { cn } from "@/lib/utils";
 
 type SolutionItem = { label: string; href: string; icon: React.ElementType };
 
-// All mega-menu items currently scroll to the "features" section on the landing page.
-// (Dedicated feature sub-pages can be added later without touching the header.)
-const solutionsCol1: SolutionItem[] = [
-  { label: "Bookings",      href: "/#features", icon: CalendarCheck },
-  { label: "Service Jobs",  href: "/#features", icon: Wrench },
-  { label: "Quick Repair",  href: "/#features", icon: Zap },
-  { label: "Quotations",    href: "/#features", icon: FileText },
+// Each item deep-links to its section on the dedicated /features page.
+const featuresCol1: SolutionItem[] = [
+  { label: "Bookings",      href: "/features#bookings",     icon: CalendarCheck },
+  { label: "Service Jobs",  href: "/features#service-jobs", icon: Wrench },
+  { label: "Quick Repair",  href: "/features#quick-repair", icon: Zap },
+  { label: "Quotations",    href: "/features#quotations",   icon: FileText },
 ];
 
-const solutionsCol2: SolutionItem[] = [
-  { label: "Customers",   href: "/#features", icon: Users },
-  { label: "Invoices",    href: "/#features", icon: Receipt },
-  { label: "Payments",    href: "/#features", icon: CreditCard },
-  { label: "Inspections", href: "/#features", icon: ClipboardCheck },
+const featuresCol2: SolutionItem[] = [
+  { label: "Customers",   href: "/features#customers",   icon: Users },
+  { label: "Invoices",    href: "/features#invoices",    icon: Receipt },
+  { label: "Payments",    href: "/features#payments",    icon: CreditCard },
+  { label: "Inspections", href: "/features#inspections", icon: ClipboardCheck },
 ];
 
 function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: boolean }) {
@@ -42,7 +41,7 @@ function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: bool
 
 export { Logo };
 
-function SolutionsMegaMenu() {
+function FeaturesMegaMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -88,15 +87,15 @@ function SolutionsMegaMenu() {
             : "text-foreground hover:bg-muted/60"
         )}
       >
-        Solutions
+        Features
         <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (
         <div className="absolute top-full left-0 mt-2 z-50">
           <div className="rounded-2xl border border-border bg-white shadow-xl p-3 flex gap-3">
-            <ColumnList items={solutionsCol1} />
-            <ColumnList items={solutionsCol2} />
+            <ColumnList items={featuresCol1} />
+            <ColumnList items={featuresCol2} />
             <div className="rounded-xl border border-border bg-white p-3 flex flex-col gap-2 min-w-[180px] justify-start">
               <Link href="/register" onClick={() => setOpen(false)}>
                 <Button
@@ -106,13 +105,13 @@ function SolutionsMegaMenu() {
                   Start free trial
                 </Button>
               </Link>
-              <Link href="/pricing" onClick={() => setOpen(false)}>
+              <Link href="/features" onClick={() => setOpen(false)}>
                 <Button
                   size="sm"
                   variant="outline"
                   className="w-full border-border bg-white text-foreground hover:bg-muted/60"
                 >
-                  Compare plans
+                  Browse all features
                 </Button>
               </Link>
             </div>
@@ -125,7 +124,7 @@ function SolutionsMegaMenu() {
 
 function PublicNav() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [solutionsOpen, setSolutionsOpen] = useState(false);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
   const [location] = useLocation();
 
   const isAuthPage = location === "/auth" || location === "/register" || location.startsWith("/auth/");
@@ -147,16 +146,16 @@ function PublicNav() {
         <div className="flex items-center gap-3">
           <Logo />
           <nav className="hidden md:flex items-center gap-1 ml-2">
-            <SolutionsMegaMenu />
+            <FeaturesMegaMenu />
             <Link href="/pricing" className={navLinkClass(location === "/pricing")}>
               Pricing
             </Link>
-            <a href="/#features" className={navLinkClass(false)}>
+            <Link href="/features" className={navLinkClass(location === "/features")}>
               Docs
-            </a>
-            <a href="/#features" className={navLinkClass(false)}>
+            </Link>
+            <Link href="/features" className={navLinkClass(false)}>
               Blog
-            </a>
+            </Link>
           </nav>
         </div>
 
@@ -203,21 +202,21 @@ function PublicNav() {
           <div>
             <button
               className="flex items-center justify-between w-full px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted"
-              onClick={() => setSolutionsOpen((v) => !v)}
+              onClick={() => setFeaturesOpen((v) => !v)}
             >
-              Solutions
-              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", solutionsOpen && "rotate-180")} />
+              Features
+              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", featuresOpen && "rotate-180")} />
             </button>
-            {solutionsOpen && (
+            {featuresOpen && (
               <div className="pl-4 space-y-0.5 py-1">
-                {[...solutionsCol1, ...solutionsCol2].map((link) => {
+                {[...featuresCol1, ...featuresCol2].map((link) => {
                   const Icon = link.icon;
                   return (
                     <a
                       key={link.href}
                       href={link.href}
                       className="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted"
-                      onClick={() => { setMenuOpen(false); setSolutionsOpen(false); }}
+                      onClick={() => { setMenuOpen(false); setFeaturesOpen(false); }}
                     >
                       <Icon className="h-4 w-4" />
                       {link.label}
@@ -234,8 +233,8 @@ function PublicNav() {
           >
             Pricing
           </Link>
-          <a href="/#features" onClick={() => setMenuOpen(false)} className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted">Docs</a>
-          <a href="/#features" onClick={() => setMenuOpen(false)} className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted">Blog</a>
+          <Link href="/features" onClick={() => setMenuOpen(false)} className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted">Docs</Link>
+          <Link href="/features" onClick={() => setMenuOpen(false)} className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted">Blog</Link>
           <div className="pt-3 space-y-2 border-t border-border mt-3">
             <Link href="/auth" onClick={() => setMenuOpen(false)}>
               <Button variant="outline" size="sm" className="w-full">Sign in</Button>

@@ -12,6 +12,7 @@ import { canAccess, type ModuleKey } from "@/lib/permissions";
 // Public pages
 import LandingPage from "@/pages/public/LandingPage";
 import PricingPage from "@/pages/public/PricingPage";
+import FeaturesPage from "@/pages/public/FeaturesPage";
 import AuthPage from "@/pages/public/AuthPage";
 import RegisterPage from "@/pages/public/RegisterPage";
 
@@ -64,7 +65,7 @@ const queryClient = new QueryClient({
 
 /* ─── Route zone detection ───────────────────────────────────────────────── */
 
-const PUBLIC_PATHS = ["/", "/pricing", "/auth", "/register"];
+const PUBLIC_PATHS = ["/", "/pricing", "/features", "/auth", "/register"];
 
 const LEGACY_APP_PREFIXES = [
   "dashboard", "customers", "clients", "vehicles", "bookings", "inspections", "quotations", "jobs",
@@ -239,6 +240,7 @@ function AppRouter() {
       <Switch>
         <Route path="/" component={LandingPage} />
         <Route path="/pricing" component={PricingPage} />
+        <Route path="/features" component={FeaturesPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </PublicLayout>
