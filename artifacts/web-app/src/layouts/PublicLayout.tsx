@@ -4,10 +4,12 @@ import {
   CalendarCheck, Wrench, Zap, FileText,
   Users, Receipt, CreditCard, ClipboardCheck,
   Instagram, Youtube, Linkedin, ArrowRight,
+  LayoutGrid, LogOut,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 type SolutionItem = { label: string; href: string; icon: React.ElementType };
 
@@ -139,10 +141,14 @@ function PublicNav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
   const [location] = useLocation();
+  const { user } = useAuth();
 
   const isAuthPage = location === "/auth" || location === "/register" || location.startsWith("/auth/");
 
   if (isAuthPage) return null;
+
+  const dashboardHref = user ? `/${user.tenantSlug}/dashboard` : "/auth";
+  const logoutHref    = user ? `/${user.tenantSlug}/logout`    : "/logout";
 
   const navLinkClass = (active: boolean) =>
     cn(
@@ -174,31 +180,59 @@ function PublicNav() {
 
         {/* Right: social proof + auth actions */}
         <div className="hidden md:flex items-center gap-2">
-          <a
-            href="/#features"
-            className="flex items-center gap-1.5 rounded-full border border-border bg-white px-2.5 py-1 text-xs text-foreground/80 hover:bg-muted/60 transition-colors"
-            aria-label="Trusted by workshops"
-          >
-            <Star className="h-3.5 w-3.5" strokeWidth={2} />
-            <span className="font-medium tabular-nums">200+ shops</span>
-          </a>
-          <Link href="/auth">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-border bg-white text-foreground hover:bg-muted/60 font-medium"
+          {!user && (
+            <a
+              href="/#features"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-white px-2.5 py-1 text-xs text-foreground/80 hover:bg-muted/60 transition-colors"
+              aria-label="Trusted by workshops"
             >
-              Sign in
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button
-              size="sm"
-              className="bg-[#df94e3] hover:bg-[#c97acd] text-black border-0"
-            >
-              Create your shop
-            </Button>
-          </Link>
+              <Star className="h-3.5 w-3.5" strokeWidth={2} />
+              <span className="font-medium tabular-nums">200+ shops</span>
+            </a>
+          )}
+          {user ? (
+            <>
+              <Link href={dashboardHref}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-border bg-white text-foreground hover:bg-muted/60 font-medium gap-1.5"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  Dashboard
+                </Button>
+              </Link>
+              <Link href={logoutHref}>
+                <Button
+                  size="sm"
+                  className="bg-[#df94e3] hover:bg-[#c97acd] text-black border-0 gap-1.5"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Log out
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/auth">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-border bg-white text-foreground hover:bg-muted/60 font-medium"
+                >
+                  Sign in
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button
+                  size="sm"
+                  className="bg-[#df94e3] hover:bg-[#c97acd] text-black border-0"
+                >
+                  Create your shop
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -249,12 +283,31 @@ function PublicNav() {
           <Link href="/docs" onClick={() => setMenuOpen(false)} className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted">Docs</Link>
           <Link href="/features" onClick={() => setMenuOpen(false)} className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted">Blog</Link>
           <div className="pt-3 space-y-2 border-t border-border mt-3">
-            <Link href="/auth" onClick={() => setMenuOpen(false)}>
-              <Button variant="outline" size="sm" className="w-full">Sign in</Button>
-            </Link>
-            <Link href="/register" onClick={() => setMenuOpen(false)}>
-              <Button size="sm" className="w-full bg-[#df94e3] hover:bg-[#c97acd] text-black border-0">Create your shop</Button>
-            </Link>
+            {user ? (
+              <>
+                <Link href={dashboardHref} onClick={() => setMenuOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full gap-1.5">
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <Link href={logoutHref} onClick={() => setMenuOpen(false)}>
+                  <Button size="sm" className="w-full bg-[#df94e3] hover:bg-[#c97acd] text-black border-0 gap-1.5">
+                    <LogOut className="h-3.5 w-3.5" />
+                    Log out
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth" onClick={() => setMenuOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full">Sign in</Button>
+                </Link>
+                <Link href="/register" onClick={() => setMenuOpen(false)}>
+                  <Button size="sm" className="w-full bg-[#df94e3] hover:bg-[#c97acd] text-black border-0">Create your shop</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
