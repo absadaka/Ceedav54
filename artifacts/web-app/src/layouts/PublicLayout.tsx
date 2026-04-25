@@ -3,6 +3,7 @@ import {
   Menu, X, ChevronDown, Star,
   CalendarCheck, Wrench, Zap, FileText,
   Users, Receipt, CreditCard, ClipboardCheck,
+  Twitter, Github, Youtube, Linkedin, ArrowRight, Sun,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -251,56 +252,123 @@ function PublicNav() {
 
 function PublicFooter() {
   const [location] = useLocation();
+  const [email, setEmail] = useState("");
   const isAuthPage = location === "/auth" || location === "/register" || location.startsWith("/auth/");
   if (isAuthPage) return null;
 
+  const productLinks: [string, string][] = [
+    ["Home",     "/"],
+    ["Pricing",  "/pricing"],
+    ["Features", "/features"],
+    ["Docs",     "/features"],
+    ["Blog",     "/features"],
+  ];
+
+  const solutionsLinks: [string, string][] = [
+    ["Auto Workshops",  "/features"],
+    ["Service Centers", "/features"],
+    ["Tyre Shops",      "/features"],
+    ["Quick Lubes",     "/features"],
+    ["Multi-branch",    "/features"],
+    ["Enterprise",      "/features"],
+  ];
+
+  const socials: { label: string; icon: React.ElementType; href: string }[] = [
+    { label: "Twitter",  icon: Twitter,  href: "#" },
+    { label: "GitHub",   icon: Github,   href: "#" },
+    { label: "YouTube",  icon: Youtube,  href: "#" },
+    { label: "LinkedIn", icon: Linkedin, href: "#" },
+  ];
+
   return (
-    <footer
-      className="relative bg-[#000000] mt-16"
-    >
+    <footer className="relative bg-[#0a0a0a] mt-16 border-t border-white/5">
       <div className="max-w-6xl mx-auto px-6 py-14">
-        <div className="flex flex-col lg:flex-row justify-between gap-12">
-          <div className="space-y-4 max-w-xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8">
+          {/* Brand + subscribe */}
+          <div className="lg:col-span-4 space-y-5">
             <Logo light />
-            <p className="text-sm text-slate-400 leading-relaxed">
-              The workshop management platform built for modern automotive businesses. From check-in to invoice.
-            </p>
-            <div className="flex items-center gap-3 pt-1">
-              {["twitter", "linkedin"].map((s) => (
-                <a key={s} href="#" className="w-8 h-8 rounded-md border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors">
-                  <span className="text-[10px] font-medium uppercase">{s[0]}</span>
+            <div className="flex items-center gap-3">
+              {socials.map(({ label, icon: Icon, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  className="text-slate-500 hover:text-white transition-colors"
+                >
+                  <Icon className="h-4 w-4" />
                 </a>
               ))}
             </div>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Get product updates and news from ceeda&gt;.
+            </p>
+            <form
+              onSubmit={(e) => { e.preventDefault(); }}
+              className="space-y-3 max-w-sm"
+            >
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Your email"
+                className="w-full rounded-md bg-[#141414] border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-white/20 focus:bg-[#181818] transition-colors"
+              />
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 text-sm font-medium transition-colors"
+              >
+                Subscribe
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </form>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-10 text-sm">
-            <div className="space-y-3">
-              <p className="font-semibold text-slate-300 text-xs uppercase tracking-wider">Product</p>
-              {[["Features", "/#features"], ["Pricing", "/pricing"], ["Changelog", "#changelog"], ["Roadmap", "#roadmap"]].map(([label, href]) => (
-                <Link key={`product-${label}`} href={href} className="block text-slate-400 hover:text-white transition-colors">{label}</Link>
+          {/* Product column */}
+          <div className="lg:col-span-3 lg:col-start-6">
+            <p className="text-sm font-semibold text-white mb-5">Product</p>
+            <ul className="space-y-3">
+              {productLinks.map(([label, href]) => (
+                <li key={label}>
+                  <Link
+                    href={href}
+                    className="text-sm text-slate-400 hover:text-white transition-colors"
+                  >
+                    {label}
+                  </Link>
+                </li>
               ))}
-            </div>
-            <div className="space-y-3">
-              <p className="font-semibold text-slate-300 text-xs uppercase tracking-wider">Company</p>
-              {[["About", "#about"], ["Blog", "#blog"], ["Careers", "#careers"], ["Contact", "#contact"]].map(([label, href]) => (
-                <Link key={`company-${label}`} href={href} className="block text-slate-400 hover:text-white transition-colors">{label}</Link>
-              ))}
-            </div>
-            <div className="space-y-3">
-              <p className="font-semibold text-slate-300 text-xs uppercase tracking-wider">Legal</p>
-              {[["Privacy", "#privacy"], ["Terms", "#terms"], ["Security", "#security"], ["Cookies", "#cookies"]].map(([label, href]) => (
-                <Link key={`legal-${label}`} href={href} className="block text-slate-400 hover:text-white transition-colors">{label}</Link>
-              ))}
-            </div>
+            </ul>
           </div>
-        </div>
 
-        <div className="mt-12 pt-6 border-t border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-slate-500">© {new Date().getFullYear()} ceeda&gt; Technologies. All rights reserved.</p>
-          <div className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            <p className="text-xs text-slate-500">All systems operational</p>
+          {/* Solutions column */}
+          <div className="lg:col-span-3">
+            <p className="text-sm font-semibold text-white mb-5">Solutions</p>
+            <ul className="space-y-3">
+              {solutionsLinks.map(([label, href]) => (
+                <li key={label}>
+                  <Link
+                    href={href}
+                    className="text-sm text-slate-400 hover:text-white transition-colors"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Right rail: icon + copyright */}
+          <div className="lg:col-span-2 flex lg:flex-col lg:items-end items-start gap-3 lg:gap-4">
+            <button
+              aria-label="Theme"
+              className="h-8 w-8 rounded-md border border-white/10 bg-[#141414] flex items-center justify-center text-[#161aff] hover:border-white/20 transition-colors"
+            >
+              <Sun className="h-4 w-4" />
+            </button>
+            <p className="text-xs text-slate-500 lg:text-right">
+              © {new Date().getFullYear()} ceeda&gt;
+            </p>
           </div>
         </div>
       </div>
