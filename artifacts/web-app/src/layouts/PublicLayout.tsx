@@ -29,7 +29,11 @@ const featuresCol2: SolutionItem[] = [
 function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: boolean }) {
   const sz = size === "sm" ? 22 : 26;
   return (
-    <Link href="/" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
+    <Link
+      href="/"
+      onClick={() => window.scrollTo({ top: 0, left: 0, behavior: "auto" })}
+      className="flex items-center hover:opacity-80 transition-opacity shrink-0"
+    >
       <span
         className="inline-flex items-center leading-none font-bold"
         style={{ fontSize: sz, fontFamily: "'Dubai', sans-serif", lineHeight: 1 }}
@@ -332,6 +336,7 @@ function PublicFooter() {
                 <li key={label}>
                   <Link
                     href={href}
+                    onClick={href === "/" ? () => window.scrollTo({ top: 0, left: 0, behavior: "auto" }) : undefined}
                     className="text-sm text-slate-400 hover:text-white transition-colors"
                   >
                     {label}
