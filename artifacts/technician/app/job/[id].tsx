@@ -44,7 +44,7 @@ import {
   type NoteMedia,
 } from "@/lib/api";
 
-type TabKey = "vehicle" | "estimation" | "inspection" | "feedback";
+type TabKey = "vehicle" | "estimation" | "inspection";
 
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -224,7 +224,6 @@ export default function JobDetailScreen() {
               { k: "vehicle", l: "Details", i: "info" as const },
               { k: "estimation", l: "Estimate", i: "list" as const },
               { k: "inspection", l: "Inspection", i: "search" as const },
-              { k: "feedback", l: "Feedback", i: "message-square" as const },
             ] as const
           ).map((t) => {
             const active = tab === t.k;
@@ -265,7 +264,6 @@ export default function JobDetailScreen() {
         {tab === "vehicle" && <DetailsTab data={data} />}
         {tab === "estimation" && <EstimationTab data={data} onChanged={invalidate} />}
         {tab === "inspection" && <InspectionTab data={data} onChanged={invalidate} />}
-        {tab === "feedback" && <FeedbackTab data={data} onChanged={invalidate} />}
       </ScrollView>
     </View>
   );
@@ -1286,127 +1284,6 @@ function NoteMediaGallery({ media }: { media: NoteMedia[] }) {
         );
       })}
     </View>
-  );
-}
-
-function FeedbackTab({
-  data,
-  onChanged,
-}: {
-  data: JobDetail;
-  onChanged: () => void;
-}) {
-  const { tenant, user } = useAuth();
-  const colors = useColors();
-  const [note, setNote] = useState("");
-
-  const addReport = useMutation({
-    mutationFn: () =>
-      addJobNote(data.job.id, tenant!.slug, note.trim(), "report", user?.id ?? null),
-    onSuccess: () => {
-      setNote("");
-      onChanged();
-    },
-    onError: (e) =>
-      Alert.alert(
-        "Couldn't submit",
-        e instanceof Error ? e.message : "Try again.",
-      ),
-  });
-
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={{ gap: 16 }}
-    >
-      <Card style={{ gap: 12 }}>
-        <SectionTitle
-          icon="file-text"
-          title={`Customer report entries (${data.reportNotes.length})`}
-        />
-        {data.reportNotes.length === 0 ? (
-          <Text
-            style={{
-              color: colors.mutedForeground,
-              fontSize: 13,
-              fontFamily: "Inter_400Regular",
-              textAlign: "center",
-              paddingVertical: 12,
-            }}
-          >
-            No feedback submitted yet. Use this section to record what was done
-            for the customer.
-          </Text>
-        ) : (
-          <View style={{ gap: 10 }}>
-            {data.reportNotes.map((n) => (
-              <View
-                key={n.id}
-                style={{
-                  backgroundColor: colors.accent,
-                  borderRadius: 10,
-                  padding: 12,
-                  borderLeftWidth: 3,
-                  borderLeftColor: colors.primary,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 11,
-                    color: colors.mutedForeground,
-                    fontFamily: "Inter_500Medium",
-                    marginBottom: 4,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.4,
-                  }}
-                >
-                  {new Date(n.created_at).toLocaleString()}
-                  {n.created_by_name ? ` · ${n.created_by_name}` : ""}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.foreground,
-                    fontFamily: "Inter_400Regular",
-                    lineHeight: 20,
-                  }}
-                >
-                  {n.note}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </Card>
-
-      <Card style={{ gap: 12 }}>
-        <SectionTitle icon="edit-3" title="Submit repair feedback" />
-        <Input
-          value={note}
-          onChangeText={setNote}
-          placeholder="Describe the work completed, parts replaced, recommendations…"
-          multiline
-          numberOfLines={6}
-          style={{ minHeight: 140, textAlignVertical: "top" }}
-        />
-        <Button
-          label="Submit feedback"
-          icon="send"
-          onPress={() => addReport.mutate()}
-          loading={addReport.isPending}
-          disabled={!note.trim()}
-        />
-        <Text
-          style={{
-            color: colors.mutedForeground,
-            fontSize: 12,
-            fontFamily: "Inter_400Regular",
-          }}
-        >
-          This appears on the customer invoice and report.
-        </Text>
-      </Card>
-    </KeyboardAvoidingView>
   );
 }
 
