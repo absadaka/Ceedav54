@@ -352,6 +352,7 @@ router.get("/:id", async (req, res) => {
           id:             jobNotesTable.id,
           note:           jobNotesTable.note,
           type:           jobNotesTable.type,
+          media:          jobNotesTable.media,
           created_by:     jobNotesTable.created_by,
           created_by_name: usersTable.name,
           created_at:     jobNotesTable.created_at,
@@ -460,14 +461,28 @@ router.post("/:id/notes", async (req, res) => {
     const tenant = await resolveTenant(slug);
     if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
-    const { note, created_by, type } = req.body as { note: string; created_by?: string; type?: string };
-    if (!note?.trim()) return res.status(400).json({ error: "Note text is required" });
+    const { note, created_by, type, media } = req.body as {
+      note: string;
+      created_by?: string;
+      type?: string;
+      media?: Array<{ url: string; kind: "image" | "video" }>;
+    };
+    const trimmedNote = (note ?? "").trim();
+    const cleanMedia = Array.isArray(media)
+      ? media
+          .filter((m) => m && typeof m.url === "string" && m.url.length > 0)
+          .map((m) => ({ url: m.url, kind: m.kind === "video" ? "video" as const : "image" as const }))
+      : [];
+    if (!trimmedNote && cleanMedia.length === 0) {
+      return res.status(400).json({ error: "Add a note or at least one attachment" });
+    }
 
     const [inserted] = await db.insert(jobNotesTable).values({
       job_id:     req.params.id,
       tenant_id:  tenant.id,
-      note:       note.trim(),
+      note:       trimmedNote || (cleanMedia.length === 1 ? `(${cleanMedia[0].kind})` : `(${cleanMedia.length} attachments)`),
       type:       type === "report" ? "report" : "technician",
+      media:      cleanMedia,
       created_by: created_by || null,
     }).returning();
 

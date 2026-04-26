@@ -1,12 +1,14 @@
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Redirect, useLocalSearchParams } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -34,9 +36,12 @@ import {
   getCatalog,
   getJob,
   jobTimer,
+  mediaServingUrl,
   patchJob,
+  uploadAsset,
   type CatalogItem,
   type JobDetail,
+  type NoteMedia,
 } from "@/lib/api";
 
 type TabKey = "vehicle" | "estimation" | "inspection" | "feedback";
@@ -788,6 +793,30 @@ function CatalogPickerList({
   );
 }
 
+type StagedAsset = {
+  localUri: string;
+  kind: "image" | "video";
+  contentType: string;
+  uploading: boolean;
+  objectPath?: string;
+  error?: string;
+};
+
+function guessContentType(uri: string, kind: "image" | "video"): string {
+  const ext = (uri.split("?")[0].split(".").pop() ?? "").toLowerCase();
+  if (kind === "image") {
+    if (ext === "png") return "image/png";
+    if (ext === "webp") return "image/webp";
+    if (ext === "heic" || ext === "heif") return "image/heic";
+    if (ext === "gif") return "image/gif";
+    return "image/jpeg";
+  }
+  if (ext === "mov") return "video/quicktime";
+  if (ext === "webm") return "video/webm";
+  if (ext === "m4v") return "video/x-m4v";
+  return "video/mp4";
+}
+
 function InspectionTab({
   data,
   onChanged,
@@ -798,12 +827,133 @@ function InspectionTab({
   const { tenant, user } = useAuth();
   const colors = useColors();
   const [note, setNote] = useState("");
+  const [staged, setStaged] = useState<StagedAsset[]>([]);
+
+  const updateStaged = (
+    localUri: string,
+    patch: Partial<StagedAsset>,
+  ) =>
+    setStaged((prev) =>
+      prev.map((s) => (s.localUri === localUri ? { ...s, ...patch } : s)),
+    );
+
+  const startUpload = async (asset: StagedAsset) => {
+    try {
+      const objectPath = await uploadAsset(asset.localUri, asset.contentType);
+      updateStaged(asset.localUri, { uploading: false, objectPath });
+    } catch (e) {
+      updateStaged(asset.localUri, {
+        uploading: false,
+        error: e instanceof Error ? e.message : "Upload failed",
+      });
+    }
+  };
+
+  const addAsset = (
+    localUri: string,
+    kind: "image" | "video",
+    mimeType?: string,
+  ) => {
+    const contentType = mimeType ?? guessContentType(localUri, kind);
+    const asset: StagedAsset = {
+      localUri,
+      kind,
+      contentType,
+      uploading: true,
+    };
+    setStaged((prev) => [...prev, asset]);
+    void startUpload(asset);
+  };
+
+  const ensurePerm = async (
+    needCamera: boolean,
+  ): Promise<boolean> => {
+    if (needCamera) {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Camera access needed",
+          "Allow camera access in Settings to take photos.",
+        );
+        return false;
+      }
+    } else {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Photo library access needed",
+          "Allow photo library access in Settings to attach files.",
+        );
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const takePhoto = async () => {
+    if (!(await ensurePerm(true))) return;
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+    if (result.canceled) return;
+    for (const a of result.assets) {
+      addAsset(a.uri, "image", a.mimeType ?? undefined);
+    }
+  };
+
+  const pickPhoto = async () => {
+    if (!(await ensurePerm(false))) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsMultipleSelection: true,
+    });
+    if (result.canceled) return;
+    for (const a of result.assets) {
+      addAsset(a.uri, "image", a.mimeType ?? undefined);
+    }
+  };
+
+  const pickVideo = async () => {
+    if (!(await ensurePerm(false))) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      videoMaxDuration: 120,
+    });
+    if (result.canceled) return;
+    for (const a of result.assets) {
+      addAsset(a.uri, "video", a.mimeType ?? undefined);
+    }
+  };
+
+  const removeStaged = (localUri: string) =>
+    setStaged((prev) => prev.filter((s) => s.localUri !== localUri));
+
+  const retryStaged = (asset: StagedAsset) => {
+    updateStaged(asset.localUri, { uploading: true, error: undefined });
+    void startUpload({ ...asset, uploading: true, error: undefined });
+  };
+
+  const stagedReady = staged.filter((s) => s.objectPath && !s.uploading);
+  const stagedUploading = staged.some((s) => s.uploading);
+  const canSubmit = !stagedUploading &&
+    (note.trim().length > 0 || stagedReady.length > 0);
 
   const addNote = useMutation({
     mutationFn: () =>
-      addJobNote(data.job.id, tenant!.slug, note.trim(), "technician", user?.id ?? null),
+      addJobNote(
+        data.job.id,
+        tenant!.slug,
+        note.trim(),
+        "technician",
+        user?.id ?? null,
+        stagedReady.map((s) => ({ url: s.objectPath!, kind: s.kind })),
+      ),
     onSuccess: () => {
       setNote("");
+      setStaged([]);
       onChanged();
     },
     onError: (e) =>
@@ -869,10 +1019,12 @@ function InspectionTab({
                 >
                   {n.note}
                 </Text>
+                <NoteMediaGallery media={n.media ?? []} />
               </View>
             ))}
           </View>
         )}
+
         <Input
           value={note}
           onChangeText={setNote}
@@ -880,16 +1032,260 @@ function InspectionTab({
           multiline
           style={{ minHeight: 60, textAlignVertical: "top" }}
         />
+
+        {/* Attachment buttons */}
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <AttachButton
+            label="Camera"
+            icon="camera"
+            onPress={takePhoto}
+          />
+          <AttachButton
+            label="Photo"
+            icon="image"
+            onPress={pickPhoto}
+          />
+          <AttachButton
+            label="Video"
+            icon="video"
+            onPress={pickVideo}
+          />
+        </View>
+
+        {staged.length > 0 ? (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {staged.map((s) => (
+              <StagedThumb
+                key={s.localUri}
+                asset={s}
+                onRemove={() => removeStaged(s.localUri)}
+                onRetry={() => retryStaged(s)}
+              />
+            ))}
+          </View>
+        ) : null}
+
         <Button
-          label="Add note"
+          label={stagedUploading ? "Uploading…" : "Add note"}
           icon="plus"
           variant="secondary"
           onPress={() => addNote.mutate()}
           loading={addNote.isPending}
-          disabled={!note.trim()}
+          disabled={!canSubmit}
         />
       </Card>
     </KeyboardAvoidingView>
+  );
+}
+
+function AttachButton({
+  label,
+  icon,
+  onPress,
+}: {
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+  onPress: () => void;
+}) {
+  const colors = useColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        paddingVertical: 10,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: pressed ? colors.accent : colors.background,
+      })}
+    >
+      <Feather name={icon} size={14} color={colors.primary} />
+      <Text
+        style={{
+          fontSize: 12,
+          fontFamily: "Inter_600SemiBold",
+          color: colors.foreground,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function StagedThumb({
+  asset,
+  onRemove,
+  onRetry,
+}: {
+  asset: StagedAsset;
+  onRemove: () => void;
+  onRetry: () => void;
+}) {
+  const colors = useColors();
+  const size = 76;
+
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      {asset.kind === "image" ? (
+        <Image
+          source={{ uri: asset.localUri }}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: 8,
+            backgroundColor: colors.muted,
+          }}
+        />
+      ) : (
+        <View
+          style={{
+            width: size,
+            height: size,
+            borderRadius: 8,
+            backgroundColor: colors.foreground,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Feather name="video" size={22} color="#fff" />
+        </View>
+      )}
+
+      {/* Status overlay */}
+      {asset.uploading ? (
+        <View
+          style={{
+            ...StyleSheetAbsoluteFill,
+            borderRadius: 8,
+            backgroundColor: "rgba(0,0,0,0.45)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <ActivityIndicator color="#fff" />
+        </View>
+      ) : asset.error ? (
+        <Pressable
+          onPress={onRetry}
+          style={{
+            ...StyleSheetAbsoluteFill,
+            borderRadius: 8,
+            backgroundColor: "rgba(190,32,32,0.6)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Feather name="refresh-ccw" size={14} color="#fff" />
+          <Text
+            style={{
+              color: "#fff",
+              fontSize: 9,
+              fontFamily: "Inter_600SemiBold",
+              marginTop: 2,
+            }}
+          >
+            Retry
+          </Text>
+        </Pressable>
+      ) : null}
+
+      {/* Remove button */}
+      <Pressable
+        onPress={onRemove}
+        hitSlop={6}
+        style={{
+          position: "absolute",
+          top: -6,
+          right: -6,
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: colors.foreground,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Feather name="x" size={12} color="#fff" />
+      </Pressable>
+    </View>
+  );
+}
+
+const StyleSheetAbsoluteFill = {
+  position: "absolute" as const,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+};
+
+function NoteMediaGallery({ media }: { media: NoteMedia[] }) {
+  const colors = useColors();
+  if (!media || media.length === 0) return null;
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginTop: 10,
+      }}
+    >
+      {media.map((m, idx) => {
+        const url = mediaServingUrl(m.url);
+        const size = 76;
+        if (m.kind === "image") {
+          return (
+            <Pressable
+              key={`${m.url}-${idx}`}
+              onPress={() => Linking.openURL(url).catch(() => {})}
+            >
+              <Image
+                source={{ uri: url }}
+                style={{
+                  width: size,
+                  height: size,
+                  borderRadius: 8,
+                  backgroundColor: colors.background,
+                }}
+              />
+            </Pressable>
+          );
+        }
+        return (
+          <Pressable
+            key={`${m.url}-${idx}`}
+            onPress={() => Linking.openURL(url).catch(() => {})}
+            style={{
+              width: size,
+              height: size,
+              borderRadius: 8,
+              backgroundColor: colors.foreground,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Feather name="play-circle" size={26} color="#fff" />
+            <Text
+              style={{
+                color: "#fff",
+                fontSize: 9,
+                fontFamily: "Inter_600SemiBold",
+                marginTop: 4,
+              }}
+            >
+              VIDEO
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 

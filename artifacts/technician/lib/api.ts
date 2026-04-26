@@ -174,10 +174,13 @@ export type JobTimeLog = {
   notes: string | null;
 };
 
+export type NoteMedia = { url: string; kind: "image" | "video" };
+
 export type JobNote = {
   id: string;
   note: string;
   type: string;
+  media?: NoteMedia[] | null;
   created_at: string;
   created_by_name?: string | null;
 };
@@ -240,12 +243,13 @@ export async function addJobNote(
   note: string,
   type: "technician" | "report",
   created_by: string | null,
+  media: NoteMedia[] = [],
 ): Promise<unknown> {
   return apiFetch(
     `/jobs/${id}/notes?tenant=${encodeURIComponent(tenantSlug)}`,
     {
       method: "POST",
-      body: JSON.stringify({ note, type, created_by }),
+      body: JSON.stringify({ note, type, created_by, media }),
     },
   );
 }
@@ -310,6 +314,51 @@ export async function getCatalog(tenantSlug: string): Promise<CatalogItem[]> {
     `/settings/catalog?tenant=${encodeURIComponent(tenantSlug)}`,
   );
   return (res.items ?? []).filter((i) => i.is_active);
+}
+
+/* ── Object storage upload (presigned URL) ──────────────────────────────
+   Step 1: ask the API for a presigned PUT URL.
+   Step 2: PUT the file bytes directly to that URL.
+   Returns the persistent objectPath (already prefixed with "/objects/").
+   To display, prefix with `${API_BASE}/storage` to get a serving URL.
+─────────────────────────────────────────────────────────────────────── */
+
+export function mediaServingUrl(objectPath: string): string {
+  if (!objectPath) return "";
+  if (/^https?:\/\//i.test(objectPath)) return objectPath;
+  return `${API_BASE}/storage${objectPath}`;
+}
+
+export async function uploadAsset(
+  uri: string,
+  contentType: string,
+): Promise<string> {
+  // Step 1 — request presigned URL
+  const res = await apiFetch<{ uploadURL: string; objectPath: string }>(
+    "/storage/uploads/request-url",
+    {
+      method: "POST",
+      body: JSON.stringify({ contentType }),
+    },
+  );
+
+  // Step 2 — fetch the local file bytes and PUT to GCS
+  const fileRes = await fetch(uri);
+  if (!fileRes.ok) {
+    throw new Error(`Couldn't read file (${fileRes.status})`);
+  }
+  const blob = await fileRes.blob();
+
+  const putRes = await fetch(res.uploadURL, {
+    method: "PUT",
+    headers: { "Content-Type": contentType },
+    body: blob,
+  });
+  if (!putRes.ok) {
+    throw new Error(`Upload failed (${putRes.status})`);
+  }
+
+  return res.objectPath;
 }
 
 export async function jobTimer(
