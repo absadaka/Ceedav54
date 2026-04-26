@@ -289,6 +289,18 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 | `lib/db/src/schema/index.ts` | Schema barrel export |
 | `lib/api-spec/openapi.yaml` | API contract (source of truth) |
 
+## Object Storage
+
+- App Storage (GCS-backed) is provisioned. Env: `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS`, `PRIVATE_OBJECT_DIR`.
+- Server: `artifacts/api-server/src/lib/objectStorage.ts` + `objectAcl.ts` and `routes/storage.ts`.
+- Endpoints (mounted under `/api`):
+  - `POST /storage/uploads/request-url` → returns `{ uploadURL, objectPath }`
+  - `PUT <uploadURL>` → upload bytes directly to GCS
+  - `GET /storage/objects/<path>` → serve uploaded object
+- Technician helper: `uploadAsset(uri, contentType)` and `mediaServingUrl(objectPath)` in `artifacts/technician/lib/api.ts`.
+- Used by: inspection notes (`job_notes.media` jsonb column — `Array<{url, kind:'image'|'video'}>`).
+- NOTE: storage routes are currently unauthenticated, matching the rest of the API surface (which trusts the `tenant` query param). Tighten when global auth is introduced.
+
 ## TypeScript & Monorepo
 
 - Every package extends `tsconfig.base.json` (`composite: true`)

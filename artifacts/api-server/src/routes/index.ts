@@ -12,6 +12,7 @@ import teamRouter        from "./team";
 import settingsRouter    from "./settings";
 import adminRouter       from "./admin";
 import authRouter        from "./auth";
+import storageRouter     from "./storage";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use("/team",       teamRouter);
 router.use(settingsRouter);
 router.use(adminRouter);
 router.use(authRouter);
+router.use(storageRouter);
 
 export default router;

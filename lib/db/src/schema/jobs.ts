@@ -1,5 +1,5 @@
 import {
-  pgTable, text, timestamp, uuid, integer, numeric, index, pgEnum
+  pgTable, text, timestamp, uuid, integer, numeric, index, pgEnum, jsonb
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -296,6 +296,8 @@ export const jobNotesTable = pgTable("job_notes", {
   tenant_id:   uuid("tenant_id").references(() => tenantsTable.id, { onDelete: "cascade" }).notNull(),
   note:        text("note").notNull(),
   type:        text("type").default("technician").notNull(),
+  // Array of { url: string, kind: "image" | "video" } — optional attachments stored on object storage.
+  media:       jsonb("media").$type<Array<{ url: string; kind: "image" | "video" }>>().default([]).notNull(),
   created_by:  uuid("created_by").references(() => usersTable.id, { onDelete: "set null" }),
   created_at:  timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
