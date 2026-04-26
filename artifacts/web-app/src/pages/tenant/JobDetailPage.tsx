@@ -125,12 +125,82 @@ interface Part {
 interface Photo {
   id: string; url: string; caption: string | null; photo_type: string; created_at: string;
 }
+interface NoteMedia {
+  url: string;
+  kind: "image" | "video";
+}
 interface TechNote {
   id: string;
   note: string;
+  media?: NoteMedia[] | null;
   created_by: string | null;
   created_by_name: string | null;
   created_at: string;
+}
+
+function noteMediaUrl(objectPath: string): string {
+  if (!objectPath) return "";
+  if (/^https?:\/\//i.test(objectPath)) return objectPath;
+  const normalized = objectPath.startsWith("/") ? objectPath : `/${objectPath}`;
+  return `${API}/api/storage${normalized}`;
+}
+
+function NoteMediaGallery({ media }: { media?: NoteMedia[] | null }) {
+  if (!media || media.length === 0) return null;
+  const valid = media.filter(
+    (m): m is NoteMedia =>
+      !!m &&
+      typeof m.url === "string" &&
+      m.url.length > 0 &&
+      (m.kind === "image" || m.kind === "video"),
+  );
+  if (valid.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2 pt-2">
+      {valid.map((m, idx) => {
+        const url = noteMediaUrl(m.url);
+        if (m.kind === "image") {
+          return (
+            <a
+              key={`${m.url}-${idx}`}
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="block w-20 h-20 rounded-md overflow-hidden border border-border bg-muted"
+            >
+              <img
+                src={url}
+                alt="Note attachment"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </a>
+          );
+        }
+        return (
+          <a
+            key={`${m.url}-${idx}`}
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="block w-20 h-20 rounded-md overflow-hidden border border-border bg-foreground/90 relative group"
+          >
+            <video
+              src={url}
+              className="w-full h-full object-cover"
+              preload="metadata"
+              muted
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+              <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  );
 }
 
 interface DetailData {
@@ -1994,6 +2064,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                             </span>
                           </div>
                           <p className="text-sm text-muted-foreground whitespace-pre-wrap">{n.note}</p>
+                          <NoteMediaGallery media={n.media} />
                         </div>
                       ))}
                     </div>
@@ -2118,6 +2189,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{n.note}</p>
+                        <NoteMediaGallery media={n.media} />
                       </div>
                     ))}
                   </div>
