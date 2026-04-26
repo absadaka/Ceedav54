@@ -285,6 +285,33 @@ export async function deleteJobPart(
   );
 }
 
+/* ─── Catalog (services & parts, synced from workshop portal) ───────────── */
+
+export type CatalogItemType =
+  | "labour"
+  | "part"
+  | "consumable"
+  | "sublet"
+  | "package";
+
+export type CatalogItem = {
+  id: string;
+  type: CatalogItemType;
+  sku: string | null;
+  name: string;
+  description: string | null;
+  unit: string;
+  unit_price: string;
+  is_active: boolean;
+};
+
+export async function getCatalog(tenantSlug: string): Promise<CatalogItem[]> {
+  const res = await apiFetch<{ items: CatalogItem[] }>(
+    `/settings/catalog?tenant=${encodeURIComponent(tenantSlug)}`,
+  );
+  return (res.items ?? []).filter((i) => i.is_active);
+}
+
 export async function jobTimer(
   id: string,
   tenantSlug: string,
