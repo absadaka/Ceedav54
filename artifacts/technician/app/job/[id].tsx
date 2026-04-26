@@ -31,9 +31,11 @@ import {
   addJobNote,
   addJobPart,
   deleteJobPart,
+  getCatalog,
   getJob,
   jobTimer,
   patchJob,
+  type CatalogItem,
   type JobDetail,
 } from "@/lib/api";
 
@@ -368,6 +370,15 @@ function DetailsTab({ data }: { data: JobDetail }) {
   );
 }
 
+type AddMode = "service" | "part" | "custom";
+
+const SERVICE_TYPES: ReadonlyArray<CatalogItem["type"]> = ["labour", "package"];
+const PART_TYPES: ReadonlyArray<CatalogItem["type"]> = [
+  "part",
+  "consumable",
+  "sublet",
+];
+
 function EstimationTab({
   data,
   onChanged,
@@ -377,20 +388,32 @@ function EstimationTab({
 }) {
   const { tenant, user } = useAuth();
   const colors = useColors();
+  const [mode, setMode] = useState<AddMode>("service");
+  const [search, setSearch] = useState("");
   const [desc, setDesc] = useState("");
   const [qty, setQty] = useState("1");
 
-  const addPart = useMutation({
-    mutationFn: () =>
+  const catalogQ = useQuery({
+    queryKey: ["catalog", tenant?.slug],
+    enabled: !!tenant?.slug,
+    queryFn: () => getCatalog(tenant!.slug),
+  });
+
+  const addLine = useMutation({
+    mutationFn: (line: {
+      description: string;
+      qty: number;
+      unit_price: number;
+      part_number?: string;
+    }) =>
       addJobPart(data.job.id, tenant!.slug, {
-        description: desc.trim(),
-        qty: Number(qty) || 1,
-        unit_price: 0,
+        ...line,
         added_by: user?.id ?? null,
       }),
     onSuccess: () => {
       setDesc("");
       setQty("1");
+      setSearch("");
       onChanged();
     },
     onError: (e) =>
@@ -411,6 +434,37 @@ function EstimationTab({
       ),
   });
 
+  const wantedTypes = mode === "service" ? SERVICE_TYPES : PART_TYPES;
+  const filteredItems = (catalogQ.data ?? [])
+    .filter((i) => wantedTypes.includes(i.type))
+    .filter((i) => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        i.name.toLowerCase().includes(q) ||
+        (i.sku ?? "").toLowerCase().includes(q)
+      );
+    });
+
+  const onPickItem = (item: CatalogItem) => {
+    addLine.mutate({
+      description: item.name,
+      qty: 1,
+      unit_price: Number(item.unit_price) || 0,
+      part_number: item.sku ?? undefined,
+    });
+  };
+
+  const onAddCustom = () => {
+    const d = desc.trim();
+    if (!d) return;
+    addLine.mutate({
+      description: d,
+      qty: Number(qty) || 1,
+      unit_price: 0,
+    });
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -428,7 +482,7 @@ function EstimationTab({
               paddingVertical: 20,
             }}
           >
-            No estimate lines yet. Add parts and labour below.
+            No estimate lines yet. Add a service or part below.
           </Text>
         ) : (
           <View style={{ gap: 8 }}>
@@ -480,28 +534,257 @@ function EstimationTab({
 
       <Card style={{ gap: 12 }}>
         <SectionTitle icon="plus" title="Add line" />
-        <Input
-          label="Description"
-          value={desc}
-          onChangeText={setDesc}
-          placeholder="e.g. Brake pads — front"
-        />
-        <Input
-          label="Quantity"
-          value={qty}
-          onChangeText={setQty}
-          keyboardType="numeric"
-          placeholder="1"
-        />
-        <Button
-          label="Add line"
-          icon="plus"
-          onPress={() => addPart.mutate()}
-          loading={addPart.isPending}
-          disabled={!desc.trim()}
-        />
+
+        {/* Mode segmented control */}
+        <View
+          style={{
+            flexDirection: "row",
+            backgroundColor: colors.background,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 10,
+            padding: 3,
+            gap: 3,
+          }}
+        >
+          {(
+            [
+              { k: "service", l: "Service", i: "tool" as const },
+              { k: "part", l: "Part", i: "package" as const },
+              { k: "custom", l: "Custom", i: "edit-3" as const },
+            ] as const
+          ).map((m) => {
+            const active = mode === m.k;
+            return (
+              <Pressable
+                key={m.k}
+                onPress={() => {
+                  setMode(m.k);
+                  setSearch("");
+                }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 8,
+                  borderRadius: 7,
+                  backgroundColor: active ? colors.primary : "transparent",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "row",
+                  gap: 6,
+                }}
+              >
+                <Feather
+                  name={m.i}
+                  size={13}
+                  color={active ? "#fff" : colors.mutedForeground}
+                />
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontFamily: "Inter_600SemiBold",
+                    color: active ? "#fff" : colors.foreground,
+                  }}
+                >
+                  {m.l}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {mode === "custom" ? (
+          <>
+            <Input
+              label="Description"
+              value={desc}
+              onChangeText={setDesc}
+              placeholder="e.g. Brake pads — front"
+            />
+            <Input
+              label="Quantity"
+              value={qty}
+              onChangeText={setQty}
+              keyboardType="numeric"
+              placeholder="1"
+            />
+            <Button
+              label="Add line"
+              icon="plus"
+              onPress={onAddCustom}
+              loading={addLine.isPending}
+              disabled={!desc.trim()}
+            />
+          </>
+        ) : (
+          <>
+            <Input
+              value={search}
+              onChangeText={setSearch}
+              placeholder={`Search ${mode === "service" ? "services" : "parts"}…`}
+            />
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                fontFamily: "Inter_400Regular",
+              }}
+            >
+              {mode === "service"
+                ? "Synced from your workshop services."
+                : "Synced from your workshop parts catalog."}
+            </Text>
+            <CatalogPickerList
+              items={filteredItems}
+              loading={catalogQ.isLoading}
+              error={catalogQ.error}
+              mode={mode}
+              onPick={onPickItem}
+              picking={addLine.isPending}
+            />
+          </>
+        )}
       </Card>
     </KeyboardAvoidingView>
+  );
+}
+
+function CatalogPickerList({
+  items,
+  loading,
+  error,
+  mode,
+  onPick,
+  picking,
+}: {
+  items: CatalogItem[];
+  loading: boolean;
+  error: unknown;
+  mode: "service" | "part";
+  onPick: (item: CatalogItem) => void;
+  picking: boolean;
+}) {
+  const colors = useColors();
+
+  if (loading) {
+    return (
+      <View style={{ paddingVertical: 24, alignItems: "center" }}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <Text
+        style={{
+          color: colors.destructive,
+          fontFamily: "Inter_400Regular",
+          fontSize: 13,
+          textAlign: "center",
+          paddingVertical: 16,
+        }}
+      >
+        Couldn't load catalog. Pull to retry.
+      </Text>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <View style={{ paddingVertical: 16, gap: 4 }}>
+        <Text
+          style={{
+            color: colors.mutedForeground,
+            fontFamily: "Inter_500Medium",
+            fontSize: 13,
+            textAlign: "center",
+          }}
+        >
+          No {mode === "service" ? "services" : "parts"} found.
+        </Text>
+        <Text
+          style={{
+            color: colors.mutedForeground,
+            fontFamily: "Inter_400Regular",
+            fontSize: 12,
+            textAlign: "center",
+          }}
+        >
+          Use Custom to add one manually.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={{ maxHeight: 260 }}
+      keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled
+    >
+      <View style={{ gap: 6 }}>
+        {items.map((item) => (
+          <Pressable
+            key={item.id}
+            onPress={() => onPick(item)}
+            disabled={picking}
+            style={({ pressed }) => ({
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              paddingVertical: 10,
+              paddingHorizontal: 10,
+              borderRadius: 8,
+              backgroundColor: pressed ? colors.accent : colors.background,
+              borderWidth: 1,
+              borderColor: colors.border,
+              opacity: picking ? 0.5 : 1,
+            })}
+          >
+            <View
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                backgroundColor: colors.accent,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Feather
+                name={mode === "service" ? "tool" : "package"}
+                size={13}
+                color={colors.primary}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: "Inter_600SemiBold",
+                  color: colors.foreground,
+                }}
+              >
+                {item.name}
+              </Text>
+              {item.sku ? (
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: colors.mutedForeground,
+                    fontFamily: "Inter_400Regular",
+                    marginTop: 1,
+                  }}
+                >
+                  {item.sku}
+                </Text>
+              ) : null}
+            </View>
+            <Feather name="plus" size={16} color={colors.primary} />
+          </Pressable>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
