@@ -798,31 +798,6 @@ function InspectionTab({
   const { tenant, user } = useAuth();
   const colors = useColors();
   const [note, setNote] = useState("");
-  const [savingMain, setSavingMain] = useState(false);
-  const [mainNote, setMainNote] = useState(data.job.technician_note ?? "");
-  const [mainNoteDirty, setMainNoteDirty] = useState(false);
-
-  useEffect(() => {
-    if (!mainNoteDirty) {
-      setMainNote(data.job.technician_note ?? "");
-    }
-  }, [data.job.technician_note, mainNoteDirty]);
-
-  const saveMain = async () => {
-    setSavingMain(true);
-    try {
-      await patchJob(data.job.id, tenant!.slug, { technician_note: mainNote });
-      setMainNoteDirty(false);
-      onChanged();
-    } catch (e) {
-      Alert.alert(
-        "Couldn't save",
-        e instanceof Error ? e.message : "Try again.",
-      );
-    } finally {
-      setSavingMain(false);
-    }
-  };
 
   const addNote = useMutation({
     mutationFn: () =>
@@ -843,27 +818,6 @@ function InspectionTab({
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ gap: 16 }}
     >
-      <Card style={{ gap: 12 }}>
-        <SectionTitle icon="search" title="Inspection findings" />
-        <Input
-          value={mainNote}
-          onChangeText={(t) => {
-            setMainNote(t);
-            setMainNoteDirty(true);
-          }}
-          placeholder="Document what you found during inspection — wear, faults, recommendations…"
-          multiline
-          numberOfLines={5}
-          style={{ minHeight: 120, textAlignVertical: "top" }}
-        />
-        <Button
-          label="Save findings"
-          icon="save"
-          onPress={saveMain}
-          loading={savingMain}
-        />
-      </Card>
-
       <Card style={{ gap: 12 }}>
         <SectionTitle
           icon="message-circle"
