@@ -779,65 +779,49 @@ function FeedbackTab({
 
 /* ─── Vehicle brand logo header ─────────────────────────────────────────── */
 
-const BRAND_DOMAINS: Record<string, string> = {
-  toyota: "toyota.com",
-  lexus: "lexus.com",
-  honda: "honda.com",
-  acura: "acura.com",
-  ford: "ford.com",
-  lincoln: "lincoln.com",
-  chevrolet: "chevrolet.com",
-  chevy: "chevrolet.com",
-  gmc: "gmc.com",
-  cadillac: "cadillac.com",
-  buick: "buick.com",
-  chrysler: "chrysler.com",
-  dodge: "dodge.com",
-  jeep: "jeep.com",
-  ram: "ramtrucks.com",
-  bmw: "bmw.com",
-  mini: "mini.com",
-  "mercedes-benz": "mercedes-benz.com",
-  mercedes: "mercedes-benz.com",
-  audi: "audi.com",
-  volkswagen: "volkswagen.com",
-  vw: "volkswagen.com",
-  porsche: "porsche.com",
-  nissan: "nissan.com",
-  infiniti: "infinitiusa.com",
-  hyundai: "hyundai.com",
-  kia: "kia.com",
-  genesis: "genesis.com",
-  mazda: "mazda.com",
-  subaru: "subaru.com",
-  mitsubishi: "mitsubishi-motors.com",
-  suzuki: "suzuki.com",
-  volvo: "volvocars.com",
-  jaguar: "jaguar.com",
-  "land rover": "landrover.com",
-  landrover: "landrover.com",
-  ferrari: "ferrari.com",
-  lamborghini: "lamborghini.com",
-  bentley: "bentleymotors.com",
-  "rolls-royce": "rolls-roycemotorcars.com",
-  rollsroyce: "rolls-roycemotorcars.com",
-  fiat: "fiat.com",
-  "alfa romeo": "alfaromeo.com",
-  alfaromeo: "alfaromeo.com",
-  peugeot: "peugeot.com",
-  renault: "renault.com",
-  citroen: "citroen.com",
-  tesla: "tesla.com",
-  rivian: "rivian.com",
-  lucid: "lucidmotors.com",
+// Map of common car-brand make → Simple Icons slug. Brands not listed here
+// fall back to the generic truck icon. Slugs verified against
+// https://cdn.simpleicons.org/<slug>.
+const BRAND_SLUGS: Record<string, string> = {
+  toyota: "toyota",
+  honda: "honda",
+  acura: "acura",
+  ford: "ford",
+  chevrolet: "chevrolet",
+  chevy: "chevrolet",
+  bmw: "bmw",
+  mini: "mini",
+  audi: "audi",
+  volkswagen: "volkswagen",
+  vw: "volkswagen",
+  porsche: "porsche",
+  nissan: "nissan",
+  hyundai: "hyundai",
+  kia: "kia",
+  mazda: "mazda",
+  subaru: "subaru",
+  mitsubishi: "mitsubishi",
+  suzuki: "suzuki",
+  volvo: "volvo",
+  jeep: "jeep",
+  ferrari: "ferrari",
+  lamborghini: "lamborghini",
+  bentley: "bentley",
+  fiat: "fiat",
+  "alfa romeo": "alfaromeo",
+  alfaromeo: "alfaromeo",
+  peugeot: "peugeot",
+  renault: "renault",
+  citroen: "citroen",
+  tesla: "tesla",
 };
 
 function brandLogoUrl(make: string | null | undefined): string | null {
   if (!make) return null;
   const key = make.trim().toLowerCase();
-  const domain = BRAND_DOMAINS[key];
-  if (!domain) return null;
-  return `https://logo.clearbit.com/${domain}?size=80`;
+  const slug = BRAND_SLUGS[key] ?? BRAND_SLUGS[key.split(/\s+/)[0]];
+  if (!slug) return null;
+  return `https://cdn.simpleicons.org/${slug}`;
 }
 
 function VehicleHeader({ make }: { make: string | null }) {
