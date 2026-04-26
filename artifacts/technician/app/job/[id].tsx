@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -29,7 +30,6 @@ import { useColors } from "@/hooks/useColors";
 import {
   addJobNote,
   addJobPart,
-  changeJobStatus,
   deleteJobPart,
   getJob,
   jobTimer,
@@ -64,17 +64,6 @@ export default function JobDetailScreen() {
     qc.invalidateQueries({ queryKey: ["job", id, tenant?.slug] });
     qc.invalidateQueries({ queryKey: ["my-jobs"] });
   };
-
-  const statusMut = useMutation({
-    mutationFn: (to_status: string) =>
-      changeJobStatus(String(id), tenant!.slug, to_status, user?.id ?? null),
-    onSuccess: invalidate,
-    onError: (e) =>
-      Alert.alert(
-        "Couldn't update status",
-        e instanceof Error ? e.message : "Try again.",
-      ),
-  });
 
   const onTimerError = (e: unknown) =>
     Alert.alert(
@@ -275,37 +264,6 @@ export default function JobDetailScreen() {
   );
 }
 
-function nextStatuses(
-  current: string,
-): Array<{ to: string; label: string; icon: string; variant: "primary" | "success" | "secondary" | "destructive" }> {
-  switch (current) {
-    case "new":
-    case "waiting":
-      return [
-        { to: "in_progress", label: "Start work", icon: "play", variant: "primary" },
-        { to: "on_hold", label: "On hold", icon: "pause", variant: "secondary" },
-      ];
-    case "in_progress":
-      return [
-        { to: "waiting_parts", label: "Waiting parts", icon: "package", variant: "secondary" },
-        { to: "qc", label: "Send to QC", icon: "shield", variant: "secondary" },
-        { to: "completed", label: "Mark complete", icon: "check", variant: "success" },
-        { to: "on_hold", label: "On hold", icon: "pause", variant: "secondary" },
-      ];
-    case "on_hold":
-    case "waiting_parts":
-      return [
-        { to: "in_progress", label: "Resume", icon: "play", variant: "primary" },
-      ];
-    case "qc":
-      return [
-        { to: "completed", label: "QC pass", icon: "check", variant: "success" },
-        { to: "in_progress", label: "Send back", icon: "rotate-ccw", variant: "secondary" },
-      ];
-    default:
-      return [];
-  }
-}
 
 /* ─────────────────────────────────── Tabs ─────────────────────────────────── */
 
@@ -318,7 +276,7 @@ function DetailsTab({ data }: { data: JobDetail }) {
   return (
     <View style={{ gap: 16 }}>
       <Card>
-        <SectionTitle icon="truck" title="Vehicle" />
+        <VehicleHeader make={job.make} />
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <View
             style={{
@@ -421,20 +379,18 @@ function EstimationTab({
   const colors = useColors();
   const [desc, setDesc] = useState("");
   const [qty, setQty] = useState("1");
-  const [price, setPrice] = useState("");
 
   const addPart = useMutation({
     mutationFn: () =>
       addJobPart(data.job.id, tenant!.slug, {
         description: desc.trim(),
         qty: Number(qty) || 1,
-        unit_price: Number(price) || 0,
+        unit_price: 0,
         added_by: user?.id ?? null,
       }),
     onSuccess: () => {
       setDesc("");
       setQty("1");
-      setPrice("");
       onChanged();
     },
     onError: (e) =>
@@ -454,11 +410,6 @@ function EstimationTab({
         e instanceof Error ? e.message : "Try again.",
       ),
   });
-
-  const total = data.parts.reduce(
-    (sum, p) => sum + Number(p.line_total ?? 0),
-    0,
-  );
 
   return (
     <KeyboardAvoidingView
@@ -511,18 +462,9 @@ function EstimationTab({
                       marginTop: 2,
                     }}
                   >
-                    {p.qty} × {Number(p.unit_price).toFixed(2)}
+                    Qty {p.qty}
                   </Text>
                 </View>
-                <Text
-                  style={{
-                    fontFamily: "Inter_700Bold",
-                    color: colors.foreground,
-                    fontSize: 15,
-                  }}
-                >
-                  {Number(p.line_total).toFixed(2)}
-                </Text>
                 <Pressable
                   onPress={() => delPart.mutate(p.id)}
                   hitSlop={8}
@@ -532,32 +474,6 @@ function EstimationTab({
                 </Pressable>
               </View>
             ))}
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                paddingTop: 12,
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: "Inter_600SemiBold",
-                  fontSize: 15,
-                  color: colors.foreground,
-                }}
-              >
-                Total
-              </Text>
-              <Text
-                style={{
-                  fontFamily: "Inter_700Bold",
-                  fontSize: 17,
-                  color: colors.primary,
-                }}
-              >
-                {total.toFixed(2)} {tenant?.currency ?? ""}
-              </Text>
-            </View>
           </View>
         )}
       </Card>
@@ -570,26 +486,13 @@ function EstimationTab({
           onChangeText={setDesc}
           placeholder="e.g. Brake pads — front"
         />
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <View style={{ flex: 1 }}>
-            <Input
-              label="Quantity"
-              value={qty}
-              onChangeText={setQty}
-              keyboardType="numeric"
-              placeholder="1"
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Input
-              label="Unit price"
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="decimal-pad"
-              placeholder="0.00"
-            />
-          </View>
-        </View>
+        <Input
+          label="Quantity"
+          value={qty}
+          onChangeText={setQty}
+          keyboardType="numeric"
+          placeholder="1"
+        />
         <Button
           label="Add line"
           icon="plus"
@@ -871,5 +774,120 @@ function FeedbackTab({
         </Text>
       </Card>
     </KeyboardAvoidingView>
+  );
+}
+
+/* ─── Vehicle brand logo header ─────────────────────────────────────────── */
+
+const BRAND_DOMAINS: Record<string, string> = {
+  toyota: "toyota.com",
+  lexus: "lexus.com",
+  honda: "honda.com",
+  acura: "acura.com",
+  ford: "ford.com",
+  lincoln: "lincoln.com",
+  chevrolet: "chevrolet.com",
+  chevy: "chevrolet.com",
+  gmc: "gmc.com",
+  cadillac: "cadillac.com",
+  buick: "buick.com",
+  chrysler: "chrysler.com",
+  dodge: "dodge.com",
+  jeep: "jeep.com",
+  ram: "ramtrucks.com",
+  bmw: "bmw.com",
+  mini: "mini.com",
+  "mercedes-benz": "mercedes-benz.com",
+  mercedes: "mercedes-benz.com",
+  audi: "audi.com",
+  volkswagen: "volkswagen.com",
+  vw: "volkswagen.com",
+  porsche: "porsche.com",
+  nissan: "nissan.com",
+  infiniti: "infinitiusa.com",
+  hyundai: "hyundai.com",
+  kia: "kia.com",
+  genesis: "genesis.com",
+  mazda: "mazda.com",
+  subaru: "subaru.com",
+  mitsubishi: "mitsubishi-motors.com",
+  suzuki: "suzuki.com",
+  volvo: "volvocars.com",
+  jaguar: "jaguar.com",
+  "land rover": "landrover.com",
+  landrover: "landrover.com",
+  ferrari: "ferrari.com",
+  lamborghini: "lamborghini.com",
+  bentley: "bentleymotors.com",
+  "rolls-royce": "rolls-roycemotorcars.com",
+  rollsroyce: "rolls-roycemotorcars.com",
+  fiat: "fiat.com",
+  "alfa romeo": "alfaromeo.com",
+  alfaromeo: "alfaromeo.com",
+  peugeot: "peugeot.com",
+  renault: "renault.com",
+  citroen: "citroen.com",
+  tesla: "tesla.com",
+  rivian: "rivian.com",
+  lucid: "lucidmotors.com",
+};
+
+function brandLogoUrl(make: string | null | undefined): string | null {
+  if (!make) return null;
+  const key = make.trim().toLowerCase();
+  const domain = BRAND_DOMAINS[key];
+  if (!domain) return null;
+  return `https://logo.clearbit.com/${domain}?size=80`;
+}
+
+function VehicleHeader({ make }: { make: string | null }) {
+  const colors = useColors();
+  const url = brandLogoUrl(make);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    setFailed(false);
+  }, [url]);
+  const showLogo = !!url && !failed;
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 12,
+      }}
+    >
+      <View
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 8,
+          backgroundColor: colors.accent,
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+        }}
+      >
+        {showLogo ? (
+          <Image
+            source={{ uri: url! }}
+            style={{ width: 22, height: 22 }}
+            resizeMode="contain"
+            onError={() => setFailed(true)}
+          />
+        ) : (
+          <Feather name="truck" size={15} color={colors.primary} />
+        )}
+      </View>
+      <Text
+        style={{
+          fontFamily: "Inter_700Bold",
+          color: colors.foreground,
+          fontSize: 14,
+        }}
+      >
+        Vehicle
+      </Text>
+    </View>
   );
 }
