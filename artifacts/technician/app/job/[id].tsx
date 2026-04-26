@@ -270,35 +270,6 @@ export default function JobDetailScreen() {
         {tab === "estimation" && <EstimationTab data={data} onChanged={invalidate} />}
         {tab === "inspection" && <InspectionTab data={data} onChanged={invalidate} />}
         {tab === "feedback" && <FeedbackTab data={data} onChanged={invalidate} />}
-
-        {/* Status actions */}
-        <Card style={{ gap: 10 }}>
-          <SectionTitle icon="activity" title="Update status" />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {nextStatuses(job.status).map((s) => (
-              <Button
-                key={s.to}
-                label={s.label}
-                icon={s.icon as keyof typeof Feather.glyphMap}
-                variant={s.variant}
-                size="sm"
-                onPress={() => statusMut.mutate(s.to)}
-                loading={statusMut.isPending && statusMut.variables === s.to}
-              />
-            ))}
-            {nextStatuses(job.status).length === 0 ? (
-              <Text
-                style={{
-                  color: colors.mutedForeground,
-                  fontFamily: "Inter_400Regular",
-                  fontSize: 13,
-                }}
-              >
-                No further status changes available from here.
-              </Text>
-            ) : null}
-          </View>
-        </Card>
       </ScrollView>
     </View>
   );
@@ -410,8 +381,6 @@ function DetailsTab({ data }: { data: JobDetail }) {
       <Card>
         <SectionTitle icon="user" title="Customer" />
         <KV k="Name" v={job.client_name} icon="user" />
-        <KV k="Phone" v={job.client_phone} icon="phone" />
-        <KV k="Email" v={job.client_email} icon="mail" />
       </Card>
 
       <Card>
