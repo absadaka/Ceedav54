@@ -677,91 +677,97 @@ export default function DashboardPage() {
 
       <div className="-mx-6 -mb-6 px-6 pb-6 bg-[#f2f3ff] space-y-5">
 
-      {/* ── KPI strip ────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
-        {isLoading ? (
-          Array.from({ length: 5 }).map((_, i) => <KpiSkeleton key={i} />)
-        ) : (
-          <>
-            {[
-              {
-                label: "Today's bookings",
-                value: data?.kpis.bookings_today ?? 0,
-                sub: "Scheduled today",
-                icon: CalendarCheck,
-                iconCls: "text-blue-500",
-                iconBg: "bg-blue-50",
-                href: "/bookings",
-              },
-              {
-                label: "Active jobs",
-                value: data?.kpis.active_jobs ?? 0,
-                sub: "In shop right now",
-                icon: Wrench,
-                iconCls: "text-amber-500",
-                iconBg: "bg-amber-50",
-                href: "/jobs",
-              },
-              {
-                label: "Revenue today",
-                value: money(data?.revenue.today ?? "0", cur),
-                sub: `${money(data?.revenue.week ?? "0", cur)} this week`,
-                icon: TrendingUp,
-                iconCls: "text-emerald-500",
-                iconBg: "bg-emerald-50",
-                href: "/invoices",
-              },
-              {
-                label: "Revenue this month",
-                value: money(data?.revenue.month ?? "0", cur),
-                sub: "From paid invoices",
-                icon: TrendingUp,
-                iconCls: "text-violet-500",
-                iconBg: "bg-violet-50",
-                href: "/invoices",
-              },
-              {
-                label: "Unpaid invoices",
-                value: data?.kpis.unpaid_invoices_count ?? 0,
-                sub: money(data?.kpis.unpaid_invoices_total ?? "0", cur) + " outstanding",
-                icon: ReceiptText,
-                iconCls: (data?.kpis.unpaid_invoices_count ?? 0) > 0 ? "text-red-500" : "text-muted-foreground",
-                iconBg:  (data?.kpis.unpaid_invoices_count ?? 0) > 0 ? "bg-red-50" : "bg-muted",
-                href: "/invoices",
-              },
-            ].map((kpi) => (
-              <Link href={kpi.href} key={kpi.label}>
-                <Card className="shadow-none border-border cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all group">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2.5">
-                      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider leading-tight">
-                        {kpi.label}
-                      </p>
-                      <div className={cn("w-7 h-7 rounded-md flex items-center justify-center shrink-0", kpi.iconBg)}>
-                        <kpi.icon className={cn("w-3.5 h-3.5", kpi.iconCls)} />
-                      </div>
-                    </div>
-                    <p className="text-xl font-semibold text-foreground truncate">{kpi.value}</p>
-                    <p className="text-[11px] text-muted-foreground mt-1 truncate">{kpi.sub}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </>
-        )}
-      </div>
+      {/* ── KPI grid (left) + Monthly revenue chart (top right) ─────── */}
+      {(() => {
+        const kpiBookings = {
+          label: "Today's bookings",
+          value: data?.kpis.bookings_today ?? 0,
+          sub: "Scheduled today",
+          icon: CalendarCheck,
+          iconCls: "text-blue-500",
+          iconBg: "bg-blue-50",
+          href: "/bookings",
+        };
+        const kpiActive = {
+          label: "Active jobs",
+          value: data?.kpis.active_jobs ?? 0,
+          sub: "In shop right now",
+          icon: Wrench,
+          iconCls: "text-amber-500",
+          iconBg: "bg-amber-50",
+          href: "/jobs",
+        };
+        const kpiRevToday = {
+          label: "Revenue today",
+          value: money(data?.revenue.today ?? "0", cur),
+          sub: `${money(data?.revenue.week ?? "0", cur)} this week`,
+          icon: TrendingUp,
+          iconCls: "text-emerald-500",
+          iconBg: "bg-emerald-50",
+          href: "/invoices",
+        };
+        const kpiRevMonth = {
+          label: "Revenue this month",
+          value: money(data?.revenue.month ?? "0", cur),
+          sub: "From paid invoices",
+          icon: TrendingUp,
+          iconCls: "text-violet-500",
+          iconBg: "bg-violet-50",
+          href: "/invoices",
+        };
+        const kpiUnpaid = {
+          label: "Unpaid invoices",
+          value: data?.kpis.unpaid_invoices_count ?? 0,
+          sub: money(data?.kpis.unpaid_invoices_total ?? "0", cur) + " outstanding",
+          icon: ReceiptText,
+          iconCls: (data?.kpis.unpaid_invoices_count ?? 0) > 0 ? "text-red-500" : "text-muted-foreground",
+          iconBg:  (data?.kpis.unpaid_invoices_count ?? 0) > 0 ? "bg-red-50" : "bg-muted",
+          href: "/invoices",
+        };
+        const renderKpi = (kpi: typeof kpiBookings) => (
+          <Link href={kpi.href} key={kpi.label}>
+            <Card className="shadow-none border-border cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all group h-full">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2.5">
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider leading-tight">
+                    {kpi.label}
+                  </p>
+                  <div className={cn("w-7 h-7 rounded-md flex items-center justify-center shrink-0", kpi.iconBg)}>
+                    <kpi.icon className={cn("w-3.5 h-3.5", kpi.iconCls)} />
+                  </div>
+                </div>
+                <p className="text-xl font-semibold text-foreground truncate">{kpi.value}</p>
+                <p className="text-[11px] text-muted-foreground mt-1 truncate">{kpi.sub}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        );
+        return (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            {/* LEFT column: KPI stack */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                {isLoading ? <><KpiSkeleton /><KpiSkeleton /></> : <>{renderKpi(kpiBookings)}{renderKpi(kpiActive)}</>}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {isLoading ? <><KpiSkeleton /><KpiSkeleton /></> : <>{renderKpi(kpiRevToday)}{renderKpi(kpiRevMonth)}</>}
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {isLoading ? <KpiSkeleton /> : renderKpi(kpiUnpaid)}
+              </div>
+            </div>
+            {/* RIGHT column: monthly revenue chart */}
+            <div>
+              <MonthlyRevenueCard data={data} isLoading={isLoading} cur={cur} />
+            </div>
+          </div>
+        );
+      })()}
 
-      {/* ── Row 2: Monthly Revenue Chart (half) + Jobs by Category + Top Technicians */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-        <div className="xl:col-span-2">
-          <MonthlyRevenueCard data={data} isLoading={isLoading} cur={cur} />
-        </div>
-        <div className="xl:col-span-1">
-          <RevenueByCategoryCard data={data} isLoading={isLoading} cur={cur} />
-        </div>
-        <div className="xl:col-span-1">
-          <TopTechniciansCard data={data} isLoading={isLoading} />
-        </div>
+      {/* ── Row 2: Jobs by Category + Top Technicians ───────────────── */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <RevenueByCategoryCard data={data} isLoading={isLoading} cur={cur} />
+        <TopTechniciansCard data={data} isLoading={isLoading} />
       </div>
 
       {/* ── Row 3: Bookings + Revenue summary + Critical Alerts ────── */}
