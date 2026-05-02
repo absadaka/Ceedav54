@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { SupportDialog } from "@/components/SupportDialog";
+import { LifeBuoy } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Users, CalendarCheck, FileText, Wrench, Receipt,
@@ -310,6 +312,7 @@ function TopBar({
   const userEmail = user?.email ?? "";
   const userInitials = initials(userName);
   const prefix = tenantSlug ? `/${tenantSlug}` : "";
+  const [supportOpen, setSupportOpen] = useState(false);
 
   return (
     <header className="h-[52px] flex items-center justify-between px-4 bg-background border-b border-border shrink-0 gap-3">
@@ -352,6 +355,27 @@ function TopBar({
           </span>
         </div>
 
+        {/* Get help */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 text-xs hidden sm:inline-flex"
+          onClick={() => setSupportOpen(true)}
+          aria-label="Get help from support"
+        >
+          <LifeBuoy className="w-3.5 h-3.5" />
+          Get help
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-8 h-8 sm:hidden text-muted-foreground"
+          onClick={() => setSupportOpen(true)}
+          aria-label="Get help from support"
+        >
+          <LifeBuoy className="w-[17px] h-[17px]" />
+        </Button>
+
         {/* Notifications */}
         <Button
           variant="ghost"
@@ -362,6 +386,8 @@ function TopBar({
           <Bell className="w-[17px] h-[17px]" />
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full" />
         </Button>
+
+        <SupportDialog open={supportOpen} onOpenChange={setSupportOpen} />
 
         {/* User menu */}
         <DropdownMenu>

@@ -289,6 +289,14 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 | `lib/db/src/schema/index.ts` | Schema barrel export |
 | `lib/api-spec/openapi.yaml` | API contract (source of truth) |
 
+## Support Tickets
+
+- Tenant entry point: "Get Help" button in `TenantLayout.tsx` opens `SupportDialog.tsx` (subject/category/priority/description). Posts to `POST /api/support/tickets` with `tenant_slug` + `user_id`; server derives `contact_name`/`contact_email` from the verified tenant user (body contact fields are ignored to prevent spoofing) and creates the ticket inside a `db.transaction`.
+- Ref format: `TK-{seq+1000}` where `seq` is a serial column.
+- Admin surface (`SupportTicketsPage.tsx`): list with filter/search, detail dialog with thread + reply + status/priority controls. Bell icon in `AdminLayout.tsx` polls `/admin/support/notifications` every 30s. Dashboard shows unread alert card.
+- Schema: `support_tickets` (status/priority/category enums, ack/resolve timestamps, atomic `reply_count`) + `support_ticket_messages` (cascade on ticket delete). Migration `0002_add_support_tickets.sql`.
+- Auth: admin endpoints require `X-Admin-Id` (`requirePlatformAdmin`); reply increments `reply_count` via SQL, auto-bumps status `open → in_progress`; auto-ack uses `WHERE acknowledged_at IS NULL` for idempotency.
+
 ## Object Storage
 
 - App Storage (GCS-backed) is provisioned. Env: `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS`, `PRIVATE_OBJECT_DIR`.

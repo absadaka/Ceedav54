@@ -1,5 +1,5 @@
 import {
-  pgTable, text, timestamp, boolean, uuid, pgEnum, index, unique, jsonb, integer, numeric,
+  pgTable, text, timestamp, boolean, uuid, pgEnum, index, unique, jsonb, integer, numeric, serial,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -299,3 +299,60 @@ export const planCatalogTable = pgTable("plan_catalog", {
 });
 
 export type PlanCatalog = typeof planCatalogTable.$inferSelect;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SUPPORT TICKETS  (raised by tenant users, handled by platform staff)
+───────────────────────────────────────────────────────────────────────── */
+
+export const supportTicketStatusEnum = pgEnum("support_ticket_status", [
+  "open", "in_progress", "waiting_on_customer", "resolved", "closed",
+]);
+
+export const supportTicketPriorityEnum = pgEnum("support_ticket_priority", [
+  "low", "medium", "high", "urgent",
+]);
+
+export const supportTicketCategoryEnum = pgEnum("support_ticket_category", [
+  "general", "billing", "technical", "feature_request", "bug", "account",
+]);
+
+export const supportTicketsTable = pgTable("support_tickets", {
+  id:              uuid("id").defaultRandom().primaryKey(),
+  seq:             serial("seq").notNull(),                       // numeric counter, used to format `ref`
+  ref:             text("ref").notNull().unique(),                // e.g. "TK-1024"
+  tenant_id:       uuid("tenant_id").references(() => tenantsTable.id, { onDelete: "set null" }),
+  created_by_id:   uuid("created_by_id").references(() => usersTable.id, { onDelete: "set null" }),
+  contact_email:   text("contact_email").notNull(),
+  contact_name:    text("contact_name").notNull(),
+  subject:         text("subject").notNull(),
+  description:     text("description").notNull(),
+  priority:        supportTicketPriorityEnum("priority").notNull().default("medium"),
+  category:        supportTicketCategoryEnum("category").notNull().default("general"),
+  status:          supportTicketStatusEnum("status").notNull().default("open"),
+  assigned_to_id:  uuid("assigned_to_id").references(() => usersTable.id, { onDelete: "set null" }),
+  acknowledged_at: timestamp("acknowledged_at", { withTimezone: true }),  // when an admin first viewed it
+  resolved_at:     timestamp("resolved_at",     { withTimezone: true }),
+  reply_count:     integer("reply_count").notNull().default(0),
+  created_at:      timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updated_at:      timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("support_tickets_tenant_idx").on(t.tenant_id),
+  index("support_tickets_status_idx").on(t.status),
+  index("support_tickets_created_idx").on(t.created_at),
+]);
+
+export type SupportTicket = typeof supportTicketsTable.$inferSelect;
+
+export const supportTicketMessagesTable = pgTable("support_ticket_messages", {
+  id:           uuid("id").defaultRandom().primaryKey(),
+  ticket_id:    uuid("ticket_id").references(() => supportTicketsTable.id, { onDelete: "cascade" }).notNull(),
+  author_id:    uuid("author_id").references(() => usersTable.id, { onDelete: "set null" }),
+  author_type:  text("author_type").notNull(),   // 'tenant' | 'platform' | 'system'
+  author_name:  text("author_name").notNull(),
+  body:         text("body").notNull(),
+  created_at:   timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("support_ticket_messages_ticket_idx").on(t.ticket_id),
+]);
+
+export type SupportTicketMessage = typeof supportTicketMessagesTable.$inferSelect;

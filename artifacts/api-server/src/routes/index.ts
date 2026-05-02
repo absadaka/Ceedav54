@@ -13,6 +13,7 @@ import settingsRouter    from "./settings";
 import adminRouter       from "./admin";
 import authRouter        from "./auth";
 import storageRouter     from "./storage";
+import supportRouter     from "./support";
 
 const router: IRouter = Router();
 
@@ -28,6 +29,7 @@ router.use("/invoices",   invoicesRouter);
 router.use("/team",       teamRouter);
 router.use(settingsRouter);
 router.use(adminRouter);
+router.use(supportRouter);
 router.use(authRouter);
 router.use(storageRouter);
 

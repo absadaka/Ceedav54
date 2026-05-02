@@ -3,7 +3,7 @@ import { randomBytes, scryptSync, scrypt, timingSafeEqual } from "crypto";
 import {
   db, tenantsTable, usersTable, auditLogsTable, featureFlagsTable,
   clientsTable, vehiclesTable, bookingsTable, jobsTable, invoicesTable,
-  planCatalogTable,
+  planCatalogTable, supportTicketsTable,
 } from "@workspace/db";
 import {
   eq, ilike, isNull, count, desc, and, or, sql, ne, sum, asc,
@@ -78,7 +78,7 @@ function resolveAdminIp(req: any) {
    Platform-level KPIs (total tenants, active users, per-plan breakdown)
 ───────────────────────────────────────────────────────────────────────── */
 router.get("/admin/stats", async (_req, res) => {
-  const [[tenantStats], [userStats], planRows, statusRows] = await Promise.all([
+  const [[tenantStats], [userStats], planRows, statusRows, ticketRows, [{ unread }]] = await Promise.all([
     db.select({ total: count() })
       .from(tenantsTable)
       .where(isNull(tenantsTable.deleted_at)),
@@ -96,10 +96,22 @@ router.get("/admin/stats", async (_req, res) => {
       .from(tenantsTable)
       .where(isNull(tenantsTable.deleted_at))
       .groupBy(tenantsTable.status),
+
+    db.select({ status: supportTicketsTable.status, cnt: count() })
+      .from(supportTicketsTable)
+      .groupBy(supportTicketsTable.status),
+
+    db.select({ unread: count() })
+      .from(supportTicketsTable)
+      .where(and(
+        isNull(supportTicketsTable.acknowledged_at),
+        sql`${supportTicketsTable.status} IN ('open','in_progress','waiting_on_customer')`,
+      )),
   ]);
 
   const byPlan   = Object.fromEntries(planRows.map((r) => [r.plan, Number(r.cnt)]));
   const byStatus = Object.fromEntries(statusRows.map((r) => [r.status, Number(r.cnt)]));
+  const byTicket = Object.fromEntries(ticketRows.map((r) => [r.status, Number(r.cnt)]));
 
   return res.json({
     total_tenants: Number(tenantStats.total),
@@ -110,6 +122,13 @@ router.get("/admin/stats", async (_req, res) => {
       (byPlan.professional ?? 0) * 149 +
       (byPlan.enterprise    ?? 0) * 499
     ),
+    support: {
+      open:        Number(byTicket.open ?? 0),
+      in_progress: Number(byTicket.in_progress ?? 0),
+      waiting:     Number(byTicket.waiting_on_customer ?? 0),
+      resolved:    Number(byTicket.resolved ?? 0),
+      unread:      Number(unread),
+    },
   });
 });
 
