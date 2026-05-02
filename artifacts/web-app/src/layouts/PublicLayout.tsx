@@ -166,6 +166,9 @@ function PublicNav() {
           <Logo />
           <nav className="hidden md:flex items-center gap-1 ml-2">
             <FeaturesMegaMenu />
+            <Link href="/solutions" className={navLinkClass(location === "/solutions")}>
+              Solutions
+            </Link>
             <Link href="/pricing" className={navLinkClass(location === "/pricing")}>
               Pricing
             </Link>
@@ -274,6 +277,13 @@ function PublicNav() {
             )}
           </div>
           <Link
+            href="/solutions"
+            className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted"
+            onClick={() => setMenuOpen(false)}
+          >
+            Solutions
+          </Link>
+          <Link
             href="/pricing"
             className="block px-3 py-2.5 text-sm rounded-md text-foreground/80 hover:text-foreground hover:bg-muted"
             onClick={() => setMenuOpen(false)}
@@ -322,20 +332,21 @@ function PublicFooter() {
   if (isAuthPage) return null;
 
   const productLinks: [string, string][] = [
-    ["Home",     "/"],
-    ["Pricing",  "/pricing"],
-    ["Features", "/features"],
-    ["Docs",     "/docs"],
-    ["Blog",     "/features"],
+    ["Home",      "/"],
+    ["Features",  "/features"],
+    ["Solutions", "/solutions"],
+    ["Pricing",   "/pricing"],
+    ["Docs",      "/docs"],
+    ["Blog",      "/features"],
   ];
 
   const solutionsLinks: [string, string][] = [
-    ["Auto Workshops",  "/features"],
-    ["Service Centers", "/features"],
-    ["Tyre Shops",      "/features"],
-    ["Quick Lubes",     "/features"],
-    ["Multi-branch",    "/features"],
-    ["Enterprise",      "/features"],
+    ["Car Maintenance", "/solutions#car-maintenance"],
+    ["Body Shops",      "/solutions#bodyshops"],
+    ["Auto Detailing",  "/solutions#auto-detailing"],
+    ["Tyre & Wheel",    "/solutions#tyre-shops"],
+    ["Quick Lubes",     "/solutions#quick-lube"],
+    ["Multi-branch",    "/solutions#multi-branch"],
   ];
 
   const socials: { label: string; icon: React.ElementType; href: string }[] = [
