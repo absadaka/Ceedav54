@@ -1416,7 +1416,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Quotation",     icon: <Calculator className="w-4 h-4" /> },
               in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status",   icon: <Hammer className="w-4 h-4" /> },
               completed:     { title: "Ready for Invoicing",             desc: "Work is complete. Prepare and send the invoice to the customer.",                                             btn: "Mark as Invoiced",     icon: <Send className="w-4 h-4" /> },
-              invoiced:      { title: "Awaiting Payment",               desc: "Invoice has been sent. Waiting for customer to complete payment, then prepare the vehicle for handover.", btn: "Mark as Paid",          icon: <DollarSign className="w-4 h-4" /> },
+              invoiced:      { title: "Awaiting Payment",               desc: "Invoice has been sent. Once the customer pays, hand over the vehicle to complete the job.", btn: "Deliver the Vehicle",    icon: <Truck className="w-4 h-4" /> },
               paid:          { title: "Ready for Delivery",              desc: "Payment has been received. Prepare the vehicle for handover.",                                               btn: "Mark as Delivered",     icon: <Truck className="w-4 h-4" /> },
               delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: "",                      icon: <CheckCircle2 className="w-4 h-4" /> },
             };
@@ -1541,6 +1541,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       );
                     })() : job.status === "invoiced" ? (() => {
                       const inv = (invoices as any[])[0];
+                      const invPaid = !!inv && inv.status === "paid";
                       return (
                         <div className="flex flex-col gap-2 w-full">
                           {inv && (
@@ -1558,15 +1559,23 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                           )}
                           <button
                             onClick={() => {
-                              setMarkPaidNote("");
-                              setMarkPaidMethod("cash");
-                              setMarkPaidStep(1);
-                              setMarkPaidOpen(true);
+                              if (!invPaid) {
+                                toast.error("The invoice must be paid before delivering the vehicle");
+                                return;
+                              }
+                              moveStatus("delivered");
                             }}
-                            className="w-full h-10 rounded-xl border-2 border-[#161aff] bg-[#161aff] text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
+                            disabled={!invPaid || moveStatusMutation.isPending}
+                            title={invPaid ? "Hand over the vehicle to the customer" : "Waiting for the invoice to be paid"}
+                            className={cn(
+                              "w-full h-10 rounded-xl border-2 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed",
+                              invPaid
+                                ? "border-[#161aff] bg-[#161aff] text-white hover:bg-[#1014cc] hover:border-[#1014cc] hover:shadow-lg hover:scale-[1.03]"
+                                : "border-[#161aff]/40 bg-transparent text-[#161aff]/60",
+                            )}
                           >
-                            <DollarSign className="w-4 h-4" />
-                            <span className="text-xs font-bold">Mark as Paid</span>
+                            <Truck className="w-4 h-4" />
+                            <span className="text-xs font-bold">{moveStatusMutation.isPending ? "Updating…" : "Deliver the Vehicle"}</span>
                           </button>
                         </div>
                       );
