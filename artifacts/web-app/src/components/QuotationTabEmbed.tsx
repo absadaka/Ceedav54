@@ -328,6 +328,12 @@ export default function QuotationTabEmbed({ quotationId, jobId }: { quotationId:
               Download PDF
             </Button>
           )}
+          {qt.status === "approved" && (
+            <span className="inline-flex items-center gap-1 text-sm font-semibold text-green-600">
+              <CheckCircle2 className="w-4 h-4" />
+              Approved
+            </span>
+          )}
         </div>
       </div>
 
