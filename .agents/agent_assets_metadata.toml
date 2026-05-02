@@ -1,79 +1,8 @@
 uploads = []
+outputs = []
 
 [[generated]]
 id = "pUZDamd5F1l_r4VMqI-VP"
 uri = "file://artifacts/technician/assets/images/icon.png"
 type = "image"
 title = "generated_image"
-
-[[outputs]]
-id = "jfAi15cyPyzfbklQq8omm"
-uri = "file://attached_assets/stock_images/solution_car-maintenance.jpg"
-type = "image"
-title = "auto mechanic working on a car engine in a modern repair shop"
-
-[[outputs]]
-id = "ZGqYMVlNZhJOosNl7-8mf"
-uri = "file://attached_assets/stock_images/solution_bodyshops.jpg"
-type = "image"
-title = "auto body collision repair shop with car panel and paint booth"
-
-[[outputs]]
-id = "G7WTMuvPMpuXKcYWh4LYK"
-uri = "file://attached_assets/stock_images/solution_auto-detailing.jpg"
-type = "image"
-title = "professional car detailing polishing a glossy black sports car"
-
-[[outputs]]
-id = "SxuGREEdk7wA83tgYWjKE"
-uri = "file://attached_assets/stock_images/solution_tyre-shops.jpg"
-type = "image"
-title = "tire shop technician changing wheel and balancing tyres"
-
-[[outputs]]
-id = "K430WrlTM_F9QIyPEOA2w"
-uri = "file://attached_assets/stock_images/solution_quick-lube.jpg"
-type = "image"
-title = "quick oil change service car on lift draining engine oil"
-
-[[outputs]]
-id = "2fynWeGLDxO7994s6r6B5"
-uri = "file://attached_assets/stock_images/solution_performance.jpg"
-type = "image"
-title = "tuned sports car on dynamometer in performance tuning workshop"
-
-[[outputs]]
-id = "pYbBoOKFeOwolWOIU6qfX"
-uri = "file://attached_assets/stock_images/solution_ev.jpg"
-type = "image"
-title = "electric vehicle being serviced with charging cable and battery diagnostics"
-
-[[outputs]]
-id = "VL74ZEsrvyDR8vkI_7efz"
-uri = "file://attached_assets/stock_images/solution_fleet.jpg"
-type = "image"
-title = "fleet of white commercial vans parked outside service center"
-
-[[outputs]]
-id = "eZh6BrtBqoJdWoj0GExVv"
-uri = "file://attached_assets/stock_images/solution_motorcycle.jpg"
-type = "image"
-title = "motorcycle workshop mechanic repairing sport bike on lift"
-
-[[outputs]]
-id = "RKFEMg6Cg_IDZMwMHSohJ"
-uri = "file://attached_assets/stock_images/solution_mobile.jpg"
-type = "image"
-title = "mobile mechanic working on car at customer driveway with tool van"
-
-[[outputs]]
-id = "eN9xQ8hYKlIRgLN1IH8c5"
-uri = "file://attached_assets/stock_images/solution_multi-branch.jpg"
-type = "image"
-title = "modern multi bay automotive service center building exterior"
-
-[[outputs]]
-id = "JV-moFxi6sNLVuo7BIZBU"
-uri = "file://attached_assets/stock_images/solution_warranty.jpg"
-type = "image"
-title = "automotive technician inspecting car with checklist clipboard"
