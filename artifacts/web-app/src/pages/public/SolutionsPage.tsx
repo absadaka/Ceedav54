@@ -17,7 +17,7 @@ import photoMechanic       from "@assets/photo-1526626607369-f89fe1ed77a9_177774
 import photoPerfDark       from "@assets/lorenzo-hamers-wtXnp09Q86w-unsplash_1777741356304.jpg";
 import photoModernShop     from "@assets/zaptec-owAi6NkSnW8-unsplash_1777742039813.jpg";
 import photoServiceBay     from "@assets/photo-1587813369290-091c9d432daf_1777742424432.avif";
-import photoMotor          from "@assets/photo-1615906655593-ad0386982a0f_1777741356305.avif";
+import photoMotor          from "@assets/fabio-spinelli-cPpmFa1OiGU-unsplash_1777742502786.jpg";
 import photoMobile         from "@assets/kevin-grieve-3CKZS3-o3XU-unsplash_1777741910513.jpg";
 import photoWorkshopHero   from "@/assets/workshop-hero.jpg";
 import photoInspection     from "@assets/premium_photo-1661602003497-7e918e0259b2_1777742131069.avif";
