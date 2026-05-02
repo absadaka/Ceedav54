@@ -18,7 +18,7 @@ import photoPerfDark       from "@assets/lorenzo-hamers-wtXnp09Q86w-unsplash_177
 import photoModernShop     from "@assets/photo-1727413433599-496949ef8196_1777741356305.avif";
 import photoServiceBay     from "@assets/photo-1702146713882-2579afb0bfba_1777741356305.avif";
 import photoMotor          from "@assets/photo-1615906655593-ad0386982a0f_1777741356305.avif";
-import photoMobile         from "@assets/photo-1654167535598-86dfc149efa1_1777741356305.avif";
+import photoMobile         from "@assets/kevin-grieve-3CKZS3-o3XU-unsplash_1777741910513.jpg";
 import photoWorkshopHero   from "@/assets/workshop-hero.jpg";
 import photoInspection     from "@assets/photo-1593280405106-e438ebe93f5b_1777741356304.avif";
 
