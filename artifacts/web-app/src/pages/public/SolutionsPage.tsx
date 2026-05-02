@@ -7,6 +7,18 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import imgCarMaintenance from "@/assets/solutions/solution_car-maintenance.jpg";
+import imgBodyshops from "@/assets/solutions/solution_bodyshops.jpg";
+import imgAutoDetailing from "@/assets/solutions/solution_auto-detailing.jpg";
+import imgTyreShops from "@/assets/solutions/solution_tyre-shops.jpg";
+import imgQuickLube from "@/assets/solutions/solution_quick-lube.jpg";
+import imgPerformance from "@/assets/solutions/solution_performance.jpg";
+import imgEv from "@/assets/solutions/solution_ev.jpg";
+import imgFleet from "@/assets/solutions/solution_fleet.jpg";
+import imgMotorcycle from "@/assets/solutions/solution_motorcycle.jpg";
+import imgMobile from "@/assets/solutions/solution_mobile.jpg";
+import imgMultiBranch from "@/assets/solutions/solution_multi-branch.jpg";
+import imgWarranty from "@/assets/solutions/solution_warranty.jpg";
 
 type Solution = {
   slug: string;
@@ -19,6 +31,7 @@ type Solution = {
   accent: string;
   iconBg: string;
   iconCls: string;
+  image: string;
 };
 
 const SOLUTIONS: Solution[] = [
@@ -39,6 +52,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-blue-50",
     iconBg: "bg-blue-100",
     iconCls: "text-blue-600",
+    image: imgCarMaintenance,
   },
   {
     slug: "bodyshops",
@@ -57,6 +71,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-rose-50",
     iconBg: "bg-rose-100",
     iconCls: "text-rose-600",
+    image: imgBodyshops,
   },
   {
     slug: "auto-detailing",
@@ -75,6 +90,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-violet-50",
     iconBg: "bg-violet-100",
     iconCls: "text-violet-600",
+    image: imgAutoDetailing,
   },
   {
     slug: "tyre-shops",
@@ -93,6 +109,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-amber-50",
     iconBg: "bg-amber-100",
     iconCls: "text-amber-600",
+    image: imgTyreShops,
   },
   {
     slug: "quick-lube",
@@ -111,6 +128,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-emerald-50",
     iconBg: "bg-emerald-100",
     iconCls: "text-emerald-600",
+    image: imgQuickLube,
   },
   {
     slug: "performance",
@@ -129,6 +147,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-indigo-50",
     iconBg: "bg-indigo-100",
     iconCls: "text-indigo-600",
+    image: imgPerformance,
   },
   {
     slug: "ev",
@@ -147,6 +166,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-teal-50",
     iconBg: "bg-teal-100",
     iconCls: "text-teal-600",
+    image: imgEv,
   },
   {
     slug: "fleet",
@@ -165,6 +185,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-slate-50",
     iconBg: "bg-slate-200",
     iconCls: "text-slate-700",
+    image: imgFleet,
   },
   {
     slug: "motorcycle",
@@ -183,6 +204,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-orange-50",
     iconBg: "bg-orange-100",
     iconCls: "text-orange-600",
+    image: imgMotorcycle,
   },
   {
     slug: "mobile",
@@ -201,6 +223,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-cyan-50",
     iconBg: "bg-cyan-100",
     iconCls: "text-cyan-600",
+    image: imgMobile,
   },
   {
     slug: "multi-branch",
@@ -219,6 +242,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-fuchsia-50",
     iconBg: "bg-fuchsia-100",
     iconCls: "text-fuchsia-600",
+    image: imgMultiBranch,
   },
   {
     slug: "warranty",
@@ -237,6 +261,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-lime-50",
     iconBg: "bg-lime-100",
     iconCls: "text-lime-700",
+    image: imgWarranty,
   },
 ];
 
@@ -434,20 +459,22 @@ function SolutionSection({ solution, index }: { solution: Solution; index: numbe
             </div>
           </div>
 
-          {/* Visual placeholder card */}
+          {/* Photo card */}
           <div>
-            <div className={cn("relative rounded-3xl border border-border p-8 sm:p-10 overflow-hidden", solution.accent)}>
-              <div className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-white/40 blur-2xl pointer-events-none" />
-              <div className="relative flex flex-col items-center justify-center text-center min-h-[220px]">
-                <div className={cn("inline-flex h-16 w-16 items-center justify-center rounded-2xl", solution.iconBg)}>
-                  <Icon className={cn("h-8 w-8", solution.iconCls)} />
-                </div>
-                <p className="mt-5 text-base font-semibold text-foreground">
-                  {solution.label}
-                </p>
-                <p className="mt-1 text-xs uppercase tracking-wider text-foreground/50 font-medium">
-                  Powered by ceeda&gt;
-                </p>
+            <div className={cn("relative rounded-3xl border border-border overflow-hidden shadow-sm", solution.accent)}>
+              <div className="aspect-[4/3] w-full overflow-hidden">
+                <img
+                  src={solution.image}
+                  alt={solution.label}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="absolute top-3 left-3 flex items-center gap-2 rounded-full bg-white/90 backdrop-blur px-3 py-1.5 shadow-sm">
+                <span className={cn("inline-flex h-6 w-6 items-center justify-center rounded-md", solution.iconBg)}>
+                  <Icon className={cn("h-3.5 w-3.5", solution.iconCls)} />
+                </span>
+                <span className="text-xs font-semibold text-foreground">{solution.label}</span>
               </div>
             </div>
           </div>
