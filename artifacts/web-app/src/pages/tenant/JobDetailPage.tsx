@@ -247,7 +247,7 @@ function ServiceFlowTracker({
   onStepClick?: (statusKey: string) => void;
 }) {
   const stages = (isInspection ? INSPECTION_STATUSES : JOB_STATUSES).filter(
-    (s) => s.key !== "move_to_service_job"
+    (s) => s.key !== "move_to_service_job" && s.key !== "paid"
   );
   const reachedAt: Record<string, string> = {};
   for (const entry of statusHistory) {
@@ -828,7 +828,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
   const NEXT_STATUS: Record<string, string> = {
     new: "waiting", waiting: "on_hold", on_hold: "qc",
     qc: "in_progress", in_progress: "completed",
-    completed: "invoiced", invoiced: "paid", paid: "delivered",
+    completed: "invoiced", invoiced: "delivered", paid: "delivered",
   };
 
   const validateTransition = (targetStatus: string): boolean => {
@@ -1416,8 +1416,8 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
               qc:            { title: "Prepare Estimation",              desc: "Review inspection findings and prepare a detailed cost estimate for the customer.",                           btn: "Create Quotation",     icon: <Calculator className="w-4 h-4" /> },
               in_progress:   { title: "Work In Progress",                desc: "Technician is actively working on the vehicle. Monitor progress and time logs.",                             btn: "Update Work Status",   icon: <Hammer className="w-4 h-4" /> },
               completed:     { title: "Ready for Invoicing",             desc: "Work is complete. Prepare and send the invoice to the customer.",                                             btn: "Mark as Invoiced",     icon: <Send className="w-4 h-4" /> },
-              invoiced:      { title: "Awaiting Payment",               desc: "Invoice has been sent. Waiting for customer to complete payment.",                                            btn: "Mark as Paid",          icon: <DollarSign className="w-4 h-4" /> },
-              paid:          { title: "Paid — Ready for Delivery",      desc: "Payment has been received. Prepare the vehicle for handover.",                                               btn: "Mark as Delivered",     icon: <Truck className="w-4 h-4" /> },
+              invoiced:      { title: "Awaiting Payment",               desc: "Invoice has been sent. Waiting for customer to complete payment, then prepare the vehicle for handover.", btn: "Mark as Paid",          icon: <DollarSign className="w-4 h-4" /> },
+              paid:          { title: "Ready for Delivery",              desc: "Payment has been received. Prepare the vehicle for handover.",                                               btn: "Mark as Delivered",     icon: <Truck className="w-4 h-4" /> },
               delivered:     { title: "Job Complete",                    desc: "The vehicle has been delivered to the customer. The job card is closed.",                                    btn: "",                      icon: <CheckCircle2 className="w-4 h-4" /> },
             };
             const action = NEXT_ACTION[job.status] ?? { title: "Update Status", desc: "Move this job to the next stage in the workflow.", btn: "Move Status", icon: <ArrowRight className="w-4 h-4" /> };
@@ -2757,7 +2757,7 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                       if (!res.ok) throw new Error();
                       qc.invalidateQueries({ queryKey: ["job", id] });
                       qc.invalidateQueries({ queryKey: ["invoices"] });
-                      toast.success("Payment recorded — job marked as paid");
+                      toast.success("Payment recorded — job marked as delivered");
                       setMarkPaidOpen(false);
                     } catch {
                       toast.error("Failed to record payment");

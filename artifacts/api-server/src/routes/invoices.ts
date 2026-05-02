@@ -3,7 +3,7 @@ import { sql, eq, and, desc, asc, ilike, or, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   db, tenantsTable, clientsTable, vehiclesTable, usersTable,
-  jobsTable, jobPartsTable, jobNotesTable,
+  jobsTable, jobPartsTable, jobNotesTable, jobStatusHistoryTable,
   invoicesTable, invoiceLineItemsTable, paymentsTable,
   quotationsTable, quoteLineItemsTable,
 } from "@workspace/db";
@@ -86,15 +86,22 @@ async function recalcPaid(invoiceId: string) {
     .where(eq(invoicesTable.id, invoiceId));
 
   if (status === "paid" && inv.job_id) {
-    const [job] = await db.select({ status: jobsTable.status })
+    const [job] = await db.select({ status: jobsTable.status, tenant_id: jobsTable.tenant_id })
       .from(jobsTable)
       .where(eq(jobsTable.id, inv.job_id))
       .limit(1);
-    if (job && job.status === "invoiced") {
+    if (job && (job.status === "invoiced" || job.status === "paid")) {
       await db.update(jobsTable).set({
-        status: "paid",
+        status: "delivered",
         updated_at: new Date(),
       }).where(eq(jobsTable.id, inv.job_id));
+      await db.insert(jobStatusHistoryTable).values({
+        job_id:      inv.job_id,
+        tenant_id:   job.tenant_id,
+        from_status: job.status,
+        to_status:   "delivered",
+        note:        "Auto-advanced after invoice paid",
+      });
     }
   }
 }
