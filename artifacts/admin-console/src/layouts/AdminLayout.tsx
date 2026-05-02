@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, Building2, CreditCard, Flag, UserSearch,
   ChevronLeft, ChevronRight, Bell, LogOut, ChevronDown,
@@ -303,6 +304,16 @@ function AdminTopBar({ sidebarLight, onToggleTheme }: { sidebarLight: boolean; o
   const { user, logout } = useAdminAuth();
   const initials = user?.name ? user.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "SA";
   const displayName = user?.name ?? "Admin";
+  const [, navigate] = useLocation();
+  const { data: notif } = useQuery<{ open: number; in_progress: number; waiting: number; unread: number }>({
+    queryKey: ["admin-support-notifications"],
+    queryFn: () => fetch("/api/admin/support/notifications", {
+      headers: user ? { "X-Admin-Id": user.id } : {},
+    }).then((r) => (r.ok ? r.json() : { unread: 0, open: 0, in_progress: 0, waiting: 0 })),
+    refetchInterval: 30_000,
+    enabled: !!user,
+  });
+  const unread = notif?.unread ?? 0;
 
   return (
     <header className="h-[72px] flex items-center justify-between px-6 bg-background border-b border-border shrink-0">
@@ -323,8 +334,19 @@ function AdminTopBar({ sidebarLight, onToggleTheme }: { sidebarLight: boolean; o
         >
           {sidebarLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
         </Button>
-        <Button variant="ghost" size="icon" className="w-8 h-8" aria-label="Notifications">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-8 h-8 relative"
+          aria-label={unread > 0 ? `${unread} new support tickets` : "Notifications"}
+          onClick={() => navigate("/tickets")}
+        >
           <Bell className="w-4 h-4" />
+          {unread > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-semibold flex items-center justify-center tabular-nums">
+              {unread > 99 ? "99+" : unread}
+            </span>
+          )}
         </Button>
 
         <DropdownMenu>

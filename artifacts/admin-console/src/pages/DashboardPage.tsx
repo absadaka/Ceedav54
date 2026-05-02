@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Users, CreditCard, TrendingUp, AlertTriangle, Circle, Activity } from "lucide-react";
+import { Building2, Users, CreditCard, TrendingUp, AlertTriangle, Circle, Activity, LifeBuoy, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 
@@ -11,6 +11,13 @@ interface Stats {
   mrr_estimate:  number;
   by_plan:   Record<string, number>;
   by_status: Record<string, number>;
+  support?: {
+    open:        number;
+    in_progress: number;
+    waiting:     number;
+    resolved:    number;
+    unread:      number;
+  };
 }
 
 function StatCard({
@@ -63,9 +70,9 @@ export default function DashboardPage() {
   const byStatus = data?.by_status ?? {};
   const byPlan   = data?.by_plan ?? {};
 
-  const alerts = [
-    ...(byStatus.suspended ? [{ level: "warn", msg: `${byStatus.suspended} tenant${byStatus.suspended > 1 ? "s" : ""} suspended` }] : []),
-  ];
+  const support = data?.support;
+  const unreadTickets = support?.unread ?? 0;
+  const openTickets   = support?.open   ?? 0;
 
   return (
     <div className="space-y-6">
@@ -76,12 +83,29 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {alerts.map((a, i) => (
-        <div key={i} className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-sm bg-amber-50 border-amber-200 text-amber-800">
+      {byStatus.suspended ? (
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-sm bg-amber-50 border-amber-200 text-amber-800">
           <AlertTriangle className="w-4 h-4 shrink-0" />
-          {a.msg}
+          {byStatus.suspended} tenant{byStatus.suspended > 1 ? "s" : ""} suspended
         </div>
-      ))}
+      ) : null}
+
+      {unreadTickets > 0 && (
+        <Link href="/tickets">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg border text-sm bg-red-50 border-red-200 text-red-800 hover:bg-red-100 transition-colors cursor-pointer">
+            <LifeBuoy className="w-4 h-4 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium">
+                {unreadTickets} new support ticket{unreadTickets > 1 ? "s" : ""} need{unreadTickets > 1 ? "" : "s"} attention
+              </p>
+              <p className="text-xs text-red-700/80 mt-0.5">
+                {openTickets} open in total — click to review and respond.
+              </p>
+            </div>
+            <ArrowRight className="w-4 h-4 shrink-0" />
+          </div>
+        </Link>
+      )}
 
       {/* KPI grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">

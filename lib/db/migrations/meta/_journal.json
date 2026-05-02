@@ -15,6 +15,13 @@
       "when": 1773380000000,
       "tag": "0001_add_booking_type_and_job_type",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777745700000,
+      "tag": "0002_add_support_tickets",
+      "breakpoints": true
     }
   ]
 }
