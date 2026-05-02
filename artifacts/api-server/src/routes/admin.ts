@@ -874,6 +874,33 @@ router.get("/admin/plans", requirePlatformAdmin, async (_req, res) => {
   });
 });
 
+/**
+ * POST /admin/plans/reorder — atomic batch sort_order update
+ * Body: { ids: string[] }   (the desired left→right / top→bottom plan order)
+ * Persists sort_order = (index + 1) for every id in a single transaction so
+ * concurrent re-orders cannot interleave into inconsistent state.
+ */
+router.post("/admin/plans/reorder", requirePlatformAdmin, async (req: any, res) => {
+  if (!["platform_admin", "platform_finance"].includes(req.adminUser?.role)) {
+    return res.status(403).json({ error: "Insufficient permissions." });
+  }
+  const { ids } = req.body as { ids?: unknown };
+  if (!Array.isArray(ids) || ids.length === 0 || !ids.every((v) => typeof v === "string")) {
+    return res.status(400).json({ error: "Body.ids must be a non-empty array of plan ids." });
+  }
+
+  await db.transaction(async (tx) => {
+    for (let i = 0; i < ids.length; i++) {
+      await tx
+        .update(planCatalogTable)
+        .set({ sort_order: i + 1, updated_at: new Date() })
+        .where(eq(planCatalogTable.id, ids[i] as string));
+    }
+  });
+
+  return res.json({ ok: true });
+});
+
 router.put("/admin/plans/:id", requirePlatformAdmin, async (req: any, res) => {
   if (!["platform_admin", "platform_finance"].includes(req.adminUser?.role)) {
     return res.status(403).json({ error: "Insufficient permissions." });
