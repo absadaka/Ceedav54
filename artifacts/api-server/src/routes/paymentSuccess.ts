@@ -267,12 +267,6 @@ function successPageHtml(opts: {
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h4v7"/><path d="M4 14h8"/><path d="M4 9H2v5a1 1 0 001 1h10a1 1 0 001-1V9h-2"/></svg>
         Download Invoice
       </button>
-      ${opts.jobReport.length > 0 ? `
-      <button class="btn btn-outline" onclick="printReport()">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v12l4-3 4 3V4a2 2 0 00-2-2z"/></svg>
-        Download Report
-      </button>
-      ` : ""}
     </div>
 
     <p style="text-align:center;margin-top:32px;font-size:12px;color:#94a3b8">
@@ -298,15 +292,6 @@ function successPageHtml(opts: {
       }
       setTimeout(function() { container.style.display = 'none'; }, 5000);
     })();
-
-    function printReport() {
-      var allCards = document.querySelectorAll('.card');
-      allCards.forEach(function(c) { c.style.display = 'none'; });
-      var report = document.getElementById('report-section');
-      if (report) report.style.display = 'block';
-      window.print();
-      allCards.forEach(function(c) { c.style.display = ''; });
-    }
   </script>
 </body>
 </html>`;
