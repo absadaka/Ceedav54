@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 // Auto-shop photos — one per solution, no repeats
 import photoEngineBay      from "@assets/serjan-midili-7tqN3HvUswQ-unsplash_1777741356306.jpg";
 import photoBodyTeam       from "@assets/Hero_Photo_1777741356303.jpg";
-import photoDetailingShop  from "@assets/premium_photo-1661602003497-7e918e0259b2_1777741356306.avif";
+import photoDetailingShop  from "@assets/photo-1593280405106-e438ebe93f5b_1777741356304.avif";
 import photoOnLiftWheels   from "@assets/smitty-sGmZ5IMXV_s-unsplash_1777741356307.jpg";
 import photoMechanic       from "@assets/photo-1526626607369-f89fe1ed77a9_1777741356304.avif";
 import photoPerfDark       from "@assets/lorenzo-hamers-wtXnp09Q86w-unsplash_1777741356304.jpg";
@@ -20,7 +20,7 @@ import photoServiceBay     from "@assets/photo-1702146713882-2579afb0bfba_177774
 import photoMotor          from "@assets/photo-1615906655593-ad0386982a0f_1777741356305.avif";
 import photoMobile         from "@assets/kevin-grieve-3CKZS3-o3XU-unsplash_1777741910513.jpg";
 import photoWorkshopHero   from "@/assets/workshop-hero.jpg";
-import photoInspection     from "@assets/photo-1593280405106-e438ebe93f5b_1777741356304.avif";
+import photoInspection     from "@assets/premium_photo-1661602003497-7e918e0259b2_1777742131069.avif";
 
 type Solution = {
   slug: string;
