@@ -8,6 +8,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+// Auto-shop photos — one per solution, no repeats
+import photoEngineBay      from "@assets/serjan-midili-7tqN3HvUswQ-unsplash_1777741356306.jpg";
+import photoBodyTeam       from "@assets/Hero_Photo_1777741356303.jpg";
+import photoDetailingShop  from "@assets/premium_photo-1661602003497-7e918e0259b2_1777741356306.avif";
+import photoOnLiftWheels   from "@assets/smitty-sGmZ5IMXV_s-unsplash_1777741356307.jpg";
+import photoMechanic       from "@assets/photo-1526626607369-f89fe1ed77a9_1777741356304.avif";
+import photoPerfDark       from "@assets/lorenzo-hamers-wtXnp09Q86w-unsplash_1777741356304.jpg";
+import photoModernShop     from "@assets/photo-1727413433599-496949ef8196_1777741356305.avif";
+import photoServiceBay     from "@assets/photo-1702146713882-2579afb0bfba_1777741356305.avif";
+import photoMotor          from "@assets/photo-1615906655593-ad0386982a0f_1777741356305.avif";
+import photoMobile         from "@assets/photo-1654167535598-86dfc149efa1_1777741356305.avif";
+import photoWorkshopHero   from "@/assets/workshop-hero.jpg";
+import photoInspection     from "@assets/photo-1593280405106-e438ebe93f5b_1777741356304.avif";
+
 type Solution = {
   slug: string;
   label: string;
@@ -19,6 +33,7 @@ type Solution = {
   accent: string;
   iconBg: string;
   iconCls: string;
+  photo: string;
 };
 
 const SOLUTIONS: Solution[] = [
@@ -39,6 +54,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-blue-50",
     iconBg: "bg-blue-100",
     iconCls: "text-blue-600",
+    photo: photoEngineBay,
   },
   {
     slug: "bodyshops",
@@ -57,6 +73,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-rose-50",
     iconBg: "bg-rose-100",
     iconCls: "text-rose-600",
+    photo: photoBodyTeam,
   },
   {
     slug: "auto-detailing",
@@ -75,6 +92,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-violet-50",
     iconBg: "bg-violet-100",
     iconCls: "text-violet-600",
+    photo: photoDetailingShop,
   },
   {
     slug: "tyre-shops",
@@ -93,6 +111,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-amber-50",
     iconBg: "bg-amber-100",
     iconCls: "text-amber-600",
+    photo: photoOnLiftWheels,
   },
   {
     slug: "quick-lube",
@@ -111,6 +130,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-emerald-50",
     iconBg: "bg-emerald-100",
     iconCls: "text-emerald-600",
+    photo: photoMechanic,
   },
   {
     slug: "performance",
@@ -129,6 +149,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-indigo-50",
     iconBg: "bg-indigo-100",
     iconCls: "text-indigo-600",
+    photo: photoPerfDark,
   },
   {
     slug: "ev",
@@ -147,6 +168,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-teal-50",
     iconBg: "bg-teal-100",
     iconCls: "text-teal-600",
+    photo: photoModernShop,
   },
   {
     slug: "fleet",
@@ -165,6 +187,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-slate-50",
     iconBg: "bg-slate-200",
     iconCls: "text-slate-700",
+    photo: photoServiceBay,
   },
   {
     slug: "motorcycle",
@@ -183,6 +206,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-orange-50",
     iconBg: "bg-orange-100",
     iconCls: "text-orange-600",
+    photo: photoMotor,
   },
   {
     slug: "mobile",
@@ -201,6 +225,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-cyan-50",
     iconBg: "bg-cyan-100",
     iconCls: "text-cyan-600",
+    photo: photoMobile,
   },
   {
     slug: "multi-branch",
@@ -219,6 +244,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-fuchsia-50",
     iconBg: "bg-fuchsia-100",
     iconCls: "text-fuchsia-600",
+    photo: photoWorkshopHero,
   },
   {
     slug: "warranty",
@@ -237,6 +263,7 @@ const SOLUTIONS: Solution[] = [
     accent: "bg-lime-50",
     iconBg: "bg-lime-100",
     iconCls: "text-lime-700",
+    photo: photoInspection,
   },
 ];
 
@@ -319,24 +346,35 @@ export default function SolutionsPage() {
                 <a
                   key={s.slug}
                   href={`#${s.slug}`}
-                  className="group rounded-2xl border border-border bg-white p-5 hover:border-[#161aff]/40 hover:shadow-md transition-all"
+                  className="group rounded-2xl border border-border bg-white overflow-hidden hover:border-[#161aff]/40 hover:shadow-md transition-all flex flex-col"
                 >
-                  <div className={cn("inline-flex h-10 w-10 items-center justify-center rounded-xl", s.iconBg)}>
-                    <Icon className={cn("h-5 w-5", s.iconCls)} />
+                  <div className="relative aspect-[16/9] overflow-hidden bg-muted">
+                    <img
+                      src={s.photo}
+                      alt={`${s.label} workshop photo`}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                    <span className={cn("absolute top-3 left-3 inline-flex h-9 w-9 items-center justify-center rounded-lg shadow-sm bg-white", s.iconBg)}>
+                      <Icon className={cn("h-4.5 w-4.5", s.iconCls)} />
+                    </span>
                   </div>
-                  <p className="mt-3 text-xs uppercase tracking-wider text-foreground/50 font-medium">
-                    {s.eyebrow}
-                  </p>
-                  <h3 className="mt-1 text-base font-semibold text-foreground">
-                    {s.label}
-                  </h3>
-                  <p className="mt-2 text-sm text-foreground/70 leading-relaxed line-clamp-3">
-                    {s.description}
-                  </p>
-                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#161aff] group-hover:underline">
-                    Learn more
-                    <ArrowRight className="h-3 w-3" />
-                  </span>
+                  <div className="p-5 flex-1 flex flex-col">
+                    <p className="text-xs uppercase tracking-wider text-foreground/50 font-medium">
+                      {s.eyebrow}
+                    </p>
+                    <h3 className="mt-1 text-base font-semibold text-foreground">
+                      {s.label}
+                    </h3>
+                    <p className="mt-2 text-sm text-foreground/70 leading-relaxed line-clamp-3 flex-1">
+                      {s.description}
+                    </p>
+                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#161aff] group-hover:underline">
+                      Learn more
+                      <ArrowRight className="h-3 w-3" />
+                    </span>
+                  </div>
                 </a>
               );
             })}
@@ -434,20 +472,30 @@ function SolutionSection({ solution, index }: { solution: Solution; index: numbe
             </div>
           </div>
 
-          {/* Visual placeholder card */}
+          {/* Photo card */}
           <div>
-            <div className={cn("relative rounded-3xl border border-border p-8 sm:p-10 overflow-hidden", solution.accent)}>
-              <div className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-white/40 blur-2xl pointer-events-none" />
-              <div className="relative flex flex-col items-center justify-center text-center min-h-[220px]">
-                <div className={cn("inline-flex h-16 w-16 items-center justify-center rounded-2xl", solution.iconBg)}>
-                  <Icon className={cn("h-8 w-8", solution.iconCls)} />
+            <div className="relative rounded-3xl border border-border overflow-hidden aspect-[5/4] shadow-sm">
+              <img
+                src={solution.photo}
+                alt={`${solution.label} — workshop using ceeda>`}
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent pointer-events-none" />
+              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+                <div className="flex items-center gap-3">
+                  <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-xl shrink-0 backdrop-blur bg-white/95", solution.iconBg)}>
+                    <Icon className={cn("h-4.5 w-4.5", solution.iconCls)} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[11px] uppercase tracking-wider text-white/80 font-medium">
+                      {solution.eyebrow}
+                    </p>
+                    <p className="text-sm sm:text-base font-semibold text-white truncate">
+                      {solution.label}
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-5 text-base font-semibold text-foreground">
-                  {solution.label}
-                </p>
-                <p className="mt-1 text-xs uppercase tracking-wider text-foreground/50 font-medium">
-                  Powered by ceeda&gt;
-                </p>
               </div>
             </div>
           </div>
