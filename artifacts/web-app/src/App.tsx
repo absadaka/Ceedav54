@@ -13,6 +13,7 @@ import { canAccess, type ModuleKey } from "@/lib/permissions";
 import LandingPage from "@/pages/public/LandingPage";
 import PricingPage from "@/pages/public/PricingPage";
 import FeaturesPage from "@/pages/public/FeaturesPage";
+import SolutionsPage from "@/pages/public/SolutionsPage";
 import DocsPage from "@/pages/public/DocsPage";
 import AuthPage from "@/pages/public/AuthPage";
 import RegisterPage from "@/pages/public/RegisterPage";
@@ -242,6 +243,7 @@ function AppRouter() {
         <Route path="/" component={LandingPage} />
         <Route path="/pricing" component={PricingPage} />
         <Route path="/features" component={FeaturesPage} />
+        <Route path="/solutions" component={SolutionsPage} />
         <Route path="/docs" component={DocsPage} />
         <Route component={NotFoundPage} />
       </Switch>
