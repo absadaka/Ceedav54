@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 // Auto-shop photos — one per solution, no repeats
 import photoEngineBay      from "@assets/serjan-midili-7tqN3HvUswQ-unsplash_1777741356306.jpg";
 import photoBodyTeam       from "@assets/Hero_Photo_1777741356303.jpg";
-import photoDetailingShop  from "@assets/photo-1593280405106-e438ebe93f5b_1777741356304.avif";
+import photoDetailingShop  from "@assets/deniz-demirci-dlJelFmdpOc-unsplash_1777742323781.jpg";
 import photoOnLiftWheels   from "@assets/smitty-sGmZ5IMXV_s-unsplash_1777741356307.jpg";
 import photoMechanic       from "@assets/photo-1526626607369-f89fe1ed77a9_1777741356304.avif";
 import photoPerfDark       from "@assets/lorenzo-hamers-wtXnp09Q86w-unsplash_1777741356304.jpg";
