@@ -1443,7 +1443,15 @@ export default function JobDetailPage({ moduleType, backPath = "/jobs", backLabe
                     <span className={cn("w-1.5 h-1.5 rounded-full inline-block", isReady ? "bg-blue-600" : "bg-gray-300")} />
                     Next required action
                   </p>
-                  <h2 className="text-xl font-bold leading-tight text-foreground mb-2">{action.title}</h2>
+                  <h2 className="text-xl font-bold leading-tight text-foreground mb-2 flex items-center gap-2 flex-wrap">
+                    {action.title}
+                    {(job.status === "paid" || job.status === "delivered") && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 border border-green-200 px-2.5 py-0.5 text-xs font-semibold">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Paid
+                      </span>
+                    )}
+                  </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed">{action.desc}</p>
                 </div>
                 {job.status !== "delivered" && (
