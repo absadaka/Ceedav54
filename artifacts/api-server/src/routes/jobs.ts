@@ -9,6 +9,7 @@ import {
   catalogItemsTable, quoteAdvancePaymentsTable,
   invoicesTable, invoiceLineItemsTable, paymentsTable,
 } from "@workspace/db";
+import { sendSms, sendWhatsApp, jobStatusSmsBody, NOTIFIABLE_JOB_STATUSES } from "../services/sms.js";
 
 const router = Router();
 
@@ -865,6 +866,48 @@ router.post("/:id/status", async (req, res) => {
       note:        note ?? null,
       changed_by:  changed_by ?? null,
     });
+
+    // Notify customer on meaningful status changes (gated by tenant_settings.notifications.job_status)
+    if (NOTIFIABLE_JOB_STATUSES.has(status) && status !== existing.status && job.client_id) {
+      const [client] = await db
+        .select({ name: clientsTable.name, phone: clientsTable.phone })
+        .from(clientsTable)
+        .where(eq(clientsTable.id, job.client_id))
+        .limit(1);
+
+      if (client?.phone) {
+        let vehicleInfo: string | undefined;
+        if (job.vehicle_id) {
+          const [v] = await db
+            .select({ make: vehiclesTable.make, model: vehiclesTable.model, plate: vehiclesTable.plate })
+            .from(vehiclesTable)
+            .where(eq(vehiclesTable.id, job.vehicle_id))
+            .limit(1);
+          if (v) vehicleInfo = [v.make, v.model, v.plate].filter(Boolean).join(" ");
+        }
+
+        const body = jobStatusSmsBody({
+          shopName:    tenant.name ?? "Workshop",
+          jobRef:      job.ref ?? job.id,
+          clientName:  client.name ?? "Customer",
+          status,
+          vehicleInfo,
+          note,
+        });
+        const meta = {
+          to:           client.phone,
+          body,
+          tenantId:     tenant.id,
+          event:        "job_status" as const,
+          clientId:     job.client_id,
+          relatedType:  "job" as const,
+          relatedId:    job.id,
+          sentByUserId: changed_by ?? null,
+        };
+        await sendSms(meta);
+        await sendWhatsApp(meta);
+      }
+    }
 
     return res.json({ job });
   } catch (err) {

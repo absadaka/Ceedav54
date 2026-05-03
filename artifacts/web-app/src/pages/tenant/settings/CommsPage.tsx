@@ -91,13 +91,54 @@ export default function CommsPage() {
     if (data.integrations?.whatsapp) {
       setWaEnabled(data.integrations.whatsapp.enabled ?? false);
     }
+    // Load per-event notification flags (server stores nested: { booking_confirmation: { email, sms, whatsapp }, ... })
+    const n = s.notifications ?? {};
+    setNotifications((prev) => ({
+      ...prev,
+      booking_confirmation_email:    n.booking_confirmation?.email    ?? prev.booking_confirmation_email,
+      booking_confirmation_sms:      n.booking_confirmation?.sms      ?? prev.booking_confirmation_sms,
+      booking_confirmation_whatsapp: n.booking_confirmation?.whatsapp ?? prev.booking_confirmation_whatsapp,
+      job_status_email:              n.job_status?.email              ?? prev.job_status_email,
+      job_status_whatsapp:           n.job_status?.whatsapp           ?? prev.job_status_whatsapp,
+      invoice_email:                 n.invoice?.email                 ?? prev.invoice_email,
+      invoice_whatsapp:              n.invoice?.whatsapp              ?? prev.invoice_whatsapp,
+      quote_email:                   n.quote?.email                   ?? prev.quote_email,
+      quote_whatsapp:                n.quote?.whatsapp                ?? prev.quote_whatsapp,
+      reminder_email:                n.reminder?.email                ?? prev.reminder_email,
+      reminder_sms:                  n.reminder?.sms                  ?? prev.reminder_sms,
+    }));
   }, [data]);
 
   const commsMutation = useMutation({
-    mutationFn: () => fetch(`${API}/api/settings/comms?tenant=${TENANT}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; }),
+    mutationFn: () => {
+      const nestedNotifications = {
+        booking_confirmation: {
+          email:    notifications.booking_confirmation_email,
+          sms:      notifications.booking_confirmation_sms,
+          whatsapp: notifications.booking_confirmation_whatsapp,
+        },
+        job_status: {
+          email:    notifications.job_status_email,
+          whatsapp: notifications.job_status_whatsapp,
+        },
+        invoice: {
+          email:    notifications.invoice_email,
+          whatsapp: notifications.invoice_whatsapp,
+        },
+        quote: {
+          email:    notifications.quote_email,
+          whatsapp: notifications.quote_whatsapp,
+        },
+        reminder: {
+          email: notifications.reminder_email,
+          sms:   notifications.reminder_sms,
+        },
+      };
+      return fetch(`${API}/api/settings/comms?tenant=${TENANT}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, notifications: nestedNotifications }),
+      }).then(async (r) => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; });
+    },
     onSuccess: () => toast.success("Communication settings saved"),
     onError: (e: Error) => toast.error(e.message),
   });

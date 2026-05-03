@@ -59,6 +59,16 @@ export const tenantSettingsTable = pgTable("tenant_settings", {
   email_reply_to:    text("email_reply_to"),
   sms_sender_id:     text("sms_sender_id"),
 
+  /* Per-event notification channel toggles
+     Shape: { booking_confirmation: { email, sms, whatsapp }, job_status: {...}, invoice: {...}, quote: {...}, reminder: {...} } */
+  notifications: jsonb("notifications").notNull().default({
+    booking_confirmation: { email: true,  sms: false, whatsapp: true  },
+    job_status:           { email: false, sms: false, whatsapp: true  },
+    invoice:              { email: true,  sms: false, whatsapp: true  },
+    quote:                { email: true,  sms: false, whatsapp: true  },
+    reminder:             { email: true,  sms: false, whatsapp: false },
+  }),
+
   /* Audit */
   created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
