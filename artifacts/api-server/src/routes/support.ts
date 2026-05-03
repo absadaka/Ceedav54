@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, ilike, or, isNull, desc, count, sql } from "drizzle-orm";
+import { eq, and, ilike, or, isNull, desc, count, sql, inArray } from "drizzle-orm";
 import {
   db, tenantsTable, usersTable,
   supportTicketsTable, supportTicketMessagesTable,
@@ -145,6 +145,220 @@ router.post("/support/tickets", async (req, res) => {
       created_at: created.created_at,
     },
   });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   GET /support/tickets   — list this workshop's tickets (tenant-scoped)
+   Query: tenant_slug, user_id, status?
+───────────────────────────────────────────────────────────────────────── */
+router.get("/support/tickets", async (req, res) => {
+  const tenant_slug = (req.query.tenant_slug as string | undefined) ?? "";
+  const user_id     = (req.query.user_id     as string | undefined) ?? "";
+  const status      = (req.query.status      as string | undefined) ?? "";
+
+  if (!tenant_slug) return res.status(400).json({ error: "tenant_slug is required." });
+  if (!user_id)     return res.status(401).json({ error: "Sign in to view your tickets." });
+
+  const validStatuses = ["all", "open", "in_progress", "waiting_on_customer", "resolved", "closed"];
+  if (status && !validStatuses.includes(status)) {
+    return res.status(400).json({ error: "Invalid status." });
+  }
+
+  const tenant = await resolveTenantBySlug(tenant_slug);
+  if (!tenant) return res.status(404).json({ error: "Workshop not found." });
+  const tenantUser = await resolveTenantUser(user_id, tenant.id);
+  if (!tenantUser) return res.status(403).json({ error: "User does not belong to this workshop." });
+
+  const conditions: any[] = [eq(supportTicketsTable.tenant_id, tenant.id)];
+  if (status && status !== "all") {
+    conditions.push(eq(supportTicketsTable.status, status as any));
+  }
+
+  // For each ticket, surface the latest message (snippet + author_type) and
+  // an `unread` flag = there's a platform reply newer than tenant_last_read_at.
+  const lastMsgSubq = db
+    .select({
+      ticket_id: supportTicketMessagesTable.ticket_id,
+      created_at: sql`max(${supportTicketMessagesTable.created_at})`.as("last_at"),
+    })
+    .from(supportTicketMessagesTable)
+    .groupBy(supportTicketMessagesTable.ticket_id)
+    .as("last_msg");
+
+  const rows = await db
+    .select({
+      id:              supportTicketsTable.id,
+      ref:             supportTicketsTable.ref,
+      subject:         supportTicketsTable.subject,
+      status:          supportTicketsTable.status,
+      priority:        supportTicketsTable.priority,
+      category:        supportTicketsTable.category,
+      reply_count:     supportTicketsTable.reply_count,
+      created_at:      supportTicketsTable.created_at,
+      updated_at:      supportTicketsTable.updated_at,
+      tenant_last_read_at: supportTicketsTable.tenant_last_read_at,
+      last_message_at: lastMsgSubq.created_at,
+    })
+    .from(supportTicketsTable)
+    .leftJoin(lastMsgSubq, eq(lastMsgSubq.ticket_id, supportTicketsTable.id))
+    .where(and(...conditions))
+    .orderBy(desc(supportTicketsTable.updated_at));
+
+  // Compute unread flag per ticket: any platform message after tenant_last_read_at.
+  const ids = rows.map((r) => r.id);
+  let unreadIds = new Set<string>();
+  if (ids.length > 0) {
+    const unread = await db
+      .select({ ticket_id: supportTicketMessagesTable.ticket_id })
+      .from(supportTicketMessagesTable)
+      .innerJoin(
+        supportTicketsTable,
+        eq(supportTicketsTable.id, supportTicketMessagesTable.ticket_id),
+      )
+      .where(and(
+        eq(supportTicketMessagesTable.author_type, "platform"),
+        inArray(supportTicketMessagesTable.ticket_id, ids),
+        or(
+          isNull(supportTicketsTable.tenant_last_read_at),
+          sql`${supportTicketMessagesTable.created_at} > ${supportTicketsTable.tenant_last_read_at}`,
+        )!,
+      ));
+    unreadIds = new Set(unread.map((u) => u.ticket_id));
+  }
+
+  return res.json({
+    tickets: rows.map((r) => ({ ...r, unread: unreadIds.has(r.id) })),
+    unread_total: unreadIds.size,
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   GET /support/tickets/:id   — single ticket + thread (tenant-scoped)
+   Marks tenant_last_read_at = now.
+   Query: tenant_slug, user_id
+───────────────────────────────────────────────────────────────────────── */
+router.get("/support/tickets/:id", async (req, res) => {
+  const { id } = req.params;
+  const tenant_slug = (req.query.tenant_slug as string | undefined) ?? "";
+  const user_id     = (req.query.user_id     as string | undefined) ?? "";
+
+  if (!tenant_slug) return res.status(400).json({ error: "tenant_slug is required." });
+  if (!user_id)     return res.status(401).json({ error: "Sign in to view your tickets." });
+
+  const tenant = await resolveTenantBySlug(tenant_slug);
+  if (!tenant) return res.status(404).json({ error: "Workshop not found." });
+  const tenantUser = await resolveTenantUser(user_id, tenant.id);
+  if (!tenantUser) return res.status(403).json({ error: "User does not belong to this workshop." });
+
+  const [ticket] = await db
+    .select({
+      id:              supportTicketsTable.id,
+      ref:             supportTicketsTable.ref,
+      subject:         supportTicketsTable.subject,
+      description:     supportTicketsTable.description,
+      status:          supportTicketsTable.status,
+      priority:        supportTicketsTable.priority,
+      category:        supportTicketsTable.category,
+      reply_count:     supportTicketsTable.reply_count,
+      resolved_at:     supportTicketsTable.resolved_at,
+      created_at:      supportTicketsTable.created_at,
+      updated_at:      supportTicketsTable.updated_at,
+      tenant_id:       supportTicketsTable.tenant_id,
+    })
+    .from(supportTicketsTable)
+    .where(eq(supportTicketsTable.id, id))
+    .limit(1);
+
+  if (!ticket) return res.status(404).json({ error: "Ticket not found." });
+  // IDOR guard — tenant can only see its own tickets.
+  if (ticket.tenant_id !== tenant.id) {
+    return res.status(404).json({ error: "Ticket not found." });
+  }
+
+  const messages = await db
+    .select({
+      id: supportTicketMessagesTable.id,
+      author_type: supportTicketMessagesTable.author_type,
+      author_name: supportTicketMessagesTable.author_name,
+      body: supportTicketMessagesTable.body,
+      created_at: supportTicketMessagesTable.created_at,
+    })
+    .from(supportTicketMessagesTable)
+    .where(eq(supportTicketMessagesTable.ticket_id, id))
+    .orderBy(supportTicketMessagesTable.created_at);
+
+  // Mark thread as read for this tenant — but only up to the timestamp of the
+  // last message we actually returned. This prevents clearing unread for a
+  // platform reply inserted between the fetch above and this update.
+  const lastReturnedAt = messages.length > 0
+    ? messages[messages.length - 1].created_at
+    : ticket.created_at;
+  await db
+    .update(supportTicketsTable)
+    .set({ tenant_last_read_at: lastReturnedAt as Date })
+    .where(eq(supportTicketsTable.id, id));
+
+  return res.json({ ticket, messages });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   POST /support/tickets/:id/messages   — tenant replies in their own thread
+   Body: { tenant_slug, user_id, body }
+───────────────────────────────────────────────────────────────────────── */
+router.post("/support/tickets/:id/messages", async (req, res) => {
+  const { id } = req.params;
+  const { tenant_slug, user_id, body } = req.body ?? {};
+
+  if (!tenant_slug || typeof tenant_slug !== "string") {
+    return res.status(400).json({ error: "tenant_slug is required." });
+  }
+  if (!user_id || typeof user_id !== "string") {
+    return res.status(401).json({ error: "Sign in to reply." });
+  }
+  if (!body || typeof body !== "string" || body.trim().length === 0) {
+    return res.status(400).json({ error: "Message body is required." });
+  }
+
+  const tenant = await resolveTenantBySlug(tenant_slug);
+  if (!tenant) return res.status(404).json({ error: "Workshop not found." });
+  const tenantUser = await resolveTenantUser(user_id, tenant.id);
+  if (!tenantUser) return res.status(403).json({ error: "User does not belong to this workshop." });
+
+  const [ticket] = await db
+    .select({ id: supportTicketsTable.id, tenant_id: supportTicketsTable.tenant_id, status: supportTicketsTable.status })
+    .from(supportTicketsTable)
+    .where(eq(supportTicketsTable.id, id))
+    .limit(1);
+  if (!ticket || ticket.tenant_id !== tenant.id) {
+    return res.status(404).json({ error: "Ticket not found." });
+  }
+  if (ticket.status === "closed") {
+    return res.status(409).json({ error: "This ticket is closed. Please open a new one." });
+  }
+
+  await db.transaction(async (tx) => {
+    await tx.insert(supportTicketMessagesTable).values({
+      ticket_id: id,
+      author_id: tenantUser.id,
+      author_type: "tenant",
+      author_name: tenantUser.name,
+      body: body.trim(),
+    });
+
+    await tx
+      .update(supportTicketsTable)
+      .set({
+        reply_count: sql`${supportTicketsTable.reply_count} + 1`,
+        updated_at: new Date(),
+        tenant_last_read_at: new Date(),
+        // Tenant replied → bump back to in_progress so admin sees it as
+        // needing attention (out of "waiting_on_customer").
+        status: sql`CASE WHEN ${supportTicketsTable.status} = 'waiting_on_customer' THEN 'in_progress'::support_ticket_status WHEN ${supportTicketsTable.status} = 'resolved' THEN 'in_progress'::support_ticket_status ELSE ${supportTicketsTable.status} END`,
+      })
+      .where(eq(supportTicketsTable.id, id));
+  });
+
+  return res.status(201).json({ ok: true });
 });
 
 /* ─────────────────────────────────────────────────────────────────────────

@@ -52,6 +52,7 @@ import SettingsSalesPage     from "@/pages/tenant/settings/SalesPage";
 import SettingsReportingPage from "@/pages/tenant/settings/ReportingPage";
 import SettingsBillingPage   from "@/pages/tenant/settings/BillingPage";
 import SettingsCommsPage     from "@/pages/tenant/settings/CommsPage";
+import SettingsSupportPage   from "@/pages/tenant/settings/SupportPage";
 import AccountSecurityPage from "@/pages/tenant/account/SecurityPage";
 import AccountSessionsPage from "@/pages/tenant/account/SessionsPage";
 import AccountDevicesPage from "@/pages/tenant/account/DevicesPage";
@@ -225,6 +226,7 @@ function AppRouter() {
           <Route path="/settings/reporting"    component={SettingsReportingPage} />
           <Route path="/settings/billing"      component={SettingsBillingPage} />
           <Route path="/settings/comms"        component={SettingsCommsPage} />
+          <Route path="/settings/support"      component={SettingsSupportPage} />
           {/* Logout */}
           <Route path="/logout" component={LogoutPage} />
           {/* Account sub-pages */}

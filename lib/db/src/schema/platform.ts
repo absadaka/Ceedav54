@@ -331,6 +331,7 @@ export const supportTicketsTable = pgTable("support_tickets", {
   status:          supportTicketStatusEnum("status").notNull().default("open"),
   assigned_to_id:  uuid("assigned_to_id").references(() => usersTable.id, { onDelete: "set null" }),
   acknowledged_at: timestamp("acknowledged_at", { withTimezone: true }),  // when an admin first viewed it
+  tenant_last_read_at: timestamp("tenant_last_read_at", { withTimezone: true }),  // tracks tenant unread badge
   resolved_at:     timestamp("resolved_at",     { withTimezone: true }),
   reply_count:     integer("reply_count").notNull().default(0),
   created_at:      timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
