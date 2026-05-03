@@ -41,7 +41,7 @@ export default function LoginPage() {
           <div className="mb-4">
             <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
               <span className="text-foreground">ceeda</span>
-              <span style={{ color: "#00FF84" }}>{">"}</span>
+              <span style={{ color: "#df94e3" }}>{">"}</span>
             </span>
           </div>
           <h1 className="text-lg font-semibold text-foreground">Platform Admin</h1>
