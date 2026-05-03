@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import workshopHeroImg from "@/assets/workshop-hero.jpg";
+import { CtaBanner } from "@/components/CtaBanner";
 
 /* ─── Feature catalogue ──────────────────────────────────────────────────── */
 
@@ -249,32 +250,10 @@ export default function FeaturesPage() {
       </div>
 
       {/* Bottom CTA ──────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-t border-border bg-muted/30">
-        <TireTrack className="absolute top-0 left-0 right-0 h-8 opacity-[0.08]" />
-        <div className="relative max-w-6xl mx-auto px-6 py-20 text-center">
-          <Wrench className="mx-auto h-6 w-6 text-foreground/30 mb-4" />
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Ready to run your shop on ceeda&gt;?
-          </h2>
-          <p className="mt-4 text-lg text-foreground/70 max-w-xl mx-auto">
-            Get every feature on this page free for 14 days. No credit card,
-            no setup fee — set up in under 5 minutes.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/register">
-              <Button size="lg" className="bg-[#161aff] hover:bg-[#1216cc] text-white border-0 font-medium shadow-sm">
-                Start free trial
-                <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button size="lg" variant="outline" className="border-border bg-white text-foreground hover:bg-muted/60">
-                See pricing
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+      <CtaBanner
+        title="Ready to run your shop on ceeda?"
+        description="Get every feature on this page free for 14 days. No credit card, no setup fee — set up in under 5 minutes."
+      />
     </div>
   );
 }

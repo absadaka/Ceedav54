@@ -1,9 +1,10 @@
 import { Link } from "wouter";
-import { CheckCircle2, Minus, ArrowRight, MessageSquare, Loader2 } from "lucide-react";
+import { CheckCircle2, Minus, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { CtaBanner } from "@/components/CtaBanner";
 
 const API = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -167,22 +168,10 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="py-20 bg-primary text-center">
-        <div className="max-w-xl mx-auto px-6">
-          <h2 className="text-2xl font-bold text-white mb-4">Ready to get started?</h2>
-          <p className="text-primary-foreground/75 mb-8">Join 2,400+ workshops. First 14 days are on us.</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/register">
-              <Button variant="secondary" size="lg" className="gap-2 font-semibold">
-                Create your shop — free <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-            <Button variant="ghost" size="lg" className="text-white hover:bg-white/10 gap-2">
-              <MessageSquare className="w-4 h-4" /> Talk to sales
-            </Button>
-          </div>
-        </div>
-      </section>
+      <CtaBanner
+        title="Ready to get started?"
+        description="Join hundreds of maintenance shops already running on ceeda. First 14 days are on us — no credit card needed."
+      />
     </div>
   );
 }

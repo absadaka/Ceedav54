@@ -11,7 +11,7 @@ import screenshotBookings from "@assets/Screenshot_2026-04-08_at_7.25.20_PM_1775
 import screenshotJobs from "@assets/Screenshot_2026-04-08_at_7.44.51_PM_1775663129834.png";
 import photoMechanic from "@assets/photo-1526626607369-f89fe1ed77a9_1775662796364.avif";
 import photoBay from "@assets/photo-1702146713882-2579afb0bfba_1775662796365.avif";
-import photoCtaBg from "@assets/photo-1593280405106-e438ebe93f5b_1775663202911.avif";
+import { CtaBanner } from "@/components/CtaBanner";
 import photoShop from "@assets/premium_photo-1661602003497-7e918e0259b2_1775662796365.avif";
 
 /* ─── Data ────────────────────────────────────────────────────────────────── */
@@ -419,44 +419,7 @@ function GrowSection() {
 }
 
 function CtaSection() {
-  return (
-    <section
-      className="py-24 relative overflow-hidden bg-cover bg-center"
-      style={{ backgroundImage: `url('${photoCtaBg}')` }}
-    >
-      <div className="absolute inset-0 bg-black/60" />
-      <div className="relative max-w-3xl mx-auto px-6 text-center">
-        <div className="flex items-center justify-center gap-2 mb-6">
-          {[Clock, Shield, TrendingUp].map((Icon, i) => (
-            <div key={i} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-              <Icon className="w-5 h-5 text-white" />
-            </div>
-          ))}
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-5 leading-tight">
-          Ready to modernise your workshop?
-        </h2>
-        <p className="text-primary-foreground/75 text-lg mb-10 leading-relaxed">
-          Join 2,400+ workshops that cut admin time by 70% and get paid faster with ceeda{">"}.
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link href="/register">
-            <Button variant="secondary" size="lg" className="gap-2 w-full sm:w-auto font-semibold shadow-lg">
-              Create your shop — it's free <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button variant="ghost" size="lg" className="gap-2 w-full sm:w-auto text-white hover:bg-white/10 hover:text-white">
-              See pricing
-            </Button>
-          </Link>
-        </div>
-        <p className="text-primary-foreground/50 text-xs mt-5">
-          14 days free. No credit card required. Set up in minutes.
-        </p>
-      </div>
-    </section>
-  );
+  return <CtaBanner />;
 }
 
 export default function LandingPage() {
