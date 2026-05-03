@@ -25,7 +25,7 @@ export function CtaBanner({
   primaryHref    = "/register",
   secondaryLabel = "Book a demo",
   secondaryHref  = "/pricing",
-  withDarkBand   = true,
+  withDarkBand   = false,
 }: CtaBannerProps) {
   const card = (
     <div className="relative overflow-hidden rounded-[28px] px-8 sm:px-16 py-16 sm:py-24 text-center shadow-2xl"
