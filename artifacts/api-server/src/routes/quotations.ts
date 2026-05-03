@@ -1113,8 +1113,17 @@ router.post("/:id/send", async (req, res) => {
         approveUrl,
         rejectUrl,
       });
-      await sendSms({ to: client.phone, body: smsBody, tenantId: tenant.id });
-      await sendWhatsApp({ to: client.phone, body: smsBody, tenantId: tenant.id });
+      const meta = {
+        to: client.phone,
+        body: smsBody,
+        tenantId: tenant.id,
+        event: "quote" as const,
+        clientId: quotation.client_id,
+        relatedType: "quotation" as const,
+        relatedId: quotation.id,
+      };
+      await sendSms(meta);
+      await sendWhatsApp(meta);
     }
 
     res.json({ quotation, sent: true, emailSent: emailResult?.success ?? false });

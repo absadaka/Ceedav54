@@ -239,7 +239,26 @@ router.patch("/settings/comms", async (req, res) => {
   const tenant = await getTenant(slug);
   if (!tenant) return res.status(404).json({ error: "Tenant not found" });
 
-  const { email_from_name, email_reply_to, sms_sender_id } = req.body;
+  const { email_from_name, email_reply_to, sms_sender_id, notifications } = req.body;
+
+  // Light validation for notifications shape
+  let notifPayload: object | undefined;
+  if (notifications !== undefined) {
+    if (typeof notifications !== "object" || notifications === null || Array.isArray(notifications)) {
+      return res.status(400).json({ error: "notifications must be an object" });
+    }
+    const allowedEvents = new Set(["booking_confirmation", "job_status", "invoice", "quote", "reminder"]);
+    const allowedChannels = new Set(["email", "sms", "whatsapp"]);
+    const cleaned: Record<string, Record<string, boolean>> = {};
+    for (const [evt, chs] of Object.entries(notifications)) {
+      if (!allowedEvents.has(evt) || typeof chs !== "object" || chs === null) continue;
+      cleaned[evt] = {};
+      for (const [ch, v] of Object.entries(chs as Record<string, unknown>)) {
+        if (allowedChannels.has(ch)) cleaned[evt][ch] = Boolean(v);
+      }
+    }
+    notifPayload = cleaned;
+  }
 
   await getOrCreateSettings(tenant.id);
   await db
@@ -248,6 +267,7 @@ router.patch("/settings/comms", async (req, res) => {
       ...(email_from_name !== undefined && { email_from_name }),
       ...(email_reply_to  !== undefined && { email_reply_to }),
       ...(sms_sender_id   !== undefined && { sms_sender_id }),
+      ...(notifPayload    !== undefined && { notifications: notifPayload }),
       updated_at: new Date(),
     })
     .where(eq(tenantSettingsTable.tenant_id, tenant.id));

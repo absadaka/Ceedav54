@@ -905,8 +905,17 @@ router.post("/:id/send", async (req, res) => {
         paymentUrl: inv.stripe_payment_url ?? null,
         advanceFromQuotation: inv.advance_from_quotation ?? null,
       });
-      await sendSms({ to: client.phone, body: smsBody, tenantId: tenant.id });
-      await sendWhatsApp({ to: client.phone, body: smsBody, tenantId: tenant.id });
+      const meta = {
+        to: client.phone,
+        body: smsBody,
+        tenantId: tenant.id,
+        event: "invoice" as const,
+        clientId: inv.client_id,
+        relatedType: "invoice" as const,
+        relatedId: inv.id,
+      };
+      await sendSms(meta);
+      await sendWhatsApp(meta);
     }
 
     return res.json({ invoice: inv, emailSent: emailResult?.success ?? false });

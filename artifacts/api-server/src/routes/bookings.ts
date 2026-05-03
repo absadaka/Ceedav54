@@ -409,8 +409,17 @@ router.post("/:id/status", async (req, res) => {
 
       if (client?.phone) {
         const body = bookingConfirmationSmsBody(msgOpts);
-        await sendSms({ to: client.phone, body, tenantId: tenant.id });
-        await sendWhatsApp({ to: client.phone, body, tenantId: tenant.id });
+        const meta = {
+          to: client.phone,
+          body,
+          tenantId: tenant.id,
+          event: "booking_confirmation" as const,
+          clientId: booking.client_id,
+          relatedType: "booking" as const,
+          relatedId: booking.id,
+        };
+        await sendSms(meta);
+        await sendWhatsApp(meta);
       }
     }
 
