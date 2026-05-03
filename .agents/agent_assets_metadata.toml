@@ -1,8 +1,13 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "pUZDamd5F1l_r4VMqI-VP"
 uri = "file://artifacts/technician/assets/images/icon.png"
 type = "image"
 title = "generated_image"
+
+[[outputs]]
+id = "lbHbgo6Hndod4XzMqfisw"
+uri = "file://attached_assets/extracted/thumbnail.jpeg"
+type = "image"
+title = "Logo reference (extracted from your PPTX)"

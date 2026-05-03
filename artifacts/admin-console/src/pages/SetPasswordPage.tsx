@@ -41,7 +41,10 @@ export default function SetPasswordPage({ userId, email }: Props) {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="mb-4">
-            <span className="text-foreground" style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1 }}>ceeda{">"}</span>
+            <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
+              <span className="text-foreground">ceeda</span>
+              <span style={{ color: "#00FF84" }}>{">"}</span>
+            </span>
           </div>
           <h1 className="text-lg font-semibold text-foreground">Set your password</h1>
           <p className="text-sm text-muted-foreground mt-1">Create a password for your admin account</p>

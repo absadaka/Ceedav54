@@ -45,10 +45,11 @@ function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: bool
       className="flex items-center hover:opacity-80 transition-opacity shrink-0"
     >
       <span
-        className="inline-flex items-center leading-none font-bold"
+        className="inline-flex items-baseline leading-none font-bold"
         style={{ fontSize: sz, fontFamily: "'Dubai', sans-serif", lineHeight: 1 }}
       >
-        <span style={{ lineHeight: 1 }} className={light ? "text-white" : "text-[#0a0a0a]"}>ceeda&gt;</span>
+        <span style={{ lineHeight: 1 }} className={light ? "text-white" : "text-[#0a0a0a]"}>ceeda</span>
+        <span style={{ lineHeight: 1, color: "#00FF84", marginLeft: 1 }}>&gt;</span>
       </span>
     </Link>
   );
