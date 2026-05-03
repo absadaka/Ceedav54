@@ -296,6 +296,9 @@ pnpm --filter @workspace/db run studio     # Open Drizzle Studio
 - Admin surface (`SupportTicketsPage.tsx`): list with filter/search, detail dialog with thread + reply + status/priority controls. Bell icon in `AdminLayout.tsx` polls `/admin/support/notifications` every 30s. Dashboard shows unread alert card.
 - Schema: `support_tickets` (status/priority/category enums, ack/resolve timestamps, atomic `reply_count`) + `support_ticket_messages` (cascade on ticket delete). Migration `0002_add_support_tickets.sql`.
 - Auth: admin endpoints require `X-Admin-Id` (`requirePlatformAdmin`); reply increments `reply_count` via SQL, auto-bumps status `open → in_progress`; auto-ack uses `WHERE acknowledged_at IS NULL` for idempotency.
+- Tenant ticket inbox at `/settings/support` (`pages/tenant/settings/SupportPage.tsx`): list of the workshop's tickets with status filter + search, click row → chat-style thread dialog with reply box. Tenant reply auto-bumps `waiting_on_customer`/`resolved` → `in_progress`. Polls list every 30s, thread every 15s. Closed tickets are read-only.
+- Tenant endpoints (no admin header): `GET /support/tickets`, `GET /support/tickets/:id` (also marks `tenant_last_read_at` up to last returned message — race-safe), `POST /support/tickets/:id/messages`. All scoped via `resolveTenantUser` (verifies user belongs to tenant) with IDOR returning 404.
+- Schema column `tenant_last_read_at` (migration `0003_add_tenant_last_read.sql`) drives the per-row "New reply" badge: a ticket is unread when any platform message has `created_at > tenant_last_read_at`.
 
 ## Object Storage
 

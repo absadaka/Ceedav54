@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import {
   Building2, Wrench, CalendarClock, Tag, CreditCard,
-  UsersRound, MessageSquare, BarChart2,
+  UsersRound, MessageSquare, BarChart2, LifeBuoy,
 } from "lucide-react";
 
 interface Card {
@@ -77,6 +77,14 @@ const CARDS: Card[] = [
     icon: BarChart2,
     iconBg: "bg-slate-100",
     iconColor: "text-slate-500",
+  },
+  {
+    title: "Support tickets",
+    description: "Track conversations with CEEDA support and reply to ongoing tickets.",
+    href: "/settings/support",
+    icon: LifeBuoy,
+    iconBg: "bg-teal-50",
+    iconColor: "text-teal-600",
   },
 ];
 
