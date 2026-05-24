@@ -78,7 +78,7 @@ export default function TenantAuthShell({
               </Link>
               <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 16, fontWeight: 700, lineHeight: 1, opacity: 0.4 }}>
                 <span style={{ color: "#0a0a0a" }}>ceeda</span>
-                <span style={{ color: "#0a0a0a", fontSize: "1.4em", lineHeight: 0.8 }}>»</span>
+                <span style={{ color: "#0a0a0a", fontSize: "1.4em", lineHeight: 0.8, position: "relative", top: "0.18em" }}>»</span>
               </span>
             </div>
 
@@ -98,7 +98,7 @@ export default function TenantAuthShell({
           <p className="text-xs text-muted-foreground">
             Secured by{" "}
             <Link href="/" className="font-medium hover:underline" style={{ fontFamily: "'Dubai', sans-serif", fontWeight: 700 }}>
-              ceeda<span style={{ fontSize: "1.4em", lineHeight: 0.8 }}>»</span>
+              ceeda<span style={{ fontSize: "1.4em", lineHeight: 0.8, position: "relative", top: "0.18em" }}>»</span>
             </Link>{" "}
             · <Link href="#privacy" className="hover:underline">Privacy</Link>
             {" "}· <Link href="#terms" className="hover:underline">Terms</Link>
