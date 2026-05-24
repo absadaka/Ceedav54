@@ -49,7 +49,7 @@ function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: bool
         style={{ fontSize: sz, fontFamily: "'Dubai', sans-serif", lineHeight: 1 }}
       >
         <span style={{ lineHeight: 1 }} className={light ? "text-white" : "text-[#0a0a0a]"}>ceeda</span>
-        <span style={{ lineHeight: 1, color: "#df94e3", marginLeft: 1 }}>&gt;</span>
+        <span style={{ lineHeight: 1, marginLeft: 1 }} className={light ? "text-white" : "text-[#0a0a0a]"}>»</span>
       </span>
     </Link>
   );
@@ -377,7 +377,7 @@ function PublicFooter() {
               ))}
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Get product updates and news from ceeda&gt;.
+              Get product updates and news from ceeda».
             </p>
             <form
               onSubmit={(e) => { e.preventDefault(); }}
@@ -439,7 +439,7 @@ function PublicFooter() {
           {/* Right rail: copyright */}
           <div className="lg:col-span-2 flex lg:flex-col lg:items-end items-start">
             <p className="text-xs text-slate-500 lg:text-right">
-              © {new Date().getFullYear()} ceeda&gt;
+              © {new Date().getFullYear()} ceeda»
             </p>
           </div>
         </div>

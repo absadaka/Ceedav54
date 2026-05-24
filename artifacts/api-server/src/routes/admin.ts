@@ -728,7 +728,7 @@ router.post("/admin/users", requirePlatformAdmin, async (req, res) => {
 
   sendPlatformEmail({
     to: email.toLowerCase().trim(),
-    subject: "You've been invited to ceeda> Platform Admin",
+    subject: "You've been invited to ceeda» Platform Admin",
     html,
   }).catch((err) => console.error("[admin] invite email failed:", err));
 
@@ -769,7 +769,7 @@ router.post("/admin/users/:id/reset-password", requirePlatformAdmin, async (req,
 
   sendPlatformEmail({
     to: user.email,
-    subject: "Reset your ceeda> Platform Admin password",
+    subject: "Reset your ceeda» Platform Admin password",
     html,
   }).catch((err) => console.error("[admin] reset password email failed:", err));
 

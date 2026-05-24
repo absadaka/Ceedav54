@@ -171,7 +171,7 @@ function Sidebar({
         )}
       >
         {collapsed ? (
-          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1, color: dark ? "#ffffff" : "#0a0a0a" }}>c&gt;</span>
+          <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 18, fontWeight: 700, lineHeight: 1, color: dark ? "#ffffff" : "#0a0a0a" }}>c»</span>
         ) : (
           <Logo size="sm" light={dark} />
         )}

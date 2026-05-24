@@ -52,7 +52,7 @@ export function quoteActionResultHtml(shopName: string, action: "approve" | "rej
   <div style="font-size:56px;color:${iconColor};margin-bottom:16px;">${icon}</div>
   <h1 style="margin:0 0 8px;font-size:22px;color:#0a0a0a;">${title}</h1>
   <p style="margin:0 0 24px;font-size:15px;color:#71717a;line-height:1.6;">${body}</p>
-  <p style="margin:0;font-size:13px;color:#a1a1aa;">${shopName} via ceeda></p>
+  <p style="margin:0;font-size:13px;color:#a1a1aa;">${shopName} via ceeda»</p>
 </div>
 </body></html>`;
 }
@@ -91,7 +91,7 @@ const DEFAULT_FROM_EMAIL = VERIFIED_DOMAIN
   : "onboarding@resend.dev";
 
 function buildFrom(shopName: string, config: TenantEmailConfig): string {
-  const name = config.fromName || shopName || "ceeda>";
+  const name = config.fromName || shopName || "ceeda»";
   return `${name} <${DEFAULT_FROM_EMAIL}>`;
 }
 
@@ -180,7 +180,7 @@ export function adminInviteEmailHtml(opts: {
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 <tr><td style="background:#0a0a0a;padding:20px 32px;">
-  <span style="color:#ffffff;font-size:22px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">ceeda&gt;</span>
+  <span style="color:#ffffff;font-size:22px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">ceeda»</span>
   <span style="color:#a1a1aa;font-size:13px;margin-left:8px;">Platform Admin</span>
 </td></tr>
 <tr><td style="padding:40px 32px;">
@@ -189,7 +189,7 @@ export function adminInviteEmailHtml(opts: {
     Hi ${opts.userName},
   </p>
   <p style="margin:0 0 16px;font-size:15px;color:#3f3f46;line-height:1.6;">
-    You've been added to the <strong>ceeda&gt;</strong> platform admin console with the role of <strong>${roleLabel}</strong>.
+    You've been added to the <strong>ceeda»</strong> platform admin console with the role of <strong>${roleLabel}</strong>.
   </p>
   <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
     <tr><td style="padding:16px;background:#f4f4f5;border-radius:8px;">
@@ -218,7 +218,7 @@ export function adminInviteEmailHtml(opts: {
 </td></tr>
 <tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
   <p style="margin:0;font-size:12px;color:#a1a1aa;text-align:center;">
-    ceeda&gt; Platform Admin
+    ceeda» Platform Admin
   </p>
 </td></tr>
 </table>
@@ -294,7 +294,7 @@ export function teamInviteEmailHtml(opts: {
 <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 <tr><td style="background:#161aff;padding:20px 32px;">
   <span style="color:#ffffff;font-size:22px;font-weight:700;">${opts.shopName}</span>
-  <span style="color:#c5c6ff;font-size:13px;margin-left:8px;">via ceeda&gt;</span>
+  <span style="color:#c5c6ff;font-size:13px;margin-left:8px;">via ceeda»</span>
 </td></tr>
 <tr><td style="padding:40px 32px;">
   <h2 style="margin:0 0 8px;font-size:22px;color:#0a0a0a;">You've been invited to join ${opts.shopName}</h2>
@@ -302,7 +302,7 @@ export function teamInviteEmailHtml(opts: {
     Hi ${opts.userName},
   </p>
   <p style="margin:0 0 16px;font-size:15px;color:#3f3f46;line-height:1.6;">
-    You've been added to <strong>${opts.shopName}</strong> on ceeda&gt; as a <strong>${roleLabel}</strong>.
+    You've been added to <strong>${opts.shopName}</strong> on ceeda» as a <strong>${roleLabel}</strong>.
   </p>
   ${credentialsBlock}
   <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
@@ -319,7 +319,7 @@ export function teamInviteEmailHtml(opts: {
 </td></tr>
 <tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
   <p style="margin:0;font-size:12px;color:#a1a1aa;text-align:center;">
-    ${opts.shopName} &middot; Powered by ceeda&gt;
+    ${opts.shopName} &middot; Powered by ceeda»
   </p>
 </td></tr>
 </table>
@@ -357,7 +357,7 @@ function baseTemplate(shopName: string, content: string): string {
 </td></tr>
 <tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
   <p style="margin:0;font-size:12px;color:#a1a1aa;text-align:center;">
-    Sent by ${shopName} via ceeda>
+    Sent by ${shopName} via ceeda»
   </p>
 </td></tr>
 </table>

@@ -41,7 +41,7 @@ export default function LoginPage() {
           <div className="mb-4">
             <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
               <span className="text-foreground">ceeda</span>
-              <span style={{ color: "#df94e3" }}>{">"}</span>
+              <span className="text-foreground">{"»"}</span>
             </span>
           </div>
           <h1 className="text-lg font-semibold text-foreground">Platform Admin</h1>
@@ -50,7 +50,7 @@ export default function LoginPage() {
 
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-          <p className="text-xs text-amber-700">This portal is restricted to ceeda{">"} platform administrators.</p>
+          <p className="text-xs text-amber-700">This portal is restricted to ceeda» platform administrators.</p>
         </div>
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-xs">
