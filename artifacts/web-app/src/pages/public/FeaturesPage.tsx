@@ -189,7 +189,7 @@ export default function FeaturesPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-white via-white/75 to-white/10" />
           {/* Vertical wash: softens the top and blends the bottom into the next section */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-white" />
-          {/* Brand tint on the right to pull the photo into the ceeda> palette */}
+          {/* Brand tint on the right to pull the photo into the ceeda» palette */}
           <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-[#161aff]/[0.08] to-transparent" />
         </div>
         <BackgroundGrid />
@@ -203,7 +203,7 @@ export default function FeaturesPage() {
               The full workshop, in one place.
             </h1>
             <p className="mt-5 text-lg text-foreground/70 leading-relaxed max-w-2xl">
-              From the first phone call to the final invoice, ceeda&gt; is the
+              From the first phone call to the final invoice, ceeda» is the
               operating system for modern auto workshops. Bookings, jobs,
               inspections, quotes, invoices and payments — all built for the
               way your team actually works on the floor.

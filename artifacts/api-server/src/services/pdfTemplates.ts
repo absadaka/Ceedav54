@@ -242,7 +242,7 @@ function documentHtml(docType: "QUOTATION" | "INVOICE", shop: ShopInfo, doc: Doc
 
     <div class="footer">
       <p>${esc(shop.name)}${shop.vatNumber ? ` · TRN ${esc(shop.vatNumber)}` : ""}</p>
-      <p style="margin-top:4px">Powered by <span style="font-weight:700;color:#161aff">ceeda</span><span style="color:#161aff">></span></p>
+      <p style="margin-top:4px">Powered by <span style="font-weight:700;color:#161aff">ceeda</span><span style="color:#161aff">»</span></p>
     </div>
   </div>
 
