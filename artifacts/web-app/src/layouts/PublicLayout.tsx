@@ -49,7 +49,7 @@ function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: bool
         style={{ fontSize: sz, fontFamily: "'Dubai', sans-serif", lineHeight: 1 }}
       >
         <span style={{ lineHeight: 1 }} className={light ? "text-white" : "text-[#0a0a0a]"}>ceeda</span>
-        <span style={{ lineHeight: 1, marginLeft: 1 }} className={light ? "text-white" : "text-[#0a0a0a]"}>»</span>
+        <span style={{ lineHeight: 0.8, marginLeft: 1, fontSize: "1.4em" }} className={light ? "text-white" : "text-[#0a0a0a]"}>»</span>
       </span>
     </Link>
   );
