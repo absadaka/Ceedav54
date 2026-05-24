@@ -106,7 +106,7 @@ export default function AuthImageCarousel({ className }: AuthImageCarouselProps)
       </div>
 
       <div className="absolute top-6 left-6">
-        <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 1, color: "#ffffff" }}>ceeda<span style={{ fontSize: "1.4em", lineHeight: 0.8, position: "relative", top: "0.18em" }}>»</span></span>
+        <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 1, color: "#ffffff" }}>ceeda<span style={{ fontSize: "1.4em", lineHeight: 0.8, position: "relative", top: "0.08em" }}>»</span></span>
       </div>
     </div>
   );
