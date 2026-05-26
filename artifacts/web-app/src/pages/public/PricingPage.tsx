@@ -26,7 +26,7 @@ const faqs = [
   ["Is my data secure?", "Encrypted in transit and at rest. ISO 27001-certified infrastructure."],
   ["Do you support multiple locations?", "Yes, on Enterprise. Contact us for multi-location pricing."],
   ["What's included in the free trial?", "Full access to your chosen plan for 14 days. No credit card needed."],
-  ["Can I use ceeda» in Arabic?", "Arabic (RTL) support is on the roadmap. Contact us if you need it sooner."],
+  ["Can I use ceeda&gt; in Arabic?", "Arabic (RTL) support is on the roadmap. Contact us if you need it sooner."],
 ];
 
 function planColor(p: Plan) {

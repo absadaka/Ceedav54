@@ -240,7 +240,7 @@ export default function CommsPage() {
         {/* SMS */}
         <Section
           title="SMS"
-          description="Send SMS notifications to customers. Messages are sent from ceeda»."
+          description="Send SMS notifications to customers. Messages are sent from ceeda&gt;."
           icon={Phone}
           badge={<StatusBadge enabled={smsEnabled} />}
         >
@@ -261,7 +261,7 @@ export default function CommsPage() {
         {/* WhatsApp */}
         <Section
           title="WhatsApp"
-          description="Send WhatsApp messages to customers. Messages are sent from ceeda»."
+          description="Send WhatsApp messages to customers. Messages are sent from ceeda&gt;."
           icon={MessageSquare}
           badge={<StatusBadge enabled={waEnabled} />}
         >
