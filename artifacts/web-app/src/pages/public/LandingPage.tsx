@@ -49,7 +49,7 @@ const features = [
 ];
 
 const stats = [
-  { value: "2,400+", label: "Workshops using ceeda»" },
+  { value: "2,400+", label: "Workshops using ceeda&gt;" },
   { value: "1.2M+", label: "Job cards processed" },
   { value: "AED 840M+", label: "Invoices managed" },
   { value: "4.9 / 5", label: "Average customer rating" },
@@ -64,7 +64,7 @@ const journey = [
 
 const testimonials = [
   {
-    quote: "We went from 4 hours of admin per day to under 30 minutes. ceeda» paid for itself in the first week.",
+    quote: "We went from 4 hours of admin per day to under 30 minutes. ceeda&gt; paid for itself in the first week.",
     author: "Mohammed Al-Harbi",
     role: "Owner, Al-Harbi Auto Centre — Riyadh",
     avatar: "MA",
@@ -112,7 +112,7 @@ const growStats = [
   {
     value: "392%",
     label: "Return on investment",
-    body: "Most workshops cover the full annual cost of ceeda» within the first month through time saved on admin.",
+    body: "Most workshops cover the full annual cost of ceeda&gt; within the first month through time saved on admin.",
   },
   {
     value: "41%",
@@ -197,7 +197,7 @@ function FeaturesSection() {
             Every tool your workshop needs, in one place
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From the dashboard to the final invoice — ceeda» replaces spreadsheets, WhatsApp groups, and paper job cards with one clean system.
+            From the dashboard to the final invoice — ceeda&gt; replaces spreadsheets, WhatsApp groups, and paper job cards with one clean system.
           </p>
         </div>
 
@@ -369,9 +369,9 @@ function GrowSection() {
             Grow Your Business
           </h2>
           <p className="text-base text-muted-foreground max-w-xl">
-            At ceeda», we want to help you grow your workshop, attract new clients and boost revenue.{" "}
+            At ceeda&gt;, we want to help you grow your workshop, attract new clients and boost revenue.{" "}
             <Link href="/register" className="text-primary hover:underline font-medium">
-              See how workshops grow with ceeda» →
+              See how workshops grow with ceeda&gt; →
             </Link>
           </p>
         </div>

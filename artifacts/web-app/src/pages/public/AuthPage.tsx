@@ -91,7 +91,7 @@ export default function AuthPage() {
           <div className="mb-8">
             <div className="mb-6">
               <Link href="/" className="hover:opacity-75 transition-opacity">
-                <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 26, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>ceeda»</span>
+                <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 26, fontWeight: 700, lineHeight: 1, color: "#0a0a0a" }}>ceeda&gt;</span>
               </Link>
             </div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Welcome back</h1>
