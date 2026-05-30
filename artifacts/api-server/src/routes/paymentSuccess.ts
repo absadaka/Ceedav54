@@ -270,7 +270,7 @@ function successPageHtml(opts: {
     </div>
 
     <p style="text-align:center;margin-top:32px;font-size:12px;color:#94a3b8">
-      Powered by <span style="font-weight:700;color:#161aff">ceeda</span><span style="color:#161aff">></span>
+      Powered by <span style="font-weight:700;color:#161aff">ceer</span></span>
     </p>
   </div>
 

@@ -13,7 +13,7 @@ import { tenantInitials } from "@/lib/tenant";
 interface TenantAuthShellProps {
   tenant: TenantInfo | null;
   children: React.ReactNode;
-  /** Show a back link to the tenant's login page instead of ceeda.me */
+  /** Show a back link to the tenant's login page instead of ceer.me */
   backToLogin?: boolean;
   className?: string;
 }
@@ -59,7 +59,7 @@ export default function TenantAuthShell({
       ? `/${tenant.slug}/login`
       : "/"
     : "/";
-  const backLabel = backToLogin ? "Back to sign in" : "Back to ceeda.me";
+  const backLabel = backToLogin ? "Back to sign in" : "Back to ceer.me";
 
   return (
     <div className={cn("h-screen flex overflow-hidden", className)}>
@@ -67,7 +67,7 @@ export default function TenantAuthShell({
       <div className="flex-1 flex flex-col overflow-y-auto bg-white">
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
           <div className="w-full max-w-[360px]">
-            {/* Back link + CEEDA watermark */}
+            {/* Back link + CEER watermark */}
             <div className="flex items-center justify-between mb-8">
               <Link
                 href={backHref}
@@ -77,7 +77,7 @@ export default function TenantAuthShell({
                 {backLabel}
               </Link>
               <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 16, fontWeight: 700, lineHeight: 1, opacity: 0.4 }}>
-                <span style={{ color: "#0a0a0a" }}>ceeda</span>
+                <span style={{ color: "#0a0a0a" }}>ceer</span>
                 <span style={{ color: "#0a0a0a" }}>&gt;</span>
               </span>
             </div>

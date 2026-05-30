@@ -735,7 +735,7 @@ router.post("/admin/users", requirePlatformAdmin, async (req, res) => {
     created = inserted;
   }
 
-  const loginUrl = `https://${req.headers.host ?? "ceeda.me"}/admin-console/auth`;
+  const loginUrl = `https://${req.headers.host ?? "ceer.me"}/admin-console/auth`;
   const html = adminInviteEmailHtml({
     userName: name,
     role: role,
@@ -744,7 +744,7 @@ router.post("/admin/users", requirePlatformAdmin, async (req, res) => {
 
   sendPlatformEmail({
     to: email.toLowerCase().trim(),
-    subject: "You've been invited to ceeda> Platform Admin",
+    subject: "You've been invited to ceer> Platform Admin",
     html,
   }).catch((err) => console.error("[admin] invite email failed:", err));
 
@@ -776,7 +776,7 @@ router.post("/admin/users/:id/reset-password", requirePlatformAdmin, async (req,
     .set({ password_hash: null, updated_at: new Date() })
     .where(eq(usersTable.id, id));
 
-  const loginUrl = `https://${req.headers.host ?? "ceeda.me"}/admin-console/auth`;
+  const loginUrl = `https://${req.headers.host ?? "ceer.me"}/admin-console/auth`;
   const html = adminInviteEmailHtml({
     userName: user.name,
     role: user.role,
@@ -785,7 +785,7 @@ router.post("/admin/users/:id/reset-password", requirePlatformAdmin, async (req,
 
   sendPlatformEmail({
     to: user.email,
-    subject: "Reset your ceeda> Platform Admin password",
+    subject: "Reset your ceer> Platform Admin password",
     html,
   }).catch((err) => console.error("[admin] reset password email failed:", err));
 

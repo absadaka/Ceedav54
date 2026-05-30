@@ -122,7 +122,7 @@ export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <LifeBuoy className="w-4 h-4 text-primary" />
-                Get help from CEEDA support
+                Get help from CEER support
               </DialogTitle>
               <DialogDescription>
                 Tell us what's going on and we'll get back to you. Your contact details

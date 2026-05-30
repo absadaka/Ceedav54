@@ -40,7 +40,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="mb-4">
             <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
-              <span className="text-foreground">ceeda</span>
+              <span className="text-foreground">ceer</span>
               <span className="text-foreground">{">"}</span>
             </span>
           </div>
@@ -62,7 +62,7 @@ export default function LoginPage() {
                 <Input
                   id="admin-email"
                   type="email"
-                  placeholder="admin@ceeda.me"
+                  placeholder="admin@ceer.me"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-9"

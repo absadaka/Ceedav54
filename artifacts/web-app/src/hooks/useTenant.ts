@@ -39,7 +39,7 @@ const MOCK_TENANT: Tenant = {
 const MOCK_USER: TenantUser = {
   id: "u_demo_001",
   tenantId: "t_demo_001",
-  email: "admin@demo-workshop.ceeda.me",
+  email: "admin@demo-workshop.ceer.me",
   name: "Demo Admin",
   role: "owner",
 };

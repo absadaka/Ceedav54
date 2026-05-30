@@ -170,7 +170,7 @@ export default function PricingPage() {
 
       <CtaBanner
         title="Ready to get started?"
-        description="Join hundreds of maintenance shops already running on ceeda. First 14 days are on us — no credit card needed."
+        description="Join hundreds of maintenance shops already running on ceer. First 14 days are on us — no credit card needed."
       />
     </div>
   );

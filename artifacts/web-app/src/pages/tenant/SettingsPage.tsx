@@ -80,7 +80,7 @@ const CARDS: Card[] = [
   },
   {
     title: "Support tickets",
-    description: "Track conversations with CEEDA support and reply to ongoing tickets.",
+    description: "Track conversations with CEER support and reply to ongoing tickets.",
     href: "/settings/support",
     icon: LifeBuoy,
     iconBg: "bg-teal-50",

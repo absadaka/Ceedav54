@@ -47,7 +47,7 @@ function Logo({ size = "md", light = false }: { size?: "sm" | "md"; light?: bool
         className="inline-flex items-baseline leading-none font-bold"
         style={{ fontSize: sz, fontFamily: "'Dubai', sans-serif", lineHeight: 1 }}
       >
-        <span style={{ lineHeight: 1 }} className={light ? "text-white" : "text-[#0a0a0a]"}>ceeda</span>
+        <span style={{ lineHeight: 1 }} className={light ? "text-white" : "text-[#0a0a0a]"}>ceer</span>
         <span style={{ lineHeight: 1, marginLeft: 1 }} className={light ? "text-white" : "text-[#0a0a0a]"}>&gt;</span>
       </span>
     </Link>

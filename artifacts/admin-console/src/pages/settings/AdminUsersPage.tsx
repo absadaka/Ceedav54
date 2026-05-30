@@ -294,7 +294,7 @@ function AddUserDialog({ open, onClose }: { open: boolean; onClose: () => void }
           </div>
           <div className="space-y-1.5">
             <Label>Email</Label>
-            <Input type="email" placeholder="john@ceeda.me" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input type="email" placeholder="john@ceer.me" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label>Role</Label>
