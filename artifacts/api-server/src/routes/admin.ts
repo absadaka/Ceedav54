@@ -12,6 +12,22 @@ import { sendPlatformEmail, adminInviteEmailHtml } from "../services/email";
 
 const router = Router();
 
+// ────────────────────────────────────────────────────────────────────────
+// GLOBAL ADMIN GUARD
+// Protect all /admin/* except auth endpoints and seed-super-admin.
+// ────────────────────────────────────────────────────────────────────────
+router.use(async (req, res, next) => {
+  const path = req.path;
+  // Auth endpoints and seed super-admin are self-secured
+  if (
+    path.startsWith("/admin/auth/") ||
+    path === "/admin/seed-super-admin"
+  ) {
+    return next();
+  }
+  return requirePlatformAdmin(req, res, next);
+});
+
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
