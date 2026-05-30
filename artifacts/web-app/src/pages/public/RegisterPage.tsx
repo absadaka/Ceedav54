@@ -740,6 +740,7 @@ function Step6Launch({
   loading: boolean; shopName: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [agreed, setAgreed] = useState(false);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -757,7 +758,7 @@ function Step6Launch({
     <>
       <WizardTopBar
         step={6} onBack={onBack} submitFormId="step6-form"
-        submitLabel="Launch workshop" loading={loading}
+        submitLabel="Launch workshop" loading={loading} disabled={!agreed}
       />
       <form id="step6-form" onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
         <StepHeader title="Branding & plan" desc="Add your logo and choose a plan to launch your workshop." />
@@ -839,6 +840,51 @@ function Step6Launch({
           <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
           14-day free trial on all plans. No credit card required.
         </div>
+
+        {/* Terms & Privacy consent — required to submit */}
+        <label className="flex items-start gap-3 mt-5 cursor-pointer group">
+          <div className="relative mt-0.5 shrink-0">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="sr-only"
+            />
+            <div className={cn(
+              "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+              agreed ? "border-primary bg-primary" : "border-gray-300 bg-white group-hover:border-primary/50",
+            )}>
+              {agreed && (
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+          </div>
+          <span className="text-sm text-gray-600 leading-relaxed">
+            I have read and agree to the CEEDA{" "}
+            <a
+              href="/legal#terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-primary font-medium hover:underline"
+            >
+              Terms of Service
+            </a>{" "}
+            and{" "}
+            <a
+              href="/legal#privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-primary font-medium hover:underline"
+            >
+              Privacy Policy
+            </a>
+            . I confirm I have the authority to register this business.
+          </span>
+        </label>
       </form>
     </>
   );
@@ -1035,8 +1081,8 @@ export default function RegisterPage() {
 
         <p className="text-xs text-gray-300 text-center mt-8">
           By continuing you agree to our{" "}
-          <Link href="#terms" className="hover:underline">Terms</Link>{" "}
-          and <Link href="#privacy" className="hover:underline">Privacy Policy</Link>.
+          <a href="/legal#terms" target="_blank" rel="noopener noreferrer" className="hover:underline">Terms</a>{" "}
+          and <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy Policy</a>.
         </p>
       </div>
     </div>

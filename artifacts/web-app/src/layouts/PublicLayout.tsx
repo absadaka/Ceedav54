@@ -435,11 +435,32 @@ function PublicFooter() {
             </ul>
           </div>
 
-          {/* Right rail: copyright */}
-          <div className="lg:col-span-2 flex lg:flex-col lg:items-end items-start">
-            <p className="text-xs text-slate-500 lg:text-right">
-              © {new Date().getFullYear()} ceeda&gt;
-            </p>
+          {/* Legal column */}
+          <div className="lg:col-span-2 flex lg:flex-col lg:items-end items-start gap-y-3">
+            <div>
+              <p className="text-sm font-semibold text-white mb-5 lg:text-right">Legal</p>
+              <ul className="space-y-3 lg:items-end flex flex-col">
+                <li>
+                  <Link
+                    href="/legal#terms"
+                    className="text-sm text-slate-400 hover:text-white transition-colors"
+                  >
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/legal#privacy"
+                    className="text-sm text-slate-400 hover:text-white transition-colors"
+                  >
+                    Privacy Policy
+                  </Link>
+                </li>
+              </ul>
+              <p className="text-xs text-slate-500 lg:text-right mt-8">
+                © {new Date().getFullYear()} ceeda&gt;
+              </p>
+            </div>
           </div>
         </div>
       </div>

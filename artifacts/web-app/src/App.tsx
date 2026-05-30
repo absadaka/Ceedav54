@@ -15,6 +15,7 @@ import PricingPage from "@/pages/public/PricingPage";
 import FeaturesPage from "@/pages/public/FeaturesPage";
 import SolutionsPage from "@/pages/public/SolutionsPage";
 import DocsPage from "@/pages/public/DocsPage";
+import LegalPage from "@/pages/public/LegalPage";
 import AuthPage from "@/pages/public/AuthPage";
 import RegisterPage from "@/pages/public/RegisterPage";
 
@@ -68,7 +69,7 @@ const queryClient = new QueryClient({
 
 /* ─── Route zone detection ───────────────────────────────────────────────── */
 
-const PUBLIC_PATHS = ["/", "/pricing", "/features", "/docs", "/auth", "/register"];
+const PUBLIC_PATHS = ["/", "/pricing", "/features", "/docs", "/legal", "/auth", "/register"];
 
 const LEGACY_APP_PREFIXES = [
   "dashboard", "customers", "clients", "vehicles", "bookings", "inspections", "quotations", "jobs",
@@ -247,6 +248,7 @@ function AppRouter() {
         <Route path="/features" component={FeaturesPage} />
         <Route path="/solutions" component={SolutionsPage} />
         <Route path="/docs" component={DocsPage} />
+        <Route path="/legal" component={LegalPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </PublicLayout>
