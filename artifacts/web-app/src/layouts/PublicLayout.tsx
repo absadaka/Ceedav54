@@ -376,7 +376,7 @@ function PublicFooter() {
               ))}
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Get product updates and news from ceeda&gt;.
+              Get product updates and news from ceer&gt;.
             </p>
             <form
               onSubmit={(e) => { e.preventDefault(); }}
@@ -458,7 +458,7 @@ function PublicFooter() {
                 </li>
               </ul>
               <p className="text-xs text-slate-500 lg:text-right mt-8">
-                © {new Date().getFullYear()} ceeda&gt;
+                © {new Date().getFullYear()} ceer&gt;
               </p>
             </div>
           </div>
