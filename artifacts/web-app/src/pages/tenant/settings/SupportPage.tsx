@@ -137,7 +137,7 @@ export default function SupportPage() {
             Support tickets
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Track your conversations with the CEEDA support team and reply to ongoing tickets.
+            Track your conversations with the CEER support team and reply to ongoing tickets.
           </p>
         </div>
         <Button onClick={() => setNewOpen(true)} className="gap-1.5">
@@ -180,7 +180,7 @@ export default function SupportPage() {
             </div>
             <p className="text-sm font-medium text-foreground">No tickets yet</p>
             <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-              When you open a ticket with CEEDA support, it will appear here so you can track replies and continue the conversation.
+              When you open a ticket with CEER support, it will appear here so you can track replies and continue the conversation.
             </p>
             <Button className="mt-4" size="sm" onClick={() => setNewOpen(true)}>
               <Plus className="w-4 h-4 mr-1.5" /> Open your first ticket
@@ -348,7 +348,7 @@ function TicketThreadDialog({ ticketId, onClose }: { ticketId: string | null; on
               className="space-y-2"
             >
               <Textarea
-                placeholder="Reply to CEEDA support…"
+                placeholder="Reply to CEER support…"
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
                 rows={3}
@@ -358,7 +358,7 @@ function TicketThreadDialog({ ticketId, onClose }: { ticketId: string | null; on
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3" />
-                  Replies are visible to the CEEDA support team only.
+                  Replies are visible to the CEER support team only.
                 </p>
                 <Button
                   type="submit"
@@ -408,7 +408,7 @@ function MessageBubble({ message }: { message: Message }) {
       <div className={cn("max-w-[78%] space-y-1", isPlatform ? "" : "items-end flex flex-col")}>
         <div className="flex items-baseline gap-2">
           <span className="text-xs font-medium text-foreground">
-            {isPlatform ? "CEEDA Support" : message.author_name}
+            {isPlatform ? "CEER Support" : message.author_name}
           </span>
           <span className="text-[10px] text-muted-foreground">{fmtDateTime(message.created_at)}</span>
         </div>

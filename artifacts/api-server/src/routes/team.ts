@@ -190,7 +190,7 @@ router.post("/invite", async (req, res) => {
       }
     }
 
-    const host = (req.headers["x-forwarded-host"] as string) ?? req.headers.host ?? "ceeda.me";
+    const host = (req.headers["x-forwarded-host"] as string) ?? req.headers.host ?? "ceer.me";
     const proto = (req.headers["x-forwarded-proto"] as string) ?? "https";
     const loginUrl = `${proto}://${host}/auth?tenant=${encodeURIComponent(tenant.slug)}`;
 

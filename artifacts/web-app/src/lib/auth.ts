@@ -93,7 +93,7 @@ function delay(ms = 700): Promise<void> {
 
 const MOCK_USER: AuthUser = {
   id: "usr_01HXQ",
-  email: "demo@ceeda.me",
+  email: "demo@ceer.me",
   name: "Demo Admin",
   role: "owner",
   tenantId: "ten_01HXQ",

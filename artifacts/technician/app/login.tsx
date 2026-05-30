@@ -86,7 +86,7 @@ export default function LoginScreen() {
                   color: colors.foreground,
                 }}
               >
-                CEEDA Technician
+                CEER Technician
               </Text>
               <Text
                 style={{
@@ -207,7 +207,7 @@ export default function LoginScreen() {
               fontFamily: "Inter_400Regular",
             }}
           >
-            Use the same credentials as the CEEDA web app.
+            Use the same credentials as the CEER web app.
           </Text>
         </View>
       </KeyboardAvoidingView>

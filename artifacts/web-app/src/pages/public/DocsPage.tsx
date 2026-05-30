@@ -22,7 +22,7 @@ const SECTIONS: DocSection[] = [
   {
     id: "introduction", title: "Introduction", icon: BookOpen,
     subsections: [
-      { id: "what-is-ceeda",   title: "What is ceer&gt;" },
+      { id: "what-is-ceer",   title: "What is ceer&gt;" },
       { id: "who-its-for",     title: "Who it's for" },
       { id: "how-it-fits",     title: "How it fits together" },
     ],
@@ -304,7 +304,7 @@ export default function DocsPage() {
             <div className="mt-16 space-y-20">
               {/* INTRODUCTION */}
               <Section id="introduction" title="Introduction" eyebrow="Welcome">
-                <SubHeading id="what-is-ceeda" title="What is ceer&gt;" />
+                <SubHeading id="what-is-ceer" title="What is ceer&gt;" />
                 <p>
                   <strong>ceer&gt;</strong> is the operating system for modern auto workshops.
                   It replaces the patchwork of spreadsheets, paper job cards, and group chats most
@@ -352,7 +352,7 @@ export default function DocsPage() {
                   </li>
                   <li>
                     Verify your email and you'll land on your shop's dashboard at{" "}
-                    <Code>{"<your-shop>"}.ceeda.app</Code>.
+                    <Code>{"<your-shop>"}.ceer.app</Code>.
                   </li>
                 </Steps>
                 <Note kind="info">
@@ -726,7 +726,7 @@ export default function DocsPage() {
 
                 <SubHeading id="faq-support" title="How do I get support?" />
                 <p>
-                  Reach us at <Code>support@ceeda.app</Code>. Professional and Enterprise plans
+                  Reach us at <Code>support@ceer.app</Code>. Professional and Enterprise plans
                   include priority response times and a dedicated account manager.
                 </p>
               </Section>

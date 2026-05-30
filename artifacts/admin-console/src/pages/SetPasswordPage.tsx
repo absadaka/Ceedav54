@@ -42,7 +42,7 @@ export default function SetPasswordPage({ userId, email }: Props) {
         <div className="text-center mb-8">
           <div className="mb-4">
             <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
-              <span className="text-foreground">ceeda</span>
+              <span className="text-foreground">ceer</span>
               <span className="text-foreground">{">"}</span>
             </span>
           </div>

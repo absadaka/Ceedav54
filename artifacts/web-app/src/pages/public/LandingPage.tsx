@@ -243,7 +243,7 @@ function FeaturesSection() {
                     <div className="absolute -bottom-8 left-4 right-4 lg:left-6 lg:right-6 rounded-xl border border-border/60 bg-white p-1.5 shadow-2xl shadow-gray-300/50">
                       <img
                         src={feature.screenshot}
-                        alt={`${feature.label} — ceeda screenshot`}
+                        alt={`${feature.label} — ceer screenshot`}
                         className="w-full rounded-lg"
                       />
                     </div>

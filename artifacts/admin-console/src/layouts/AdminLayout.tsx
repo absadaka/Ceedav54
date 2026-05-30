@@ -249,7 +249,7 @@ function AdminSidebar({ collapsed, onToggle, light }: { collapsed: boolean; onTo
         ) : (
           <div className="flex flex-col min-w-0">
             <span style={{ fontFamily: "'Dubai', sans-serif", fontSize: 32, fontWeight: 700, lineHeight: 1 }}>
-              <span style={{ color: light ? "#0a0a0a" : "#ffffff" }}>ceeda</span>
+              <span style={{ color: light ? "#0a0a0a" : "#ffffff" }}>ceer</span>
               <span style={{ color: light ? "#0a0a0a" : "#ffffff", marginLeft: 1 }}>&gt;</span>
             </span>
             <span className="text-[10px] text-sidebar-foreground/60 leading-tight mt-0.5">Platform Admin</span>

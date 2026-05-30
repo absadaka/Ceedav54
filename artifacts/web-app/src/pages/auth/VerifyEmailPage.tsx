@@ -14,7 +14,7 @@ export default function VerifyEmailPage() {
 
   const [tenant, setTenant] = useState<TenantInfo | null>(null);
   const [status, setStatus] = useState<Status>("verifying");
-  const [email, setEmail] = useState("demo@ceeda.me");
+  const [email, setEmail] = useState("demo@ceer.me");
 
   useEffect(() => {
     resolveTenant(tenantSlug).then(setTenant);

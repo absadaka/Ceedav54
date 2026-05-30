@@ -235,7 +235,7 @@ export default function FeaturesPage() {
 
       {/* Bottom CTA ──────────────────────────────────────────────────── */}
       <CtaBanner
-        title="Ready to run your shop on ceeda?"
+        title="Ready to run your shop on ceer?"
         description="Get every feature on this page free for 14 days. No credit card, no setup fee — set up in under 5 minutes."
       />
     </div>

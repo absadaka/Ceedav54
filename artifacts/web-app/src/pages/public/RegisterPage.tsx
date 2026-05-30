@@ -862,7 +862,7 @@ function Step6Launch({
             </div>
           </div>
           <span className="text-sm text-gray-600 leading-relaxed">
-            I have read and agree to the CEEDA{" "}
+            I have read and agree to the CEER{" "}
             <a
               href="/legal#terms"
               target="_blank"
@@ -916,7 +916,7 @@ function SuccessScreen({ slug, shopName }: { slug: string; shopName: string }) {
       </p>
       <p className="text-sm text-gray-400 mb-10">
         Your subdomain:{" "}
-        <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 font-mono text-xs">{slug}.ceeda.me</code>
+        <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 font-mono text-xs">{slug}.ceer.me</code>
       </p>
 
       <button

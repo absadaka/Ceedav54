@@ -20,7 +20,7 @@ interface CtaBannerProps {
  */
 export function CtaBanner({
   title       = "Ready to upgrade your shop?",
-  description = "Join hundreds of maintenance shops already running on ceeda. Free for 14 days, no credit card needed.",
+  description = "Join hundreds of maintenance shops already running on ceer. Free for 14 days, no credit card needed.",
   primaryLabel   = "Start free trial",
   primaryHref    = "/register",
   secondaryLabel = "Book a demo",

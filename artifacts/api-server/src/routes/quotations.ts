@@ -1068,7 +1068,7 @@ router.post("/:id/send", async (req, res) => {
 
     const baseUrl = process.env.REPLIT_DEV_DOMAIN
       ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : (process.env.APP_URL ?? "https://ceeda.me");
+      : (process.env.APP_URL ?? "https://ceer.me");
     const approveToken = generateQuoteActionToken(quotation.id, "approve");
     const rejectToken = generateQuoteActionToken(quotation.id, "reject");
     const approveUrl = `${baseUrl}/api/quotations/email-action?token=${approveToken}&tenant=${slug}`;

@@ -49,7 +49,7 @@ function SettingRow({ label, desc, children }: {
 
 export default function PlatformSettingsPage() {
   const [platformName, setPlatformName] = useState("ceer&gt;");
-  const [supportEmail, setSupportEmail] = useState("support@ceeda.me");
+  const [supportEmail, setSupportEmail] = useState("support@ceer.me");
   const [defaultTimezone, setDefaultTimezone] = useState("Asia/Dubai");
   const [defaultCurrency, setDefaultCurrency] = useState("AED");
   const [trialDays, setTrialDays] = useState("14");
