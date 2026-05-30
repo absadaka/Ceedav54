@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link } from "wouter";
 import {
-  CalendarCheck, Wrench, Zap, FileText, Users, Receipt, CreditCard, ClipboardCheck,
+  CalendarCheck, Wrench, Zap, FileText, Users, Receipt, ClipboardCheck,
   ArrowRight, CheckCircle2, Sparkles, Clock, Car, Phone, Tag, Plus,
   Cog, Gauge,
 } from "lucide-react";
@@ -30,10 +30,10 @@ const FEATURES: Feature[] = [
     eyebrow: "Front desk",
     title: "Bookings that fit how your shop actually runs.",
     description:
-      "Take walk-ins, phone bookings and online requests in one calendar. Assign bays, send confirmations on WhatsApp, and turn any booking into a job in one tap.",
+      "Take walk-ins, phone bookings and online requests in one calendar. Assign bays, send confirmations by SMS, and turn any booking into a job in one tap.",
     bullets: [
       "Day, week and bay views with drag-to-reschedule",
-      "WhatsApp & SMS confirmations and reminders",
+      "SMS & email confirmations and reminders",
       "Convert a booking to a service job in one click",
       "Block off bays for breaks, training or downtime",
     ],
@@ -62,7 +62,7 @@ const FEATURES: Feature[] = [
     eyebrow: "Express lane",
     title: "Quick repairs without the paperwork.",
     description:
-      "For oil changes, tyre swaps and small jobs that don't need a full inspection. Add parts, share a quote on WhatsApp, get it approved and invoice — all in under a minute.",
+      "For oil changes, tyre swaps and small jobs that don't need a full inspection. Add parts, share a quote by SMS, get it approved and invoice — all in under a minute.",
     bullets: [
       "Lightweight workflow: parts → quote → invoice",
       "Reusable service catalogue with pre-set prices",
@@ -78,7 +78,7 @@ const FEATURES: Feature[] = [
     eyebrow: "Sales",
     title: "Quotations your customers actually understand.",
     description:
-      "Build itemised estimates with parts, labour, tax and discounts. Share via WhatsApp, SMS or email and watch in real time as the customer approves or rejects each line.",
+      "Build itemised estimates with parts, labour, tax and discounts. Share via SMS or email and watch in real time as the customer approves or rejects each line.",
     bullets: [
       "Drag-and-drop line items with VAT/tax handled automatically",
       "Customer-facing approval page with line-level accept/reject",
@@ -110,31 +110,15 @@ const FEATURES: Feature[] = [
     eyebrow: "Billing",
     title: "Invoices that match the work you actually did.",
     description:
-      "Auto-generated from approved quotes and completed jobs, with VAT, discounts and deposits handled. Share PDFs over WhatsApp and accept payment without leaving the screen.",
+      "Auto-generated from approved quotes and completed jobs, with VAT, discounts and deposits handled. Share branded PDFs over SMS or email in a click.",
     bullets: [
       "Auto-sync with the related job and quotation",
       "PDF and HTML versions on a tenant-branded template",
-      "Partial payments, deposits and refunds tracked",
+      "Deposits and balances tracked per invoice",
       "Status: draft → sent → partially paid → paid",
     ],
     icon: Receipt,
     visual: <InvoicesVisual />,
-  },
-  {
-    slug: "payments",
-    label: "Payments",
-    eyebrow: "Cashier",
-    title: "Take payment any way the customer wants.",
-    description:
-      "Cash, card, bank transfer or online link — all reconciled to the right invoice automatically. End-of-day cash-up and per-cashier reports come for free.",
-    bullets: [
-      "Online payment links via Stripe with WhatsApp delivery",
-      "Card, cash, bank transfer and split-payment support",
-      "Daily cash-up sheet by cashier and shift",
-      "Auto-reconciliation with invoices and refunds",
-    ],
-    icon: CreditCard,
-    visual: <PaymentsVisual />,
   },
   {
     slug: "inspections",
@@ -205,7 +189,7 @@ export default function FeaturesPage() {
             <p className="mt-5 text-lg text-foreground/70 leading-relaxed max-w-2xl">
               From the first phone call to the final invoice, ceeda&gt; is the
               operating system for modern auto workshops. Bookings, jobs,
-              inspections, quotes, invoices and payments — all built for the
+              inspections, quotes and invoices — all built for the
               way your team actually works on the floor.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -609,32 +593,8 @@ function InvoicesVisual() {
           ))}
         </div>
         <div className="flex items-center gap-2 text-[11px] text-foreground/60">
-          <Clock className="h-3 w-3" /> Sent · WhatsApp · 2 days ago
+          <Clock className="h-3 w-3" /> Sent · SMS · 2 days ago
         </div>
-      </div>
-    </div>
-  );
-}
-
-function PaymentsVisual() {
-  return (
-    <div>
-      <MockHeader title="Payments · Today" badge="AED 6,120" />
-      <div className="p-4 space-y-2">
-        {[
-          { method: "Card",     ref: "INV-1042 · Ahmed",  amount: "1,820.00", color: "bg-[#161aff]/10 text-[#161aff]" },
-          { method: "Cash",     ref: "INV-1043 · Sara",   amount:   "420.00", color: "bg-emerald-100 text-emerald-700" },
-          { method: "Online",   ref: "INV-1044 · Khalid", amount: "2,150.00", color: "bg-purple-100 text-purple-700" },
-          { method: "Transfer", ref: "INV-1045 · Omar",   amount: "1,730.00", color: "bg-amber-100 text-amber-700" },
-        ].map((row) => (
-          <div key={row.ref} className="flex items-center gap-3 rounded-lg border border-border p-2.5">
-            <span className={cn("rounded-md px-2 py-0.5 text-[10px] font-semibold w-16 text-center", row.color)}>
-              {row.method}
-            </span>
-            <span className="flex-1 text-xs text-foreground/80">{row.ref}</span>
-            <span className="text-sm font-semibold tabular-nums text-foreground">{row.amount}</span>
-          </div>
-        ))}
       </div>
     </div>
   );

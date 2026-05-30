@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   Menu, X, ChevronDown, Star,
   CalendarCheck, Wrench, Zap, FileText,
-  Users, Receipt, CreditCard, ClipboardCheck,
+  Users, Receipt, ClipboardCheck,
   Instagram, Youtube, Linkedin, ArrowRight,
   LayoutGrid, LogOut,
 } from "lucide-react";
@@ -24,7 +24,6 @@ const featuresCol1: SolutionItem[] = [
 const featuresCol2: SolutionItem[] = [
   { label: "Customers",   href: "/features#customers",   icon: Users },
   { label: "Invoices",    href: "/features#invoices",    icon: Receipt },
-  { label: "Payments",    href: "/features#payments",    icon: CreditCard },
   { label: "Inspections", href: "/features#inspections", icon: ClipboardCheck },
 ];
 

@@ -82,7 +82,7 @@ const PLANS = [
     price: "Free trial",
     priceNote: "then $49/mo",
     desc: "Small workshops up to 3 staff",
-    features: ["3 users", "Bookings & job cards", "Invoices & payments"],
+    features: ["3 users", "Bookings & job cards", "Invoices & billing"],
   },
   {
     id: "professional",
@@ -90,7 +90,7 @@ const PLANS = [
     price: "Free trial",
     priceNote: "then $99/mo",
     desc: "Growing workshops, most popular",
-    features: ["10 users", "WhatsApp notifications", "Advanced analytics"],
+    features: ["10 users", "SMS & email notifications", "Advanced analytics"],
     popular: true,
   },
   {

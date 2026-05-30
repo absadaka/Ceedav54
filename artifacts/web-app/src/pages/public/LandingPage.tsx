@@ -57,9 +57,9 @@ const stats = [
 
 const journey = [
   { num: "01", title: "Check in",    body: "Advisor creates a booking in seconds. Vehicle details auto-fill from the CRM." },
-  { num: "02", title: "Quote",       body: "Drag services from catalogue. Set price. Send via WhatsApp — customer approves with one tap." },
+  { num: "02", title: "Quote",       body: "Drag services from catalogue. Set price. Send via SMS or email — customer approves with one tap." },
   { num: "03", title: "Job card",    body: "Auto-created on approval. Technician sees it on their phone. Kanban board tracks status." },
-  { num: "04", title: "Invoice",     body: "Generated automatically when job is marked complete. Payment link included." },
+  { num: "04", title: "Invoice",     body: "Generated automatically when job is marked complete. Sent to the customer in a click." },
 ];
 
 const testimonials = [
@@ -70,7 +70,7 @@ const testimonials = [
     avatar: "MA",
   },
   {
-    quote: "The WhatsApp invoicing alone changed everything. Customers pay the same day now.",
+    quote: "The instant invoicing alone changed everything. Customers pay the same day now.",
     author: "Priya Nair",
     role: "Workshop Manager, FastFix — Dubai",
     avatar: "PN",
@@ -92,7 +92,7 @@ const growStats = [
   {
     value: "89%",
     label: "Fewer no-shows",
-    body: "Reduce no-shows and last-minute cancellations by collecting deposits and sending WhatsApp reminders automatically.",
+    body: "Reduce no-shows and last-minute cancellations by collecting deposits and sending SMS reminders automatically.",
   },
   {
     value: "20%",
@@ -126,8 +126,8 @@ const growStats = [
 function AnnouncementBanner() {
   return (
     <div className="text-white text-center py-2.5 px-4 text-sm font-medium flex items-center justify-center gap-2 bg-[#000000]">
-      <span className="hidden sm:inline">New: WhatsApp invoice delivery with instant payment collection.</span>
-      <span className="sm:hidden">New: WhatsApp invoicing →</span>
+      <span className="hidden sm:inline">New: instant invoice delivery by SMS and email.</span>
+      <span className="sm:hidden">New: instant invoicing →</span>
       <Link href="/pricing" className="underline underline-offset-2 font-semibold inline-flex items-center gap-1 opacity-90 hover:opacity-100">
         See plans <ArrowRight className="w-3 h-3" />
       </Link>
@@ -197,7 +197,7 @@ function FeaturesSection() {
             Every tool your workshop needs, in one place
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From the dashboard to the final invoice — ceeda&gt; replaces spreadsheets, WhatsApp groups, and paper job cards with one clean system.
+            From the dashboard to the final invoice — ceeda&gt; replaces spreadsheets, group chats, and paper job cards with one clean system.
           </p>
         </div>
 
@@ -278,7 +278,7 @@ function JourneySection() {
             One complete customer journey
           </h2>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            From the moment a customer books to the moment payment clears — every step is handled.
+            From the moment a customer books to the final invoice — every step is handled.
           </p>
         </div>
 
