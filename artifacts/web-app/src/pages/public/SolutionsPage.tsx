@@ -214,7 +214,7 @@ const SOLUTIONS: Solution[] = [
     eyebrow: "On-Site Service",
     title: "Run your workshop from the road.",
     description:
-      "Take ceeda&gt; on the go. Schedule on-site visits, collect signatures and send invoices from the driveway — no office required.",
+      "Take ceer&gt; on the go. Schedule on-site visits, collect signatures and send invoices from the driveway — no office required.",
     bullets: [
       "Calendar with travel time between jobs",
       "Mobile-first job cards on the technician app",
@@ -298,7 +298,7 @@ export default function SolutionsPage() {
             </h1>
             <p className="mt-5 text-lg text-foreground/70 leading-relaxed max-w-2xl">
               Whether you run a two-bay garage, a paint and body shop, a
-              detailing studio or a multi-branch chain, ceeda&gt; adapts to
+              detailing studio or a multi-branch chain, ceer&gt; adapts to
               the way you actually work — without forcing you to change your
               process.
             </p>
@@ -397,7 +397,7 @@ export default function SolutionsPage() {
             Don't see your business above?
           </h2>
           <p className="mt-4 text-lg text-foreground/70 max-w-xl mx-auto">
-            ceeda&gt; is flexible enough to fit any vehicle service workflow.
+            ceer&gt; is flexible enough to fit any vehicle service workflow.
             Start a free trial and we'll help you set it up the way your
             shop runs.
           </p>
@@ -477,7 +477,7 @@ function SolutionSection({ solution, index }: { solution: Solution; index: numbe
             <div className="relative rounded-3xl border border-border overflow-hidden aspect-[5/4] shadow-sm">
               <img
                 src={solution.photo}
-                alt={`${solution.label} — workshop using ceeda&gt;`}
+                alt={`${solution.label} — workshop using ceer&gt;`}
                 loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover"
               />

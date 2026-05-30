@@ -98,7 +98,7 @@ export default function TenantAuthShell({
           <p className="text-xs text-muted-foreground">
             Secured by{" "}
             <Link href="/" className="font-medium hover:underline" style={{ fontFamily: "'Dubai', sans-serif", fontWeight: 700 }}>
-              ceeda&gt;
+              ceer&gt;
             </Link>{" "}
             · <Link href="#privacy" className="hover:underline">Privacy</Link>
             {" "}· <Link href="#terms" className="hover:underline">Terms</Link>

@@ -48,7 +48,7 @@ function SettingRow({ label, desc, children }: {
 }
 
 export default function PlatformSettingsPage() {
-  const [platformName, setPlatformName] = useState("ceeda&gt;");
+  const [platformName, setPlatformName] = useState("ceer&gt;");
   const [supportEmail, setSupportEmail] = useState("support@ceeda.me");
   const [defaultTimezone, setDefaultTimezone] = useState("Asia/Dubai");
   const [defaultCurrency, setDefaultCurrency] = useState("AED");

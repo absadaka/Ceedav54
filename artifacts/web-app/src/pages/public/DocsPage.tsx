@@ -22,7 +22,7 @@ const SECTIONS: DocSection[] = [
   {
     id: "introduction", title: "Introduction", icon: BookOpen,
     subsections: [
-      { id: "what-is-ceeda",   title: "What is ceeda&gt;" },
+      { id: "what-is-ceeda",   title: "What is ceer&gt;" },
       { id: "who-its-for",     title: "Who it's for" },
       { id: "how-it-fits",     title: "How it fits together" },
     ],
@@ -265,7 +265,7 @@ export default function DocsPage() {
           <main className="flex-1 min-w-0 py-10 max-w-3xl">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1.5 text-xs text-foreground/50 mb-6">
-              <Link href="/" className="hover:text-foreground">ceeda&gt;</Link>
+              <Link href="/" className="hover:text-foreground">ceer&gt;</Link>
               <ChevronRight className="h-3 w-3" />
               <span className="text-foreground">Docs</span>
               <ChevronRight className="h-3 w-3" />
@@ -273,10 +273,10 @@ export default function DocsPage() {
             </nav>
 
             <h1 className="text-4xl font-bold tracking-tight text-foreground">
-              ceeda&gt; Documentation
+              ceer&gt; Documentation
             </h1>
             <p className="mt-3 text-lg text-foreground/70 leading-relaxed">
-              Everything you need to set up your shop, run your team, and grow with ceeda&gt;.
+              Everything you need to set up your shop, run your team, and grow with ceer&gt;.
               Start with the quickstart, then dive into the modules you use most.
             </p>
 
@@ -295,7 +295,7 @@ export default function DocsPage() {
                   <Layers className="h-4 w-4" />
                   <p className="text-xs font-semibold uppercase tracking-wider">Concepts</p>
                 </div>
-                <p className="font-semibold text-foreground">How ceeda&gt; thinks</p>
+                <p className="font-semibold text-foreground">How ceer&gt; thinks</p>
                 <p className="mt-1 text-sm text-foreground/60">Tenants, roles, jobs, and how they connect.</p>
               </a>
             </div>
@@ -304,35 +304,35 @@ export default function DocsPage() {
             <div className="mt-16 space-y-20">
               {/* INTRODUCTION */}
               <Section id="introduction" title="Introduction" eyebrow="Welcome">
-                <SubHeading id="what-is-ceeda" title="What is ceeda&gt;" />
+                <SubHeading id="what-is-ceeda" title="What is ceer&gt;" />
                 <p>
-                  <strong>ceeda&gt;</strong> is the operating system for modern auto workshops.
+                  <strong>ceer&gt;</strong> is the operating system for modern auto workshops.
                   It replaces the patchwork of spreadsheets, paper job cards, and group chats most
                   shops use today with a single platform that covers bookings, inspections, quotations,
                   job tracking and invoicing.
                 </p>
                 <p>
-                  Each shop on ceeda&gt; gets its own private workspace (a <Code>tenant</Code>), with
+                  Each shop on ceer&gt; gets its own private workspace (a <Code>tenant</Code>), with
                   its own users, customers, vehicles, services and pricing. Your data is isolated
                   from every other shop on the platform.
                 </p>
 
                 <SubHeading id="who-its-for" title="Who it's for" />
                 <p>
-                  ceeda&gt; works for any shop that services vehicles — independent garages,
+                  ceer&gt; works for any shop that services vehicles — independent garages,
                   service centres, tyre shops, quick-lube stations, and multi-branch chains. The
                   workflow is the same; the modules you use depend on the work you do.
                 </p>
 
                 <SubHeading id="how-it-fits" title="How it fits together" />
                 <p>
-                  ceeda&gt; ships as three apps that share the same data:
+                  ceer&gt; ships as three apps that share the same data:
                 </p>
                 <Table
                   rows={[
                     ["Workshop app", "The day-to-day web app for advisors, managers and admins."],
                     ["Technician app", "A tablet- and phone-friendly app for technicians on the floor — jobs and account only."],
-                    ["Admin console", "A separate platform-wide console for ceeda&gt; staff to manage shops and plans."],
+                    ["Admin console", "A separate platform-wide console for ceer&gt; staff to manage shops and plans."],
                   ]}
                 />
               </Section>
@@ -369,7 +369,7 @@ export default function DocsPage() {
 
                 <SubHeading id="configure-services" title="3. Configure your services" />
                 <p>
-                  ceeda&gt; ships with a starter service catalogue, but most shops customise it on day one.
+                  ceer&gt; ships with a starter service catalogue, but most shops customise it on day one.
                   Open <Code>Settings → Services</Code> and add the services you sell most often, with
                   default prices and labour times.
                 </p>
@@ -396,7 +396,7 @@ export default function DocsPage() {
               <Section id="core-concepts" title="Core concepts" eyebrow="The mental model">
                 <SubHeading id="tenants" title="Shops & tenants" />
                 <p>
-                  Every shop on ceeda&gt; is a <strong>tenant</strong>. A tenant has its own users,
+                  Every shop on ceer&gt; is a <strong>tenant</strong>. A tenant has its own users,
                   customers, vehicles, services, prices, branding, and billing plan. Multi-branch
                   groups can run multiple tenants side-by-side, or one tenant with multiple{" "}
                   <strong>locations</strong> (Professional plan and above).
@@ -536,7 +536,7 @@ export default function DocsPage() {
                 <p>
                   Mark any item as <Code>warn</Code> or <Code>fail</Code> and it becomes
                   a candidate line on the next quotation. Click <strong>Generate quote</strong> at
-                  the end of the inspection and ceeda&gt; pre-fills line items from the findings.
+                  the end of the inspection and ceer&gt; pre-fills line items from the findings.
                 </p>
               </Section>
 
@@ -558,7 +558,7 @@ export default function DocsPage() {
 
                 <SubHeading id="quote-versions" title="Versions & revisions" />
                 <p>
-                  When you change an already-sent quote, ceeda&gt; creates a new version and keeps
+                  When you change an already-sent quote, ceer&gt; creates a new version and keeps
                   the previous one for reference. You can always see exactly what was sent and when.
                 </p>
               </Section>
@@ -667,7 +667,7 @@ export default function DocsPage() {
               <Section id="mobile" title="Technician app" eyebrow="On the floor">
                 <SubHeading id="mobile-login" title="Logging in" />
                 <p>
-                  Technicians log in to the dedicated <strong>ceeda&gt; Technician</strong> app on
+                  Technicians log in to the dedicated <strong>ceer&gt; Technician</strong> app on
                   their phone or tablet using the same credentials as the web app. They land
                   directly on their assigned jobs.
                 </p>
