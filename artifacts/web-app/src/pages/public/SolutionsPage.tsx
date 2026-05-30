@@ -81,7 +81,7 @@ const SOLUTIONS: Solution[] = [
     eyebrow: "Detailing & Ceramic",
     title: "For detailing studios and ceramic coating shops.",
     description:
-      "Package your services, schedule by bay and capture the perfect before/after gallery for every customer — ready to share on WhatsApp or social.",
+      "Package your services, schedule by bay and capture the perfect before/after gallery for every customer — ready to share by SMS, email or social.",
     bullets: [
       "Service packages: wash, polish, paint correction, coating",
       "Photo galleries attached to every job",
@@ -214,12 +214,12 @@ const SOLUTIONS: Solution[] = [
     eyebrow: "On-Site Service",
     title: "Run your workshop from the road.",
     description:
-      "Take ceeda&gt; on the go. Schedule on-site visits, collect signatures and accept payment from the driveway — no office required.",
+      "Take ceeda&gt; on the go. Schedule on-site visits, collect signatures and send invoices from the driveway — no office required.",
     bullets: [
       "Calendar with travel time between jobs",
       "Mobile-first job cards on the technician app",
       "On-site photos, signatures and digital invoices",
-      "Tap-to-pay and online payment links",
+      "Send branded invoices by SMS or email on the spot",
     ],
     icon: MapPin,
     accent: "bg-cyan-50",

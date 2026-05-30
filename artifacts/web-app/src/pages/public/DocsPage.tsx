@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
 import {
   ChevronRight, BookOpen, Rocket, Layers, CalendarCheck, Wrench, Zap,
-  ClipboardCheck, FileText, Receipt, CreditCard, Users, ShieldCheck,
+  ClipboardCheck, FileText, Receipt, Users, ShieldCheck,
   Settings as SettingsIcon, Smartphone, Bell, HelpCircle, Search,
   Info, AlertTriangle, ArrowRight, Hash,
 } from "lucide-react";
@@ -92,14 +92,6 @@ const SECTIONS: DocSection[] = [
     ],
   },
   {
-    id: "payments", title: "Payments", icon: CreditCard,
-    subsections: [
-      { id: "pay-methods",   title: "Payment methods" },
-      { id: "pay-online",    title: "Online payment links" },
-      { id: "pay-cashup",    title: "End-of-day cash-up" },
-    ],
-  },
-  {
     id: "customers", title: "Customers & vehicles", icon: Users,
     subsections: [
       { id: "cust-profiles", title: "Customer profiles" },
@@ -134,9 +126,8 @@ const SECTIONS: DocSection[] = [
   {
     id: "notifications", title: "Notifications", icon: Bell,
     subsections: [
-      { id: "notif-whatsapp", title: "WhatsApp" },
-      { id: "notif-email",    title: "Email" },
       { id: "notif-sms",      title: "SMS" },
+      { id: "notif-email",    title: "Email" },
     ],
   },
   {
@@ -316,9 +307,9 @@ export default function DocsPage() {
                 <SubHeading id="what-is-ceeda" title="What is ceeda&gt;" />
                 <p>
                   <strong>ceeda&gt;</strong> is the operating system for modern auto workshops.
-                  It replaces the patchwork of spreadsheets, paper job cards, and WhatsApp groups most
+                  It replaces the patchwork of spreadsheets, paper job cards, and group chats most
                   shops use today with a single platform that covers bookings, inspections, quotations,
-                  job tracking, invoicing and payments.
+                  job tracking and invoicing.
                 </p>
                 <p>
                   Each shop on ceeda&gt; gets its own private workspace (a <Code>tenant</Code>), with
@@ -391,7 +382,7 @@ export default function DocsPage() {
                     and a slot on the calendar.
                   </li>
                   <li>
-                    Save. The customer gets a WhatsApp confirmation, and the booking shows up on
+                    Save. The customer gets an SMS confirmation, and the booking shows up on
                     every advisor's dashboard.
                   </li>
                 </Steps>
@@ -422,9 +413,9 @@ export default function DocsPage() {
                     ["Owner",      "Everything, including billing and team management."],
                     ["Admin",      "Everything except billing."],
                     ["Manager",    "Bookings, jobs, quotes, invoices, customers and reporting."],
-                    ["Advisor",    "Bookings, customers, quotes, invoices and payments."],
+                    ["Advisor",    "Bookings, customers, quotes and invoices."],
                     ["Technician", "Jobs and account only — no pricing, no customers, no settings."],
-                    ["Cashier",    "Invoices and payments."],
+                    ["Cashier",    "Invoices and billing."],
                   ]}
                 />
 
@@ -438,7 +429,7 @@ export default function DocsPage() {
                   <li><strong>Approval</strong> — customer approves line items on their phone.</li>
                   <li><strong>In progress</strong> — technicians do the work, time-tracked.</li>
                   <li><strong>QC</strong> — supervisor signs off the work.</li>
-                  <li><strong>Invoice & payment</strong> — invoice auto-generated, payment collected.</li>
+                  <li><strong>Invoice</strong> — invoice auto-generated and sent to the customer.</li>
                   <li><strong>Delivery</strong> — customer notified, vehicle handed back.</li>
                 </ol>
               </Section>
@@ -462,7 +453,7 @@ export default function DocsPage() {
                 <SubHeading id="bookings-confirmations" title="Confirmations & reminders" />
                 <p>
                   When a booking is created, the customer gets a confirmation message via the
-                  channel they prefer (WhatsApp, SMS, or email). A reminder goes out 24 hours
+                  channel they prefer (SMS or email). A reminder goes out 24 hours
                   before the appointment.
                 </p>
               </Section>
@@ -560,7 +551,7 @@ export default function DocsPage() {
 
                 <SubHeading id="quote-approval" title="Customer approval" />
                 <p>
-                  Send the quote via WhatsApp, SMS or email. The customer opens a private link
+                  Send the quote via SMS or email. The customer opens a private link
                   and approves or rejects each line individually. You see the result in real time —
                   no phone calls required.
                 </p>
@@ -593,28 +584,6 @@ export default function DocsPage() {
                   <Code>Draft → Sent → Partially paid → Paid</Code>.
                   Sending an invoice creates a PDF on your branded template and shares it via the
                   customer's preferred channel.
-                </p>
-              </Section>
-
-              {/* PAYMENTS */}
-              <Section id="payments" title="Payments" eyebrow="Cashier">
-                <SubHeading id="pay-methods" title="Payment methods" />
-                <p>
-                  Cash, card (terminal or online), bank transfer and split payments are all supported.
-                  Every payment is reconciled against an invoice and tagged to the cashier who
-                  recorded it.
-                </p>
-
-                <SubHeading id="pay-online" title="Online payment links" />
-                <p>
-                  When the online payment add-on is enabled, every invoice gets a secure payment link
-                  delivered with the invoice. Customers can pay by card without coming to the shop.
-                </p>
-
-                <SubHeading id="pay-cashup" title="End-of-day cash-up" />
-                <p>
-                  Open <Code>Payments → Cash-up</Code> at end of shift. ceeda&gt; shows you the totals
-                  per cashier, per method, and flags any variance against expected cash.
                 </p>
               </Section>
 
@@ -653,7 +622,6 @@ export default function DocsPage() {
                     ["Inspections","Yes", "Yes", "Yes", "Yes", "Yes", "—"],
                     ["Quotations", "Yes", "Yes", "Yes", "Yes", "—",  "—"],
                     ["Invoices",   "Yes", "Yes", "Yes", "Yes", "—",  "Yes"],
-                    ["Payments",   "Yes", "Yes", "Yes", "Yes", "—",  "Yes"],
                     ["Customers",  "Yes", "Yes", "Yes", "Yes", "—",  "—"],
                     ["Settings",   "Yes", "Yes", "—",   "—",   "—",  "—"],
                     ["Billing",    "Yes", "—",   "—",   "—",   "—",  "—"],
@@ -685,7 +653,7 @@ export default function DocsPage() {
                 <SubHeading id="settings-comms" title="Branding & comms" />
                 <p>
                   Upload your logo, set your brand colour, and customise the templates used for
-                  WhatsApp, SMS and email messages.
+                  SMS and email messages.
                 </p>
 
                 <SubHeading id="settings-billing" title="Billing & plan" />
@@ -720,23 +688,17 @@ export default function DocsPage() {
 
               {/* NOTIFICATIONS */}
               <Section id="notifications" title="Notifications" eyebrow="Customer comms">
-                <SubHeading id="notif-whatsapp" title="WhatsApp" />
+                <SubHeading id="notif-sms" title="SMS" />
                 <p>
-                  WhatsApp is the primary channel for booking confirmations, quote approvals,
-                  invoice delivery and payment links. WhatsApp Business API access is included
-                  in Professional and Enterprise plans.
+                  SMS is the primary channel for booking confirmations, quote approvals and
+                  invoice delivery. Per-message charges apply on usage above the included
+                  monthly allowance.
                 </p>
 
                 <SubHeading id="notif-email" title="Email" />
                 <p>
                   Transactional emails (invoices, account events, password resets) go out via
                   Resend. Replies route back to your shop's contact address.
-                </p>
-
-                <SubHeading id="notif-sms" title="SMS" />
-                <p>
-                  SMS is available as a fallback channel for customers who don't use WhatsApp.
-                  Per-message charges apply on usage above the included monthly allowance.
                 </p>
               </Section>
 
@@ -757,8 +719,8 @@ export default function DocsPage() {
 
                 <SubHeading id="faq-export" title="Can I export my data?" />
                 <p>
-                  Yes. You can export customers, vehicles, bookings, jobs, quotations, invoices
-                  and payments to CSV at any time from each module. Full account exports are
+                  Yes. You can export customers, vehicles, bookings, jobs, quotations and
+                  invoices to CSV at any time from each module. Full account exports are
                   available on request.
                 </p>
 
